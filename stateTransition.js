@@ -32,11 +32,11 @@ function stateTransition(from, to, params) {
     var deadNodes = [];
 
     var fromBranch = from.getBranch();
-    var f = fromBranch.length;
+    var i = fromBranch.length;
 
-    while (f-- && !to.contains(fromBranch[f])) {
+    while (i-- && !to.contains(fromBranch[i])) {
 
-      deadNodes.unshift(fromBranch[f]);
+      deadNodes.unshift(fromBranch[i]);
     }
 
     return deadNodes;
@@ -48,13 +48,13 @@ function stateTransition(from, to, params) {
     var staleNodes = [];
 
     var toBranch = to.getBranch();
-    var t = toBranch.length;
+    var i = toBranch.length;
 
-    while (t--) {
+    while (i--) {
 
-      if (toBranch[t].isStale(params)) {
+      if (toBranch[i].isStale(params)) {
 
-        staleNodes.unshift(toBranch[t]);
+        staleNodes.unshift(toBranch[i]);
       }
     }
 

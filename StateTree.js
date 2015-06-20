@@ -11,7 +11,7 @@ function StateTree(Node) {
   }
 
   this._Node = Node;
-  this._leafQueue = {};
+  this._leafQueues = {};
 
   var $root = new Node({ name: '$root' });
 
@@ -58,11 +58,11 @@ StateTree.prototype._registerNode = function (node) {
 
 StateTree.prototype._queueLeaf = function (node) {
 
-  var queue = this._leafQueue[node.parent];
+  var queue = this._leafQueues[node.parent];
 
   if (queue === undefined) {
 
-    queue = this._leafQueue[node.parent] = [];
+    queue = this._leafQueues[node.parent] = [];
   }
 
   queue.push(node);
@@ -71,7 +71,7 @@ StateTree.prototype._queueLeaf = function (node) {
 
 StateTree.prototype._flushQueueOf = function (node) {
 
-  var queue = this._leafQueue[node.name];
+  var queue = this._leafQueues[node.name];
 
   if (queue === undefined) return;
 
@@ -80,5 +80,5 @@ StateTree.prototype._flushQueueOf = function (node) {
     this._registerNode(queue.pop());
   }
 
-  queue = this._leafQueue[node.name] = undefined;
+  queue = this._leafQueues[node.name] = undefined;
 };

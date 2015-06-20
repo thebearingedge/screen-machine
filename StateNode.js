@@ -67,7 +67,7 @@ StateNode.prototype.attachTo = function (parentNode) {
   return this
     ._inheritIncludes()
     ._inheritData()
-    ._inheritLineage()
+    ._inheritBranch()
     .initialize();
 };
 
@@ -82,25 +82,15 @@ StateNode.prototype._inheritIncludes = function () {
 
 StateNode.prototype._inheritData = function () {
 
-  var parentNode = this._parent;
-
-  if (parentNode && parentNode.data) {
-
-    this.data = xtend({}, parentNode.data, this.data);
-  }
+  this.data = xtend({}, this._parent.data, this.data);
 
   return this;
 };
 
 
-StateNode.prototype._inheritLineage = function () {
+StateNode.prototype._inheritBranch = function () {
 
-  var parentNode = this._parent;
-
-  if (parentNode && parentNode._branch) {
-
-    this._branch = parentNode._branch.concat(this._branch);
-  }
+  this._branch = this._parent._branch.concat(this._branch);
 
   return this;
 };
@@ -140,7 +130,13 @@ StateNode.prototype.isStale = function (newParams) {
 };
 
 
-StateNode.prototype.getOwnParams = function (allParams) {
+StateNode.prototype.isNew = function () {
+
+  return this._params === null;
+};
+
+
+StateNode.prototype._getOwnParams = function (allParams) {
 
   return this
     ._paramKeys
@@ -153,7 +149,7 @@ StateNode.prototype.getOwnParams = function (allParams) {
 
 StateNode.prototype.load = function (allParams) {
 
-  var ownParams = this.getOwnParams(allParams);
+  var ownParams = this._getOwnParams(allParams);
 
   var resolved;
 

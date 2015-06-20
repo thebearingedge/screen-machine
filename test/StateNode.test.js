@@ -21,9 +21,9 @@ describe('StateNode', function () {
   });
 
 
-  describe('#initialize()', function () {
+  describe('.initialize()', function () {
 
-    it('should return current instance', function () {
+    it('should return the instance', function () {
 
       stateNode = new StateNode();
 
@@ -33,7 +33,7 @@ describe('StateNode', function () {
   });
 
 
-  describe('#getParentName', function () {
+  describe('.getParentName', function () {
 
     it('should return the explicitly set parent name', function () {
 
@@ -82,7 +82,7 @@ describe('StateNode', function () {
 
   });
 
-  describe('#_inheritData()', function () {
+  describe('._inheritData()', function () {
 
     it('should override and combine with parent data on child', function () {
 
@@ -94,18 +94,10 @@ describe('StateNode', function () {
         .to.deep.equal({ foo: 'bar', quux: 'corge' });
     });
 
-
-    it('should not inherit data if no parent', function () {
-
-      parentNode._inheritData();
-
-      expect(parentNode.data).to.deep.equal({ foo: 'qux', quux: 'corge' });
-    });
-
   });
 
 
-  describe('#_inheritIncludes()', function () {
+  describe('._inheritIncludes()', function () {
 
     it('should inherit parent node includes', function () {
 
@@ -119,20 +111,21 @@ describe('StateNode', function () {
   });
 
 
-  describe('#_inheritLineage()', function () {
+  describe('._inheritBranch()', function () {
 
     var grandchildNode = new StateNode({ name: 'grandchild' });
 
     beforeEach(function () {
+
       childNode._parent = parentNode;
       grandchildNode._parent = childNode;
     });
 
-    it('should add a lineage array to the node', function () {
 
-      parentNode._inheritLineage();
-      childNode._inheritLineage();
-      grandchildNode._inheritLineage();
+    it('should build a branch array on the node', function () {
+
+      childNode._inheritBranch();
+      grandchildNode._inheritBranch();
 
       expect(parentNode._branch)
         .to.deep.equal([parentNode]);
@@ -140,13 +133,12 @@ describe('StateNode', function () {
         .to.deep.equal([parentNode, childNode]);
       expect(grandchildNode._branch)
         .to.deep.equal([parentNode, childNode, grandchildNode]);
-
     });
 
   });
 
 
-  describe('#_registerResolves()', function () {
+  describe('._registerResolves()', function () {
 
     it('should create an array of invokables on the node', function () {
 
@@ -164,26 +156,26 @@ describe('StateNode', function () {
   });
 
 
-  describe('#attachTo(parentNode)', function () {
+  describe('.attachTo(parentNode)', function () {
 
     it('should set parent on the node and run inheritance', function () {
 
       sinon.spy(childNode, '_inheritIncludes');
       sinon.spy(childNode, '_inheritData');
-      sinon.spy(childNode, '_inheritLineage');
+      sinon.spy(childNode, '_inheritBranch');
 
       childNode.attachTo(parentNode);
 
       expect(childNode._parent).to.equal(parentNode);
       expect(childNode._inheritIncludes.calledOnce).to.equal(true);
       expect(childNode._inheritData.calledOnce).to.equal(true);
-      expect(childNode._inheritLineage.calledOnce).to.equal(true);
+      expect(childNode._inheritBranch.calledOnce).to.equal(true);
     });
 
   });
 
 
-  describe('#getBranch()', function () {
+  describe('.getBranch()', function () {
 
     it('should return the stateNode lineage', function () {
 
@@ -195,7 +187,7 @@ describe('StateNode', function () {
   });
 
 
-  describe('#isStale(newParams)', function () {
+  describe('.isStale(newParams)', function () {
 
     it('should return `false` if node has no paramKeys', function () {
 
@@ -239,7 +231,7 @@ describe('StateNode', function () {
   });
 
 
-  describe('#contains(node)', function () {
+  describe('.contains(node)', function () {
 
     it('should return `false` if a node DOES NOT include another', function () {
 
@@ -260,13 +252,13 @@ describe('StateNode', function () {
   });
 
 
-  describe('#getOwnParams(params)', function () {
+  describe('._getOwnParams(params)', function () {
 
     it('should filter params to with own params keys', function () {
 
       parentNode._paramKeys = ['foo', 'bar'];
       var params = { foo: 'baz', bar: 'qux', quux: 'corge' };
-      var ownParams = parentNode.getOwnParams(params);
+      var ownParams = parentNode._getOwnParams(params);
 
       expect(ownParams).to.deep.equal({ foo: 'baz', bar: 'qux' });
     });
@@ -274,11 +266,12 @@ describe('StateNode', function () {
   });
 
 
-  describe('#load(params)', function () {
+  describe('.load(params)', function () {
 
     var params;
 
     beforeEach(function () {
+
       params = { foo: 'bar', baz: 'qux' };
       parentNode._paramKeys = ['foo'];
       parentNode._resolveables = [
@@ -286,20 +279,23 @@ describe('StateNode', function () {
         'resolveValue'
       ];
 
-      sinon.spy(parentNode, 'getOwnParams');
+      sinon.spy(parentNode, '_getOwnParams');
       sinon.spy(parentNode, 'onEnter');
     });
 
+
     afterEach(function () {
-      parentNode.getOwnParams.restore();
+
+      parentNode._getOwnParams.restore();
     });
+
 
     it('should filter params to ownParams', function () {
 
       parentNode.load(params);
 
-      expect(parentNode.getOwnParams.calledOnce).to.equal(true);
-      expect(parentNode.getOwnParams)
+      expect(parentNode._getOwnParams.calledOnce).to.equal(true);
+      expect(parentNode._getOwnParams)
         .to.have.been.calledWithExactly(params);
     });
 
@@ -349,7 +345,7 @@ describe('StateNode', function () {
   });
 
 
-  describe('#unload()', function () {
+  describe('.unload()', function () {
 
     it('should call the instance onExit method', function () {
 
@@ -361,7 +357,7 @@ describe('StateNode', function () {
     });
 
 
-    it('should `null` the instance `resolved` and `params`', function () {
+    it('should `null` the instance `params`', function () {
 
       parentNode._onExit = function () {};
       parentNode._params = {};

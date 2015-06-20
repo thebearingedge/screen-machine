@@ -32,7 +32,7 @@ describe('StateTree', function () {
   });
 
 
-  describe('#getRoot()', function () {
+  describe('.getRoot()', function () {
 
     it('should return the root node of tree', function () {
 
@@ -42,7 +42,7 @@ describe('StateTree', function () {
   });
 
 
-  describe('#attach(name, nodeDef)', function () {
+  describe('.attach(name, nodeDef)', function () {
 
     beforeEach(function () {
 
@@ -68,7 +68,7 @@ describe('StateTree', function () {
   });
 
 
-  describe('#_queueLeaf(node)', function () {
+  describe('._queueLeaf(node)', function () {
 
     it('should enqueue a node with an unregistered parent', function () {
 
@@ -78,14 +78,14 @@ describe('StateTree', function () {
       tree._queueLeaf(bar);
       tree._queueLeaf(baz);
 
-      expect(tree._leafQueue.foo[0]).to.equal(bar);
-      expect(tree._leafQueue.foo[1]).to.equal(baz);
+      expect(tree._leafQueues.foo[0]).to.equal(bar);
+      expect(tree._leafQueues.foo[1]).to.equal(baz);
     });
 
   });
 
 
-  describe('#_registerNode(node)', function () {
+  describe('._registerNode(node)', function () {
 
     it('should enqueue an instance of StateNode', function () {
       var barNode = new StateNode({ name: 'foo.bar' });
@@ -113,7 +113,7 @@ describe('StateTree', function () {
   });
 
 
-  describe('#_flushQueueOf(nodeName)', function () {
+  describe('._flushQueueOf(nodeName)', function () {
 
     beforeEach(function () {
       tree._nodes.foo = new StateNode({ name: 'foo' });
@@ -133,7 +133,7 @@ describe('StateTree', function () {
 
       var fooNode = tree._nodes.foo;
 
-      tree._leafQueue.foo = [
+      tree._leafQueues.foo = [
         new StateNode({ name: 'bar', parent: 'foo' }),
         new StateNode({ name: 'baz', parent: 'foo' }),
         new StateNode({ name: 'qux', parent: 'foo' })
@@ -149,7 +149,7 @@ describe('StateTree', function () {
 
       var fooNode = tree._nodes.foo;
 
-      tree._leafQueue.foo = [
+      tree._leafQueues.foo = [
         new StateNode({ name: 'bar', parent: 'foo' }),
         new StateNode({ name: 'baz', parent: 'foo' }),
         new StateNode({ name: 'qux', parent: 'foo' })
@@ -157,18 +157,17 @@ describe('StateTree', function () {
 
       tree._flushQueueOf(fooNode);
 
-      expect(tree._leafQueue.foo).to.equal(undefined);
+      expect(tree._leafQueues.foo).to.equal(undefined);
     });
 
   });
 
+
   describe('End-to-end', function () {
 
-    var tree, rootNode, fooNode, barNode, bazNode;
+    it('should attach the nodes out-of-order', function () {
 
-    beforeEach(function () {
-
-      tree = new StateTree(StateNode);
+      var tree = new StateTree(StateNode);
 
       tree
         .attach('foo', {
@@ -183,16 +182,10 @@ describe('StateTree', function () {
 
         });
 
-      rootNode = tree._nodes[''];
-      fooNode = tree._nodes.foo;
-      barNode = tree._nodes.bar;
-      bazNode = tree._nodes['bar.baz'];
-    });
-
-
-    it('should attach the nodes correctly', function () {
-
-      expect(bazNode.getParentName()).to.equal('bar');
+      var rootNode = tree._nodes[''];
+      var fooNode = tree._nodes.foo;
+      var barNode = tree._nodes.bar;
+      var bazNode = tree._nodes['bar.baz'];
 
       expect(fooNode._parent).to.equal(rootNode);
       expect(barNode._parent).to.equal(rootNode);
@@ -204,7 +197,6 @@ describe('StateTree', function () {
         .to.deep.equal([rootNode, barNode]);
       expect(bazNode.getBranch())
         .to.deep.equal([rootNode, barNode, bazNode]);
-
     });
 
   });

@@ -1,8 +1,9 @@
 {
-  "name": "node-module-starter",
+  "name": "state-tree",
   "version": "0.0.0",
   "description": "change-me",
-  "main": "index.js",
+  "main": "StateTree.js",
+  "private": true,
   "scripts": {
     "test": "./node_modules/.bin/istanbul test ./node_modules/.bin/_mocha",
     "cover": "npm test --coverage && npm run coverage",
@@ -11,14 +12,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thebearingedge/node-module-starter.git"
+    "url": "git+https://github.com/thebearingedge/state-tree.git"
   },
   "author": "Tim Davis",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/thebearingedge/node-module-starter/issues"
+    "url": "https://github.com/thebearingedge/state-tree/issues"
   },
-  "homepage": "https://github.com/thebearingedge/node-module-starter#readme",
+  "homepage": "https://github.com/thebearingedge/state-tree#readme",
   "devDependencies": {
     "chai": "^3.0.0",
     "http-server": "^0.8.0",
@@ -26,5 +27,8 @@
     "mocha": "^2.2.5",
     "sinon": "^1.15.3",
     "sinon-chai": "^2.8.0"
+  },
+  "dependencies": {
+    "xtend": "^4.0.0"
   }
 }

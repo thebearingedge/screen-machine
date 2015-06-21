@@ -142,15 +142,20 @@ describe('StateNode', function () {
 
     it('should create an array of invokables on the node', function () {
 
+      var foo = function () {};
+      var bar = function () {};
+
       parentNode.resolve = {
-        foo: function () {},
-        bar: function () {}
+        foo: foo,
+        bar: bar
       };
 
       parentNode._registerResolves();
 
-      expect(parentNode._resolveables[0]).to.equal(parentNode.resolve.foo);
-      expect(parentNode._resolveables[1]).to.equal(parentNode.resolve.bar);
+      expect(parentNode._resolves[0])
+        .to.deep.equal({ name: 'foo@parent', value: foo });
+      expect(parentNode._resolves[1])
+        .to.deep.equal({ name: 'bar@parent', value: bar });
     });
 
   });
@@ -274,9 +279,15 @@ describe('StateNode', function () {
 
       params = { foo: 'bar', baz: 'qux' };
       parentNode._paramKeys = ['foo'];
-      parentNode._resolveables = [
-        sinon.spy(function () { return { foo: true }; }),
-        'resolveValue'
+      parentNode._resolves = [
+        {
+          name: 'foo@parent',
+          value: sinon.spy(function () { return { foo: true }; })
+        },
+        {
+          name: 'bar@parent',
+          value: 'resolveValue'
+        }
       ];
 
       sinon.spy(parentNode, '_getOwnParams');
@@ -312,7 +323,7 @@ describe('StateNode', function () {
 
       parentNode.load(params);
 
-      expect(parentNode._resolveables[0])
+      expect(parentNode._resolves[0].value)
         .to.have.been.calledWithExactly({ foo: 'bar' });
     });
 

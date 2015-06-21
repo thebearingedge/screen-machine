@@ -30,6 +30,8 @@
     "sinon-chai": "^2.8.0"
   },
   "dependencies": {
+    "is-promise": "^2.0.0",
+    "native-promise-only": "^0.8.0-a",
     "xtend": "^4.0.0"
   }
 }

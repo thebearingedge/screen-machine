@@ -18,8 +18,9 @@ function StateNode(stateDef) {
   this._includes = {};
   this._branch = [this];
   this._paramKeys = [];
-  this._resolveables = [];
+  this._resolves = [];
 
+  this.waitFor = null;
   this.data = {};
   this.onEnter = function () {};
   this.onExit = function () {};
@@ -37,7 +38,10 @@ StateNode.prototype._registerResolves = function () {
 
     for (var key in this.resolve) {
 
-      this._resolveables.push(this.resolve[key]);
+      this._resolves.push({
+        name: key + '@' + this.name,
+        value: this.resolve[key]
+      });
     }
   }
 
@@ -153,13 +157,13 @@ StateNode.prototype.load = function (allParams) {
 
   var resolved;
 
-  if (this._resolveables.length !== 0) {
+  if (this._resolves.length !== 0) {
 
-    resolved = this._resolveables.map(function (resolveable) {
+    resolved = this._resolves.map(function (resolveable) {
 
-      if (typeof resolveable !== 'function') return resolveable;
+      if (typeof resolveable.value !== 'function') return resolveable.value;
 
-      return resolveable(ownParams);
+      return resolveable.value(ownParams);
     });
   }
 
@@ -185,4 +189,10 @@ StateNode.prototype.unload = function () {
 StateNode.prototype.initialize = function () {
 
   return this;
+};
+
+
+StateNode.prototype.hasDependencies = function () {
+
+  return !!this.waitFor;
 };

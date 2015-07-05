@@ -17,10 +17,11 @@ function StateNode(stateDef) {
 
   this._includes = {};
   this._branch = [this];
+  this._ancestors = {};
   this._paramKeys = [];
   this._resolves = [];
+  this._resolutions = null;
 
-  this.waitFor = null;
   this.data = {};
   this.onEnter = function () {};
   this.onExit = function () {};
@@ -28,37 +29,61 @@ function StateNode(stateDef) {
   xtend(this, stateDef);
 
   this._includes[this.name] = true;
-  this._registerResolves();
+  this._ancestors[this.name] = this;
+  this._normalizeResolves();
 }
 
 
-StateNode.prototype._registerResolves = function () {
+StateNode.prototype._normalizeResolves = function () {
 
-  if (this.resolve) {
+  this.resolve || (this.resolve = {});
 
-    for (var key in this.resolve) {
+  for (var key in this.resolve) {
 
-      this._resolves.push({
-        name: key + '@' + this.name,
-        value: this.resolve[key]
-      });
+    if (Array.isArray(this.resolve[key])) {
+
+      this._normalizeDependenciesOf(this.resolve[key]);
     }
+
+    this.resolve[key + '@' + this.name] = this.resolve[key];
   }
 
   return this;
 };
 
 
+StateNode.prototype._normalizeDependenciesOf = function (invokable) {
+
+  var i = invokable.length - 1;
+  var dependency;
+
+  while (i--) {
+
+    dependency = invokable[i];
+
+    if (dependency.indexOf('@') === -1) {
+
+      invokable[i] = dependency + '@' + this.name;
+    }
+  }
+};
+
+
 StateNode.prototype.getParentName = function () {
 
-  if (this.parent) return this.parent;
+  if (this.parent !== undefined) return this.parent;
 
   var splitNames = this.name.split('.');
 
-  if (splitNames.length === 1) return null;
+  if (splitNames.length === 1) {
 
-  splitNames.pop();
-  this.parent = splitNames.join('.');
+    this.parent = null;
+  }
+  else {
+
+    splitNames.pop();
+    this.parent = splitNames.join('.');
+  }
 
   return this.parent;
 };
@@ -72,6 +97,7 @@ StateNode.prototype.attachTo = function (parentNode) {
     ._inheritIncludes()
     ._inheritData()
     ._inheritBranch()
+    ._inheritAncestors()
     .initialize();
 };
 
@@ -95,6 +121,14 @@ StateNode.prototype._inheritData = function () {
 StateNode.prototype._inheritBranch = function () {
 
   this._branch = this._parent._branch.concat(this._branch);
+
+  return this;
+};
+
+
+StateNode.prototype._inheritAncestors = function () {
+
+  xtend(this._ancestors, this._parent._ancestors);
 
   return this;
 };
@@ -134,13 +168,7 @@ StateNode.prototype.isStale = function (newParams) {
 };
 
 
-StateNode.prototype.isNew = function () {
-
-  return this._params === null;
-};
-
-
-StateNode.prototype._getOwnParams = function (allParams) {
+StateNode.prototype._getLocalParams = function (allParams) {
 
   return this
     ._paramKeys
@@ -151,48 +179,10 @@ StateNode.prototype._getOwnParams = function (allParams) {
 };
 
 
-StateNode.prototype.load = function (allParams) {
-
-  var ownParams = this._getOwnParams(allParams);
-
-  var resolved;
-
-  if (this._resolves.length !== 0) {
-
-    resolved = this._resolves.map(function (resolveable) {
-
-      if (typeof resolveable.value !== 'function') return resolveable.value;
-
-      return resolveable.value(ownParams);
-    });
-  }
-
-  this.onEnter.apply(this, resolved);
-
-  this._params = ownParams;
-
-  this._onExit = function () {
-    this.onExit.apply(this, resolved);
-    this._onExit = undefined;
-  }.bind(this);
-
-};
-
-
-StateNode.prototype.unload = function () {
-
-  this._onExit();
-  this._params = null;
-};
-
-
 StateNode.prototype.initialize = function () {
 
   return this;
 };
 
 
-StateNode.prototype.hasDependencies = function () {
 
-  return !!this.waitFor;
-};

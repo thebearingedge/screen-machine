@@ -1,129 +1,98 @@
 
 'use strict';
 
+var xtend = require('xtend/mutable');
+
 module.exports = Resolve;
 
 
 function Resolve(Promise) {
 
   this.Promise = Promise;
-  this._chain = [[]];
-  this._resolves = {};
-  this._dependents = {};
 
 }
 
 
-Resolve.prototype.addState = function (state) {
+Resolve.prototype._filterStateNodes = function (state, params) {
 
-  if (state.hasDependencies()) {
 
-    return this._triageState(state);
-  }
 
-  this._registerState(state);
-
-  return this;
 };
 
 
-Resolve.prototype._registerState = function (state, insertDepth) {
 
-  insertDepth || (insertDepth = 0);
+Resolve.prototype._getInvokables = function (states) {
 
-  var level = this._chain[insertDepth] || (this._chain[insertDepth] = []);
+  var invokables = {};
 
-  var stateResolves = state._resolves;
-  var i = stateResolves.length;
-  var resolve, position;
+  var i = states.length;
 
   while (i--) {
 
-    resolve = stateResolves[i];
-    position = level.length;
-
-    this._resolves[resolve.name] = {
-      depth: insertDepth,
-      position: position,
-      state: state
-    };
-
-    level.push(resolve.value);
-    this._flushDependentsOf(resolve.name);
+    xtend(invokables, states[i].resolve);
   }
+
+  return invokables;
 };
 
 
-Resolve.prototype._triageState = function (state) {
+Resolve.prototype._buildPlan = function (invokables) {
 
-  var isReady = true;
-  var waitFor = state.waitFor;
-  var i = waitFor.length;
+  var VISIT_IN_PROGRESS = 1;
+  var VISIT_DONE = 2;
 
-  while (i--) {
+  var cycle = [];
+  var plan = [];
+  var visited = {};
 
-    if (!this._resolves[waitFor[i]]) {
+  for (var invokable in invokables) {
 
-      isReady = false;
-      break;
+    visit(invokable);
+  }
+
+  return plan;
+
+  function visit(key) {
+
+    if (visited[key] === VISIT_DONE) return;
+
+    cycle.push(key);
+
+    if (visited[key] === VISIT_IN_PROGRESS) {
+
+      cycle.splice(0, cycle.indexOf(key));
+      throw new Error('Cyclic Dependency: ' + cycle.join(' -> '));
     }
-  }
 
-  if (isReady) {
+    visited[key] = VISIT_IN_PROGRESS;
 
-    var insertDepth = this._getInsertDepth(waitFor);
+    var dependencies = Array.isArray(invokables[key])
+      ? invokables[key].slice(0, invokables[key].length - 1)
+      : null;
 
-    return this._registerState(state, insertDepth);
-  }
+    if (dependencies) {
 
-  return this._queueDependent(state);
-};
+      dependencies.forEach(function (key) {
 
-
-Resolve.prototype._flushDependentsOf = function (resolveName) {
-
-  var queue = this._dependents[resolveName];
-
-  if (!queue) return;
-
-  for (var stateName in queue) {
-
-    this._triageState(queue[stateName]);
-  }
-};
-
-
-Resolve.prototype._queueDependent = function (state) {
-
-  var waitingFor = state.waitFor;
-  var i = waitingFor.length;
-  var dependents = this._dependents;
-  var queue;
-
-  while (i--) {
-
-    queue = dependents[waitingFor[i]] || (dependents[waitingFor[i]] = {});
-    queue[state.name] = state;
-  }
-
-};
-
-
-Resolve.prototype._getInsertDepth = function (waitFor) {
-
-  var depth = 0;
-  var i = waitFor.length;
-  var dependencyDepth;
-
-  while (i--) {
-
-    dependencyDepth = this._resolves[waitFor[i]].depth;
-
-    if (depth < dependencyDepth) {
-
-      depth = dependencyDepth;
+        visit(key);
+      });
     }
+
+    plan.push(key, invokables[key]);
+    cycle.pop();
+    visited[key] = VISIT_DONE;
   }
 
-  return depth + 1;
 };
+
+
+var myInvokables = {
+  'foo': ['baz', function () {}],
+  'bar': ['foo', 'baz', function () {}],
+  'baz': function () {},
+  'qux': ['baz', 'bar', function () {}]
+};
+
+var plan = Resolve.prototype._buildPlan(myInvokables);
+
+console.dir(plan);

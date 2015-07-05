@@ -1,4 +1,3 @@
-
 'use strict';
 
 var chai = require('chai');
@@ -138,7 +137,7 @@ describe('StateNode', function () {
   });
 
 
-  describe('._registerResolves()', function () {
+  describe('._normalizeResolves()', function () {
 
     it('should create an array of invokables on the node', function () {
 
@@ -150,12 +149,36 @@ describe('StateNode', function () {
         bar: bar
       };
 
-      parentNode._registerResolves();
+      parentNode._normalizeResolves();
 
-      expect(parentNode._resolves[0])
-        .to.deep.equal({ name: 'foo@parent', value: foo });
-      expect(parentNode._resolves[1])
-        .to.deep.equal({ name: 'bar@parent', value: bar });
+      expect(parentNode.resolve['foo@parent']).to.equal(foo);
+      expect(parentNode.resolve['bar@parent']).to.equal(bar);
+    });
+
+  });
+
+
+  describe('._normalizeDependenciesOf(invokable)', function () {
+
+    it('should prepend own name to dependencies', function () {
+
+      var baz = function () {};
+      var resolve = ['bar', baz];
+
+      parentNode._normalizeDependenciesOf(resolve);
+
+      expect(resolve).to.deep.equal(['bar@parent', baz]);
+    });
+
+
+    it('should not modify external dependencies', function () {
+
+      var baz = function () {};
+      var resolve = ['bar@foo', baz];
+
+      parentNode._normalizeDependenciesOf(resolve);
+
+      expect(resolve).to.deep.equal(['bar@foo', baz]);
     });
 
   });
@@ -257,125 +280,15 @@ describe('StateNode', function () {
   });
 
 
-  describe('._getOwnParams(params)', function () {
+  describe('._getLocalParams(params)', function () {
 
     it('should filter params to with own params keys', function () {
 
       parentNode._paramKeys = ['foo', 'bar'];
       var params = { foo: 'baz', bar: 'qux', quux: 'corge' };
-      var ownParams = parentNode._getOwnParams(params);
+      var ownParams = parentNode._getLocalParams(params);
 
       expect(ownParams).to.deep.equal({ foo: 'baz', bar: 'qux' });
-    });
-
-  });
-
-
-  describe('.load(params)', function () {
-
-    var params;
-
-    beforeEach(function () {
-
-      params = { foo: 'bar', baz: 'qux' };
-      parentNode._paramKeys = ['foo'];
-      parentNode._resolves = [
-        {
-          name: 'foo@parent',
-          value: sinon.spy(function () { return { foo: true }; })
-        },
-        {
-          name: 'bar@parent',
-          value: 'resolveValue'
-        }
-      ];
-
-      sinon.spy(parentNode, '_getOwnParams');
-      sinon.spy(parentNode, 'onEnter');
-    });
-
-
-    afterEach(function () {
-
-      parentNode._getOwnParams.restore();
-    });
-
-
-    it('should filter params to ownParams', function () {
-
-      parentNode.load(params);
-
-      expect(parentNode._getOwnParams.calledOnce).to.equal(true);
-      expect(parentNode._getOwnParams)
-        .to.have.been.calledWithExactly(params);
-    });
-
-
-    it('should set params on the state', function () {
-
-      parentNode.load(params);
-
-      expect(parentNode._params).to.deep.equal({ foo: 'bar' });
-    });
-
-
-    it('should invoke node resolveables with ownParams', function () {
-
-      parentNode.load(params);
-
-      expect(parentNode._resolves[0].value)
-        .to.have.been.calledWithExactly({ foo: 'bar' });
-    });
-
-
-    it('should call `onEnter` with resolved values', function () {
-
-      parentNode.load(params);
-
-      expect(parentNode.onEnter)
-        .to.have.been.calledWithExactly({ foo: true }, 'resolveValue');
-    });
-
-
-    it('should create a bound _onExit callback', function () {
-
-      sinon.spy(parentNode, 'onExit');
-      expect(parentNode._onExit).to.equal(undefined);
-
-      parentNode.load(params);
-
-      expect(typeof parentNode._onExit).to.equal('function');
-
-      parentNode._onExit();
-
-      expect(parentNode.onExit)
-        .to.have.been.calledWithExactly({ foo: true }, 'resolveValue');
-      expect(parentNode._onExit).to.equal(undefined);
-    });
-
-  });
-
-
-  describe('.unload()', function () {
-
-    it('should call the instance onExit method', function () {
-
-      parentNode._onExit = sinon.spy();
-
-      parentNode.unload();
-
-      expect(parentNode._onExit.calledOnce).to.equal(true);
-    });
-
-
-    it('should `null` the instance `params`', function () {
-
-      parentNode._onExit = function () {};
-      parentNode._params = {};
-
-      parentNode.unload();
-
-      expect(parentNode._params).to.equal(null);
     });
 
   });

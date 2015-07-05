@@ -280,15 +280,15 @@ describe('StateNode', function () {
   });
 
 
-  describe('._getLocalParams(params)', function () {
+  describe('.filterParams(params)', function () {
 
     it('should filter params to with own params keys', function () {
 
       parentNode._paramKeys = ['foo', 'bar'];
       var params = { foo: 'baz', bar: 'qux', quux: 'corge' };
-      var ownParams = parentNode._getLocalParams(params);
+      var stateParams = parentNode.filterParams(params);
 
-      expect(ownParams).to.deep.equal({ foo: 'baz', bar: 'qux' });
+      expect(stateParams).to.deep.equal({ foo: 'baz', bar: 'qux' });
     });
 
   });

@@ -152,23 +152,16 @@ StateNode.prototype.isStale = function (newParams) {
 
   if (!this._params) return true;
 
-  var isStale = false;
-  var keys = this._paramKeys;
-  var i = keys.length;
+  var self = this;
 
-  while (i--) {
-    // jshint eqeqeq: false
-    if (this._params[keys[i]] != newParams[keys[i]]) {
-      isStale = true;
-      break;
-    }
-  }
+  return self._paramKeys.some(function (key) {
 
-  return isStale;
+    return self._params[key] != newParams[key];
+  });
 };
 
 
-StateNode.prototype._getLocalParams = function (allParams) {
+StateNode.prototype.filterParams = function (allParams) {
 
   return this
     ._paramKeys
@@ -183,6 +176,3 @@ StateNode.prototype.initialize = function () {
 
   return this;
 };
-
-
-

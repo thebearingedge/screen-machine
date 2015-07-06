@@ -9,7 +9,6 @@ function ResolveQueue(resolves) {
   this._wait = resolves.length;
   this._resolves = resolves;
   this._completed = [];
-  this.Promise = ResolveQueue.Promise;
 }
 
 ResolveQueue.prototype.start = function () {
@@ -35,18 +34,16 @@ ResolveQueue.prototype._run = function (resolve) {
 
   self._dequeue(resolve);
 
-  var resultOrPromise = resolve.execute();
+  var resolvePromise = self._executeAsPromise(resolve);
 
-  return self
-    .Promise
-    .resolve(resultOrPromise)
+  return resolvePromise
     .then(function (result) {
 
       resolve.result = result;
       self._completed.push(resolve);
 
       return --self._wait
-        ? self._runDependentsOf(resolve.name, result)
+        ? self._runDependentsOf(resolve)
         : self._finish();
     })
     .catch(function (err) {
@@ -65,24 +62,44 @@ ResolveQueue.prototype._dequeue = function (resolve) {
 };
 
 
-ResolveQueue.prototype._runDependentsOf = function (name, value) {
+ResolveQueue.prototype._runDependentsOf = function (resolve) {
 
   var self = this;
 
   return self
     ._resolves
-    .filter(function (resolve) {
+    .filter(function (anyResolve) {
 
-      return resolve.isDependentOn(name);
+      return anyResolve.isDependentOn(resolve.name);
     })
     .forEach(function (dependent) {
 
       return dependent
-        .setDependency(name, value)
+        .setDependency(resolve.name, resolve.result)
         .isReady()
           ? self._run(dependent)
           : undefined;
     });
+};
+
+
+ResolveQueue.prototype._executeAsPromise = function (stateResolve) {
+
+  return new ResolveQueue.Promise(function (resolve, reject) {
+
+    var resultOrPromise;
+
+    try {
+
+      resultOrPromise = stateResolve.execute();
+    }
+    catch (err) {
+
+      return reject(err);
+    }
+
+    return resolve(resultOrPromise);
+  });
 };
 
 

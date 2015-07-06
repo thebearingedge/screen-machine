@@ -34,7 +34,6 @@ DependentResolve.prototype.isReady = function () {
 DependentResolve.prototype.execute = function () {
 
   var self = this;
-
   var args = self
     ._injectables
     .map(function (injectable) {
@@ -47,7 +46,7 @@ DependentResolve.prototype.execute = function () {
 };
 
 
-DependentResolve.prototype.dependsOn = function (resolveName) {
+DependentResolve.prototype.isDependentOn = function (resolveName) {
 
   return this._injectables.indexOf(resolveName) !== -1;
 };

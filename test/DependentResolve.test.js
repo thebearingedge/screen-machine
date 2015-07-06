@@ -75,11 +75,11 @@ describe('DependentResolve', function () {
   });
 
 
-  describe('.dependsOn(resolveName)', function () {
+  describe('.isDependentOn(resolveName)', function () {
 
     it('should return whether the resolveName is a dependency', function () {
 
-      expect(resolve.dependsOn('baz@qux')).to.equal(true);
+      expect(resolve.isDependentOn('baz@qux')).to.equal(true);
     });
 
   });

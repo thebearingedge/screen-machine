@@ -39,7 +39,7 @@ module.exports = {
 
     for (resolveName in stateNode.resolve) {
 
-      resolve = this._getIntance(resolveName, stateParams, stateNode);
+      resolve = this._getResolveInstance(resolveName, stateParams, stateNode);
       stateNodeResolves.push(resolve);
     }
 
@@ -47,7 +47,7 @@ module.exports = {
   },
 
 
-  _getIntance: function (resolveName, stateParams, stateNode) {
+  _getResolveInstance: function (resolveName, stateParams, stateNode) {
 
     var resolve = stateNode.resolve[resolveName];
 

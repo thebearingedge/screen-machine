@@ -11,16 +11,16 @@ module.exports = {
 
     var self = this;
 
-    return stateNodes.reduce(function (resolves, state) {
+    return stateNodes.reduce(function (allResolves, state) {
 
       self
         ._getStateResolves(params, state)
-        .forEach(function (resolve) {
+        .forEach(function (stateResolve) {
 
-          resolves.push(resolve);
+          allResolves.push(stateResolve);
         });
 
-      return resolves;
+      return allResolves;
     }, []);
   },
 

@@ -22,9 +22,9 @@ ResolveQueue.prototype.start = function () {
 
       return resolve.isReady();
     })
-    .forEach(function (readyResolve) {
+    .forEach(function (ready) {
 
-      return self._run(readyResolve);
+      return self._run(ready);
     });
 };
 
@@ -75,12 +75,12 @@ ResolveQueue.prototype._runDependentsOf = function (name, value) {
 
       return resolve.isDependentOn(name);
     })
-    .forEach(function (resolve) {
+    .forEach(function (dependent) {
 
-      return resolve
+      return dependent
         .setDependency(name, value)
         .isReady()
-          ? self._run(resolve)
+          ? self._run(dependent)
           : undefined;
     });
 };

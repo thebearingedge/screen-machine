@@ -30,43 +30,7 @@ function StateNode(stateDef) {
 
   this._includes[this.name] = true;
   this._ancestors[this.name] = this;
-  this._normalizeResolves();
 }
-
-
-StateNode.prototype._normalizeResolves = function () {
-
-  this.resolve || (this.resolve = {});
-
-  for (var key in this.resolve) {
-
-    if (Array.isArray(this.resolve[key])) {
-
-      this._normalizeDependenciesOf(this.resolve[key]);
-    }
-
-    this.resolve[key + '@' + this.name] = this.resolve[key];
-  }
-
-  return this;
-};
-
-
-StateNode.prototype._normalizeDependenciesOf = function (invokable) {
-
-  var i = invokable.length - 1;
-  var dependency;
-
-  while (i--) {
-
-    dependency = invokable[i];
-
-    if (dependency.indexOf('@') === -1) {
-
-      invokable[i] = dependency + '@' + this.name;
-    }
-  }
-};
 
 
 StateNode.prototype.getParentName = function () {

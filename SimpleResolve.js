@@ -4,23 +4,17 @@
 module.exports = SimpleResolve;
 
 
-function SimpleResolve(resolveName, stateParams, stateNode) {
+function SimpleResolve(resolveKey, stateNode) {
 
-  this.name = resolveName;
-  this.stateParams = stateParams;
+  this.resolveKey = resolveKey;
+  this.name = resolveKey + '@' + stateNode.name;
   this.stateNode = stateNode;
 
-  this._invokable = stateNode.resolve[resolveName];
+  this.invokable = stateNode.resolve[resolveKey];
 }
 
 
-SimpleResolve.prototype.isReady = function () {
+SimpleResolve.prototype.execute = function (params) {
 
-  return true;
-};
-
-
-SimpleResolve.prototype.execute = function () {
-
-  return this._invokable.call(null, this.stateParams);
+  return this.invokable.call(null, params);
 };

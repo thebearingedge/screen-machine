@@ -4,57 +4,36 @@
 module.exports = DependentResolve;
 
 
-function DependentResolve(resolveName, stateParams, stateNode) {
+function DependentResolve(resolveKey, stateNode) {
 
-  this.name = resolveName;
-  this.stateParams = stateParams;
+  this.resolveKey = resolveKey;
+  this.name = resolveKey + '@' + stateNode.name;
   this.stateNode = stateNode;
 
-  this._dependencies = {};
+  var resolveDef = stateNode.resolve[resolveKey];
+  var invokableIndex = resolveDef.length - 1;
 
-  var invokable = stateNode.resolve[resolveName];
-  var funcIndex = invokable.length - 1;
+  this.invokable = resolveDef[invokableIndex];
+  this.dependencies = resolveDef
+    .slice(0, invokableIndex)
+    .map(function (dependency) {
 
-  this._injectables = invokable.slice(0, funcIndex);
-  this._invokable = invokable[funcIndex];
+      return dependency.indexOf('@') === -1
+        ? dependency + '@' + stateNode.name
+        : dependency;
+    });
 }
 
 
-DependentResolve.prototype.isReady = function () {
+DependentResolve.prototype.execute = function (params, injectables) {
 
-  var self = this;
+  var args = this
+    .dependencies
+    .map(function (dependency) {
 
-  return self._injectables.every(function (injectable) {
-
-    return self._dependencies[injectable] !== undefined;
-  });
-};
-
-
-DependentResolve.prototype.execute = function () {
-
-  var self = this;
-  var args = self
-    ._injectables
-    .map(function (injectable) {
-
-      return self._dependencies[injectable];
+      return injectables[dependency];
     })
-    .concat(self.stateParams);
+    .concat(params);
 
-  return self._invokable.apply(null, args);
-};
-
-
-DependentResolve.prototype.isDependentOn = function (resolveName) {
-
-  return this._injectables.indexOf(resolveName) !== -1;
-};
-
-
-DependentResolve.prototype.setDependency = function (name, value) {
-
-  this._dependencies[name] = value;
-
-  return this;
+  return this.invokable.apply(null, args);
 };

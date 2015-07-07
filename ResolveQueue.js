@@ -9,6 +9,7 @@ function ResolveQueue(resolves) {
   this._wait = resolves.length;
   this._resolves = resolves;
   this._completed = [];
+  this._results = {};
 }
 
 ResolveQueue.prototype.start = function () {
@@ -34,9 +35,8 @@ ResolveQueue.prototype._run = function (resolve) {
 
   self._dequeue(resolve);
 
-  var resolvePromise = self._executeAsPromise(resolve);
-
-  return resolvePromise
+  return resolve
+    .execute()
     .then(function (result) {
 
       resolve.result = result;
@@ -55,10 +55,7 @@ ResolveQueue.prototype._run = function (resolve) {
 
 ResolveQueue.prototype._dequeue = function (resolve) {
 
-  var allResolves = this._resolves;
-  var resolveIndex = allResolves.indexOf(resolve);
-
-  allResolves.splice(resolveIndex, 1);
+  this._resolves.splice(this._resolves.indexOf(resolve), 1);
 };
 
 
@@ -68,38 +65,18 @@ ResolveQueue.prototype._runDependentsOf = function (resolve) {
 
   return self
     ._resolves
-    .filter(function (anyResolve) {
+    .filter(function (remaining) {
 
-      return anyResolve.isDependentOn(resolve.name);
+      return remaining.isDependentOn(resolve.name);
     })
     .forEach(function (dependent) {
 
       return dependent
-        .setDependency(resolve.name, resolve.result)
+        .setInjectable(resolve.name, resolve.result)
         .isReady()
           ? self._run(dependent)
           : undefined;
     });
-};
-
-
-ResolveQueue.prototype._executeAsPromise = function (stateResolve) {
-
-  return new ResolveQueue.Promise(function (resolve, reject) {
-
-    var resultOrPromise;
-
-    try {
-
-      resultOrPromise = stateResolve.execute();
-    }
-    catch (err) {
-
-      return reject(err);
-    }
-
-    return resolve(resultOrPromise);
-  });
 };
 
 

@@ -4,67 +4,87 @@
 module.exports = ResolveQueue;
 
 
-function ResolveQueue(resolves) {
+function ResolveQueue(router) {
 
-  this._wait = resolves.length;
-  this._resolves = resolves;
-  this._completed = [];
-  this._results = {};
+  var transition = router.transition;
+
+  this.wait = 0;
+  this.resolves = [];
+  this.completed = [];
+
+  this.isSuperceded = function () {
+
+    return router.transition !== transition;
+  };
 }
+
+
+ResolveQueue.prototype.enqueue = function (resolves) {
+
+  var self = this;
+
+  Array.isArray(resolves) || (resolves = [resolves]);
+
+  resolves.forEach(function (resolve) {
+
+    self.resolves.push(resolve);
+    self.wait += 1;
+  });
+};
+
 
 ResolveQueue.prototype.start = function () {
 
   var self = this;
 
   return self
-    ._resolves
+    .resolves
     .filter(function (resolve) {
 
       return resolve.isReady();
     })
     .forEach(function (ready) {
 
-      return self._run(ready);
+      return self.run(ready);
     });
 };
 
 
-ResolveQueue.prototype._run = function (resolve) {
-
-  var self = this;
-
-  self._dequeue(resolve);
-
-  return resolve
-    .execute()
-    .then(function (result) {
-
-      resolve.result = result;
-      self._completed.push(resolve);
-
-      return --self._wait
-        ? self._runDependentsOf(resolve)
-        : self._finish();
-    })
-    .catch(function (err) {
-
-      return self._handleResolveError(err);
-    });
-};
-
-
-ResolveQueue.prototype._dequeue = function (resolve) {
-
-  this._resolves.splice(this._resolves.indexOf(resolve), 1);
-};
-
-
-ResolveQueue.prototype._runDependentsOf = function (resolve) {
+ResolveQueue.prototype.run = function (resolve) {
 
   var self = this;
 
   return self
-    ._resolves
+    .dequeue(resolve)
+    .execute()
+    .then(function (result) {
+
+      resolve.result = result;
+      self.completed.push(resolve);
+
+      return --self.wait
+        ? self.runDependentsOf(resolve)
+        : self.finish();
+    })
+    .catch(function (err) {
+
+      return self.handleResolveError(err);
+    });
+};
+
+
+ResolveQueue.prototype.dequeue = function (resolve) {
+
+  return this.resolves.splice(this.resolves.indexOf(resolve), 1);
+};
+
+
+ResolveQueue.prototype.runDependentsOf = function (resolve) {
+
+  var self = this;
+
+  return self
+    .resolves
     .filter(function (remaining) {
 
       return remaining.isDependentOn(resolve.name);
@@ -74,9 +94,58 @@ ResolveQueue.prototype._runDependentsOf = function (resolve) {
       return dependent
         .setInjectable(resolve.name, resolve.result)
         .isReady()
-          ? self._run(dependent)
+          ? self.run(dependent)
           : undefined;
     });
+};
+
+
+ResolveQueue.prototype.getGraph = function () {
+
+  return this
+    .resolves
+    .reduce(function (graph, resolve) {
+
+      graph[resolve.name] = resolve.waitingFor;
+
+      return graph;
+    }, {});
+};
+
+
+ResolveQueue.prototype.throwIfCyclic = function (graph) {
+
+  var IN_PROGRESS = 1;
+  var DONE = 2;
+  var visited = {};
+  var stack = [];
+  var key;
+
+  for (key in graph) {
+
+    visit(key);
+  }
+
+  function visit(key) {
+
+    if (visited[key] === DONE) return;
+
+    stack.push(key);
+
+    if (visited[key] === IN_PROGRESS) {
+
+      stack.splice(0, stack.indexOf(key));
+
+      throw new Error('Cyclic dependency: ' + stack.join(' -> '));
+    }
+
+    visited[key] = IN_PROGRESS;
+
+    graph[key].forEach(visit);
+
+    stack.pop();
+    visited[key] = DONE;
+  }
 };
 
 
@@ -98,7 +167,7 @@ ResolveQueue.prototype.onError = function (callback) {
 };
 
 
-ResolveQueue.prototype._handleResolveError = function (err) {
+ResolveQueue.prototype.handleResolveError = function (err) {
 
   throw err; // do something useful with err?
 };

@@ -3,82 +3,64 @@
 
 module.exports = StateTree;
 
-function StateTree(Node) {
+function StateTree() {
 
-  if (!(this instanceof StateTree)) {
+  this.leafQueues = {};
 
-    return new StateTree(Node);
-  }
+  var $root =  { name: '$root' };
 
-  this._Node = Node;
-  this._leafQueues = {};
-
-  var $root = new Node({ name: '$root' });
-
-  this._nodes = { '': $root };
+  this.nodes = { '': $root };
   this.$root = $root;
 }
 
 
-StateTree.prototype.getRoot = function () {
+StateTree.prototype.addNode = function (node) {
 
-  return this.$root;
-};
-
-
-StateTree.prototype.attach = function (name, nodeDef) {
-
-  if (arguments.length === 2) nodeDef.name = name;
-  else nodeDef = name;
-
-  var node = new this._Node(nodeDef);
-
-  this._registerNode(node);
+  this.registerNode(node);
 
   return this;
 };
 
 
-StateTree.prototype._registerNode = function (node) {
+StateTree.prototype.registerNode = function (node) {
 
-  var parentName = node.getParentName();
-  var parentNode = this._nodes[parentName];
+  var parentNode = this.nodes[node.parent];
 
-  if (parentName && !parentNode) {
+  if (node.parent && !parentNode) {
 
-    return this._queueLeaf(node);
+    return this.queueLeaf(node);
   }
 
-  this._nodes[node.name] = node.attachTo(parentNode || this.$root);
-  this._flushQueueOf(node);
+  this.nodes[node.name] = node.attachTo(parentNode || this.$root);
+  this.flushQueueOf(node);
 
   return node;
 };
 
 
-StateTree.prototype._queueLeaf = function (node) {
+StateTree.prototype.queueLeaf = function (node) {
 
-  var queue = this._leafQueues[node.parent];
+  var queue = this.leafQueues[node.parent];
 
   if (queue === undefined) {
 
-    queue = this._leafQueues[node.parent] = [];
+    queue = this.leafQueues[node.parent] = [];
   }
 
   queue.push(node);
 };
 
 
-StateTree.prototype._flushQueueOf = function (node) {
+StateTree.prototype.flushQueueOf = function (node) {
 
-  var queue = this._leafQueues[node.name];
+  var queue = this.leafQueues[node.name];
 
   if (queue === undefined) return;
 
   while (queue.length) {
 
-    this._registerNode(queue.pop());
+    this.registerNode(queue.pop());
   }
 
-  queue = this._leafQueues[node.name] = undefined;
+  queue = this.leafQueues[node.name] = undefined;
 };

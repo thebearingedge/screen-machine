@@ -34,7 +34,7 @@ ActiveResolve.prototype.setInjectable = function (dependency, value) {
 
 ActiveResolve.prototype.isReady = function () {
 
-  return !!this.waitingFor.length;
+  return !!!this.waitingFor.length;
 };
 
 

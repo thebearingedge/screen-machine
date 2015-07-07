@@ -125,6 +125,12 @@ StateNode.prototype.isStale = function (newParams) {
 };
 
 
+StateNode.prototype.setResolve = function (resolve) {
+
+  this._resolves.push(resolve);
+};
+
+
 StateNode.prototype.filterParams = function (allParams) {
 
   return this

@@ -7,11 +7,6 @@ module.exports = StateNode;
 
 function StateNode(stateDef) {
 
-  if (!(this instanceof StateNode)) {
-
-    return new StateNode(stateDef);
-  }
-
   this._parent = null;
   this._params = null;
 
@@ -30,26 +25,27 @@ function StateNode(stateDef) {
 
   this._includes[this.name] = true;
   this._ancestors[this.name] = this;
+
+  this.parent = this.getParentName();
 }
 
 
 StateNode.prototype.getParentName = function () {
 
-  if (this.parent !== undefined) return this.parent;
+  if (!!this.parent) return this.parent;
 
   var splitNames = this.name.split('.');
 
   if (splitNames.length === 1) {
 
-    this.parent = null;
+    return null;
   }
   else {
 
     splitNames.pop();
-    this.parent = splitNames.join('.');
-  }
 
-  return this.parent;
+    return splitNames.join('.');
+  }
 };
 
 
@@ -125,7 +121,7 @@ StateNode.prototype.isStale = function (newParams) {
 };
 
 
-StateNode.prototype.setResolve = function (resolve) {
+StateNode.prototype.addResolve = function (resolve) {
 
   this._resolves.push(resolve);
 };

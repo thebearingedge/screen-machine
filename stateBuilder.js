@@ -4,6 +4,7 @@
 var StateNode = require('./StateNode');
 var resolveFactory = require('./resolveFactory');
 
+
 module.exports = {
 
   build: function (name, stateDef) {
@@ -13,20 +14,20 @@ module.exports = {
 
     var stateNode = new StateNode(stateDef);
 
-    return this.attachResolves(stateNode);
+    return this.addResolves(stateNode);
   },
 
 
-  attachResolves: function (stateNode) {
+  addResolves: function (stateNode) {
 
-    var resolves = stateNode.resolve;
-    var resolveKey, resolve;
+    var raw = stateNode.resolve;
+    var key, resolve;
 
-    for (resolveKey in resolves) {
+    for (key in raw) {
 
-      resolve = resolveFactory.instantiate(resolves[resolveKey], stateNode);
+      resolve = resolveFactory.instantiate(key, stateNode);
 
-      stateNode.setResolve(resolve);
+      stateNode.addResolve(resolve);
     }
 
     return stateNode;

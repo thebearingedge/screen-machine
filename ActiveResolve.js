@@ -9,13 +9,16 @@ function ActiveResolve(stateResolve, params) {
   this.stateResolve = stateResolve;
   this.name = stateResolve.name;
   this.params = params;
-  this.waitingFor = stateResolve.dependencies
-    ? stateResolve.dependencies.slice()
+
+  var dependencies = stateResolve.dependencies;
+
+  this.waitingFor = dependencies
+    ? dependencies.slice()
     : [];
 }
 
 
-ActiveResolve.prototype.isWaitingFor = function (dependency) {
+ActiveResolve.prototype.isDependentOn = function (dependency) {
 
   return this.waitingFor.indexOf(dependency) > -1;
 };

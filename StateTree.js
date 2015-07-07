@@ -1,66 +1,59 @@
 
 'use strict';
 
-module.exports = StateTree;
+module.exports = {
 
-function StateTree() {
-
-  this.leafQueues = {};
-
-  var $root =  { name: '$root' };
-
-  this.nodes = { '': $root };
-  this.$root = $root;
-}
+  $root: null,
 
 
-StateTree.prototype.addNode = function (node) {
+  init: function (rootNode) {
 
-  this.registerNode(node);
-
-  return this;
-};
+    this.$root = rootNode;
+  },
 
 
-StateTree.prototype.registerNode = function (node) {
+  addNode: function (node) {
 
-  var parentNode = this.nodes[node.parent];
+    var parentName = node.parent;
+    var parentNode = this.nodes[parentName];
 
-  if (node.parent && !parentNode) {
+    if (parentName && !parentNode) {
 
-    return this.queueLeaf(node);
+      return this.queueLeaf(node);
+    }
+
+    this.nodes[node.name] = node.attachTo(parentNode || this.$root);
+    this.flushQueueOf(node);
+
+    return node;
+  },
+
+
+  queueLeaf: function (node) {
+
+    var queue = this.leafQueues[node.parent];
+
+    if (queue === undefined) {
+
+      queue = this.leafQueues[node.parent] = [];
+    }
+
+    queue.push(node);
+  },
+
+
+  flushQueueOf: function (node) {
+
+    var queue = this.leafQueues[node.name];
+
+    if (queue === undefined) return;
+
+    while (queue.length) {
+
+      this.registerNode(queue.pop());
+    }
+
+    queue = this.leafQueues[node.name] = undefined;
   }
 
-  this.nodes[node.name] = node.attachTo(parentNode || this.$root);
-  this.flushQueueOf(node);
-
-  return node;
-};
-
-
-StateTree.prototype.queueLeaf = function (node) {
-
-  var queue = this.leafQueues[node.parent];
-
-  if (queue === undefined) {
-
-    queue = this.leafQueues[node.parent] = [];
-  }
-
-  queue.push(node);
-};
-
-
-StateTree.prototype.flushQueueOf = function (node) {
-
-  var queue = this.leafQueues[node.name];
-
-  if (queue === undefined) return;
-
-  while (queue.length) {
-
-    this.registerNode(queue.pop());
-  }
-
-  queue = this.leafQueues[node.name] = undefined;
 };

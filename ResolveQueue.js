@@ -6,15 +6,16 @@ module.exports = ResolveQueue;
 
 function ResolveQueue(router) {
 
-  var transition = router.transition;
+  var currentTransition = router.transition;
 
+  this.cancel = false;
   this.wait = 0;
   this.resolves = [];
   this.completed = [];
 
   this.isSuperceded = function () {
 
-    return router.transition !== transition;
+    return currentTransition !== router.transition;
   };
 }
 
@@ -62,13 +63,20 @@ ResolveQueue.prototype.run = function (resolve) {
       resolve.result = result;
       self.completed.push(resolve);
 
+      if (self.cancel) return;
+
+      if (self.isSuperceded()) {
+
+        return self.abort();
+      }
+
       return --self.wait
         ? self.runDependentsOf(resolve)
         : self.finish();
     })
     .catch(function (err) {
 
-      return self.handleResolveError(err);
+      return self.abort(err);
     });
 };
 
@@ -121,10 +129,12 @@ ResolveQueue.prototype.throwIfCyclic = function (graph) {
   var stack = [];
   var key;
 
+
   for (key in graph) {
 
     visit(key);
   }
+
 
   function visit(key) {
 
@@ -149,25 +159,15 @@ ResolveQueue.prototype.throwIfCyclic = function (graph) {
 };
 
 
-ResolveQueue.prototype.onResolve = function (callback) {
+ResolveQueue.prototype.finish = function () {
 
-  return callback(); // ask observer if we should abort
+  // we're done. party time.
 };
 
 
-ResolveQueue.prototype.onComplete = function (callback) {
+ResolveQueue.prototype.abort = function (err) {
 
-  return callback(); // let observer know that we are done
-};
+  this.cancel = true;
 
-
-ResolveQueue.prototype.onError = function (callback) {
-
-  return callback(); // let observer know we had a booboo
-};
-
-
-ResolveQueue.prototype.handleResolveError = function (err) {
-
-  throw err; // do something useful with err?
+  throw err; // ew!
 };

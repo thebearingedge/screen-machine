@@ -32,7 +32,7 @@ function StateNode(stateDef) {
 
 StateNode.prototype.getParentName = function () {
 
-  if (!!this.parent) return this.parent;
+  if (this.parent !== undefined) return this.parent;
 
   var splitNames = this.name.split('.');
 
@@ -51,44 +51,16 @@ StateNode.prototype.getParentName = function () {
 
 StateNode.prototype.attachTo = function (parentNode) {
 
+  // inherit includes, data, branch, and ancestry
+  xtend(this._includes, parentNode._includes);
+
+  this.data = xtend({}, parentNode.data, this.data);
+
+  this._branch = parentNode._branch.concat(this._branch);
+
+  xtend(this._ancestors, parentNode._ancestors);
+
   this._parent = parentNode;
-
-  return this
-    ._inheritIncludes()
-    ._inheritData()
-    ._inheritBranch()
-    ._inheritAncestors()
-    .initialize();
-};
-
-
-StateNode.prototype._inheritIncludes = function () {
-
-  xtend(this._includes, this._parent._includes);
-
-  return this;
-};
-
-
-StateNode.prototype._inheritData = function () {
-
-  this.data = xtend({}, this._parent.data, this.data);
-
-  return this;
-};
-
-
-StateNode.prototype._inheritBranch = function () {
-
-  this._branch = this._parent._branch.concat(this._branch);
-
-  return this;
-};
-
-
-StateNode.prototype._inheritAncestors = function () {
-
-  xtend(this._ancestors, this._parent._ancestors);
 
   return this;
 };
@@ -135,10 +107,4 @@ StateNode.prototype.filterParams = function (allParams) {
       ownParams[key] = allParams[key];
       return ownParams;
     }, {});
-};
-
-
-StateNode.prototype.initialize = function () {
-
-  return this;
 };

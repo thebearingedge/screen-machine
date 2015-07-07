@@ -12,6 +12,11 @@ module.exports = {
     if (arguments.length === 2) stateDef.name = name;
     else stateDef = name;
 
+    if (!stateDef.name || typeof stateDef.name !== 'string') {
+
+      throw new Error('State definitions must include a string name');
+    }
+
     var stateNode = new StateNode(stateDef);
 
     return this.addResolves(stateNode);

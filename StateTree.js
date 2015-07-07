@@ -3,11 +3,10 @@
 
 module.exports = {
 
-  $root: null,
-
 
   init: function (rootNode) {
 
+    this.nodes = { '': rootNode };
     this.$root = rootNode;
   },
 

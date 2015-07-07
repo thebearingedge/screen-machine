@@ -50,7 +50,7 @@ module.exports = {
 
     while (queue.length) {
 
-      this.registerNode(queue.pop());
+      this.addNode(queue.pop());
     }
 
     queue = this.leafQueues[node.name] = undefined;

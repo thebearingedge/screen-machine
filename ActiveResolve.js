@@ -43,15 +43,17 @@ ActiveResolve.prototype.isReady = function () {
 
 ActiveResolve.prototype.execute = function () {
 
+  var self = this;
+
   return new ActiveResolve.Promise(function (resolve, reject) {
 
     var resultOrPromise;
 
     try {
 
-      resultOrPromise = this
+      resultOrPromise = self
         .stateResolve
-        .execute(this.params, this.injectables);
+        .execute(self.params, self.injectables);
     }
     catch (e) {
 

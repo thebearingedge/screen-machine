@@ -38,15 +38,7 @@ ResolveQueue.prototype.onError = function (callback) {
 
 ResolveQueue.prototype.enqueue = function (resolves) {
 
-  var self = this;
-
-  Array.isArray(resolves) || (resolves = [resolves]);
-
-  resolves.forEach(function (resolve) {
-
-    self.resolves.push(resolve);
-    self.wait += 1;
-  });
+  this.resolves = this.resolves.concat(resolves);
 };
 
 
@@ -54,6 +46,7 @@ ResolveQueue.prototype.start = function () {
 
   var self = this;
 
+  self.wait = self.resolves.length;
   self.throwIfCyclic();
 
   return self

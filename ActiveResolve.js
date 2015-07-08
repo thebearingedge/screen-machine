@@ -9,11 +9,8 @@ function ActiveResolve(stateResolve, params) {
   this.stateResolve = stateResolve;
   this.name = stateResolve.name;
   this.params = params;
-
-  var dependencies = stateResolve.dependencies;
-
-  this.waitingFor = dependencies
-    ? dependencies.slice()
+  this.waitingFor = stateResolve.dependencies
+    ? stateResolve.dependencies.slice()
     : [];
 }
 

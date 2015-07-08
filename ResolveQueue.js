@@ -20,6 +20,22 @@ function ResolveQueue(router) {
 }
 
 
+ResolveQueue.prototype.onComplete = function (callback) {
+
+  this.successHandler = callback;
+
+  return this;
+};
+
+
+ResolveQueue.prototype.onError = function (callback) {
+
+  this.errorHandler = callback;
+
+  return this;
+};
+
+
 ResolveQueue.prototype.enqueue = function (resolves) {
 
   var self = this;
@@ -37,6 +53,8 @@ ResolveQueue.prototype.enqueue = function (resolves) {
 ResolveQueue.prototype.start = function () {
 
   var self = this;
+
+  self.throwIfCyclic();
 
   return self
     .resolves
@@ -60,15 +78,15 @@ ResolveQueue.prototype.run = function (resolve) {
     .execute()
     .then(function (result) {
 
-      resolve.result = result;
-      self.completed.push(resolve);
-
       if (self.cancel) return;
 
       if (self.isSuperceded()) {
 
         return self.abort();
       }
+
+      resolve.result = result;
+      self.completed.push(resolve);
 
       return --self.wait
         ? self.runDependentsOf(resolve)
@@ -121,8 +139,9 @@ ResolveQueue.prototype.getGraph = function () {
 };
 
 
-ResolveQueue.prototype.throwIfCyclic = function (graph) {
+ResolveQueue.prototype.throwIfCyclic = function () {
 
+  var graph = this.getGraph();
   var IN_PROGRESS = 1;
   var DONE = 2;
   var visited = {};
@@ -161,7 +180,7 @@ ResolveQueue.prototype.throwIfCyclic = function (graph) {
 
 ResolveQueue.prototype.finish = function () {
 
-  // we're done. party time.
+  return this.successHandler.call(null, this.completed);
 };
 
 
@@ -169,5 +188,5 @@ ResolveQueue.prototype.abort = function (err) {
 
   this.cancel = true;
 
-  throw err; // ew!
+  if (err) this.errorHandler.call(null, err);
 };

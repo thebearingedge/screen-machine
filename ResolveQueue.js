@@ -119,7 +119,7 @@ ResolveQueue.prototype.runDependentsOf = function (resolve) {
 };
 
 
-ResolveQueue.prototype.getGraph = function () {
+ResolveQueue.prototype.getDependencyGraph = function () {
 
   return this
     .resolves
@@ -134,7 +134,7 @@ ResolveQueue.prototype.getGraph = function () {
 
 ResolveQueue.prototype.throwIfCyclic = function () {
 
-  var graph = this.getGraph();
+  var graph = this.getDependencyGraph();
   var IN_PROGRESS = 1;
   var DONE = 2;
   var visited = {};

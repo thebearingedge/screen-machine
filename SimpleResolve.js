@@ -4,17 +4,31 @@
 module.exports = SimpleResolve;
 
 
-function SimpleResolve(resolveKey, stateNode) {
+function SimpleResolve(resolveKey, stateNode, resolveCache) {
 
-  this.resolveKey = resolveKey;
+  this.key = resolveKey;
   this.name = resolveKey + '@' + stateNode.name;
-  this.stateNode = stateNode;
-
+  this.node = stateNode;
+  this.cache = resolveCache;
   this.invokable = stateNode.resolve[resolveKey];
 }
 
 
 SimpleResolve.prototype.execute = function (params) {
 
-  return this.invokable.call(this.stateNode, params);
+  return this.invokable.call(this.node, params);
+};
+
+
+SimpleResolve.prototype.getCache = function () {
+
+  return this.cache.get(this.name);
+};
+
+
+SimpleResolve.prototype.clearCache = function () {
+
+  this.cache.unset(this.name);
+
+  return this;
 };

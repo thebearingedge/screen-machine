@@ -4,11 +4,12 @@
 module.exports = ActiveResolve;
 
 
-function ActiveResolve(stateResolve, params) {
+function ActiveResolve(stateResolve, params, resolveCache) {
 
   this.stateResolve = stateResolve;
   this.name = stateResolve.name;
   this.params = params;
+  this.cache = resolveCache;
   this.waitingFor = stateResolve.dependencies
     ? stateResolve.dependencies.slice()
     : [];
@@ -59,4 +60,10 @@ ActiveResolve.prototype.execute = function () {
 
     return resolve(resultOrPromise);
   });
+};
+
+
+ActiveResolve.prototype.finalize = function () {
+
+  this.cache.set(this.name, this.result);
 };

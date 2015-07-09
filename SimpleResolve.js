@@ -20,7 +20,7 @@ SimpleResolve.prototype.execute = function (params) {
 };
 
 
-SimpleResolve.prototype.getCache = function () {
+SimpleResolve.prototype.getValue = function () {
 
   return this.cache.get(this.name);
 };

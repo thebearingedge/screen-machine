@@ -33,9 +33,9 @@ ResolveGraph.prototype.ensureDependencies = function () {
       })
       .forEach(function (absent) {
 
-         var injectable = cache.get(absent);
+         var cached = cache.get(absent);
 
-         return resolve.setInjectable(absent, injectable);
+         return resolve.setInjectable(absent, cached);
       });
   });
 

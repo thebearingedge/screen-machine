@@ -39,7 +39,7 @@ DependentResolve.prototype.execute = function (params, injectables) {
 };
 
 
-DependentResolve.prototype.getCache = function () {
+DependentResolve.prototype.getValue = function () {
 
   return this.cache.get(this.name);
 };

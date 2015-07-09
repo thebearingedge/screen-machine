@@ -25,7 +25,7 @@ module.exports = {
   },
 
 
-  getQueue: function (activeResolves) {
+  createQueue: function (activeResolves) {
 
     var graph = new ResolveGraph(activeResolves, resolveCache);
     var resolves = graph

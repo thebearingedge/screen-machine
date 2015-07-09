@@ -20,24 +20,28 @@ function ResolveTaskGraph(tasks, resolveCache) {
 
 ResolveTaskGraph.prototype.ensureDependencies = function () {
 
+  var tasks = this.tasks;
   var graph = this.graph;
   var cache = this.cache;
 
-  this.tasks.forEach(function (task) {
+  tasks
+    .filter(function (task) {
 
-    return task
-      .waitingFor
-      .filter(function (dependency) {
+      return task.isReady();
+    })
+    .forEach(function (dependent) {
 
-        return !(dependency in graph);
-      })
-      .forEach(function (absent) {
+      dependent
+        .waitingFor
+        .filter(function (dependency) {
 
-         var cached = cache.get(absent);
+          return !(dependency in graph);
+        })
+        .forEach(function (absent) {
 
-         return task.setInjectable(absent, cached);
-      });
-  });
+          dependent.setInjectable(absent, cache.get(absent));
+        });
+    });
 
   return this;
 };
@@ -46,39 +50,39 @@ ResolveTaskGraph.prototype.ensureDependencies = function () {
 ResolveTaskGraph.prototype.throwIfCyclic = function () {
 
   var graph = this.graph;
-  var IN_PROGRESS = 1;
-  var DONE = 2;
+  var VISITING = 1;
+  var OK = 2;
   var visited = {};
   var stack = [];
-  var key;
+  var taskName;
 
-  for (key in graph) {
+  for (taskName in graph) {
 
-    visit(key);
+    visit(taskName);
   }
 
   return this;
 
 
-  function visit(key) {
+  function visit(taskName) {
 
-    if (visited[key] === DONE) return;
+    if (visited[taskName] === OK) return;
 
-    stack.push(key);
+    stack.push(taskName);
 
-    if (visited[key] === IN_PROGRESS) {
+    if (visited[taskName] === VISITING) {
 
-      stack.splice(0, stack.indexOf(key));
+      stack.splice(0, stack.indexOf(taskName));
 
-      throw new Error('Cyclic dependency: ' + stack.join(' -> '));
+      throw new Error('Cyclic resolve dependency: ' + stack.join(' -> '));
     }
 
-    visited[key] = IN_PROGRESS;
+    visited[taskName] = VISITING;
 
-    graph[key].forEach(visit);
+    graph[taskName].forEach(visit);
 
     stack.pop();
-    visited[key] = DONE;
+    visited[taskName] = OK;
   }
 };
 

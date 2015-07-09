@@ -3,12 +3,14 @@
 
 module.exports = {
 
-
   init: function (rootNode) {
 
     this.nodes = { '': rootNode };
     this.$root = rootNode;
   },
+
+
+  leafQueues: {},
 
 
   addNode: function (node) {

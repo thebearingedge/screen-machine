@@ -6,20 +6,11 @@ module.exports = ResolveJob;
 
 function ResolveJob(tasks) {
 
-  this.cancel = false;
+  this.canceled = false;
   this.wait = 0;
   this.tasks = tasks;
   this.completed = [];
 }
-
-
-ResolveJob.prototype.setTransitionReference = function (router) {
-
-  this.router = router;
-  this.transition = router.transition;
-
-  return this;
-};
 
 
 ResolveJob.prototype.onComplete = function (callback) {
@@ -30,9 +21,9 @@ ResolveJob.prototype.onComplete = function (callback) {
 };
 
 
-ResolveJob.prototype.onAbort = function (callback) {
+ResolveJob.prototype.onError = function (callback) {
 
-  this.abortHandler = callback;
+  this.errorHandler = callback;
 
   return this;
 };
@@ -66,12 +57,7 @@ ResolveJob.prototype.run = function (task) {
     .execute()
     .then(function (result) {
 
-      if (self.cancel) return;
-
-      if (self.isSuperceded()) {
-
-        return self.abort();
-      }
+      if (self.canceled) return;
 
       task.result = result;
       self.completed.push(task);
@@ -82,7 +68,7 @@ ResolveJob.prototype.run = function (task) {
     })
     .catch(function (err) {
 
-      if (!self.cancel) {
+      if (!self.canceled) {
 
         return self.abort(err);
       }
@@ -96,17 +82,11 @@ ResolveJob.prototype.dequeue = function (task) {
 };
 
 
-ResolveJob.prototype.isSuperceded = function () {
-
-  return this.transition !== this.router.transition;
-};
-
-
 ResolveJob.prototype.abort = function (err) {
 
-  this.cancel = true;
+  this.canceled = true;
 
-  if (err) this.abortHandler.call(null, err);
+  if (err) this.errorHandler.call(null, err);
 };
 
 

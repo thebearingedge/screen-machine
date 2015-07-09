@@ -4,29 +4,14 @@
 module.exports = ResolveJob;
 
 
-function ResolveJob(tasks) {
+function ResolveJob(tasks, callback) {
 
   this.tasks = tasks;
   this.wait = tasks.length;
+  this.callback = callback;
   this.completed = [];
   this.canceled = false;
 }
-
-
-ResolveJob.prototype.onComplete = function (callback) {
-
-  this.successHandler = callback;
-
-  return this;
-};
-
-
-ResolveJob.prototype.onError = function (callback) {
-
-  this.errorHandler = callback;
-
-  return this;
-};
 
 
 ResolveJob.prototype.start = function () {
@@ -103,7 +88,7 @@ ResolveJob.prototype.runDependentsOf = function (task) {
 
 ResolveJob.prototype.finish = function () {
 
-  return this.successHandler.call(null, this.completed);
+  return this.callback.call(null, null, this.completed);
 };
 
 
@@ -111,5 +96,5 @@ ResolveJob.prototype.abort = function (err) {
 
   this.canceled = true;
 
-  if (err) this.errorHandler.call(null, err);
+  if (err) this.callback.call(null, err);
 };

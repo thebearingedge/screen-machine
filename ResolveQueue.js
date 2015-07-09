@@ -4,21 +4,22 @@
 module.exports = ResolveQueue;
 
 
-function ResolveQueue(router, resolveCache) {
+function ResolveQueue(resolves) {
 
-  var currentTransition = router.transition;
-
-  this.cache = resolveCache;
   this.cancel = false;
   this.wait = 0;
-  this.queue = [];
+  this.resolves = resolves;
   this.completed = [];
-
-  this.isSuperceded = function () {
-
-    return currentTransition !== router.transition;
-  };
 }
+
+
+ResolveQueue.prototype.setTransition = function (router) {
+
+  this.router = router;
+  this.transition = router.transition;
+
+  return this;
+};
 
 
 ResolveQueue.prototype.onComplete = function (callback) {
@@ -29,32 +30,22 @@ ResolveQueue.prototype.onComplete = function (callback) {
 };
 
 
-ResolveQueue.prototype.onError = function (callback) {
+ResolveQueue.prototype.onAbort = function (callback) {
 
-  this.errorHandler = callback;
+  this.abortHandler = callback;
 
   return this;
 };
 
 
-ResolveQueue.prototype.enqueue = function (resolves) {
-
-  this.queue = this.queue.concat(resolves);
-};
-
-
 ResolveQueue.prototype.start = function () {
 
-  var graph = this.getDependencyGraph();
-
-  this.ensureDependencies(graph);
-  this.throwIfCyclic(graph);
-  this.wait = this.queue.length;
+  this.wait = this.resolves.length;
 
   var self = this;
 
   return self
-    .queue
+    .resolves
     .filter(function (resolve) {
 
       return resolve.isReady();
@@ -63,79 +54,6 @@ ResolveQueue.prototype.start = function () {
 
       return self.run(ready);
     });
-};
-
-
-ResolveQueue.prototype.getDependencyGraph = function () {
-
-  return this
-    .resolves
-    .reduce(function (graph, resolve) {
-
-      graph[resolve.name] = resolve.waitingFor;
-
-      return graph;
-    }, {});
-};
-
-
-ResolveQueue.prototype.ensureDependencies = function (graph) {
-
-  var cache = this.cache;
-
-  this.queue.forEach(function (resolve) {
-
-    return resolve
-      .waitingFor
-      .filter(function (dependency) {
-
-        return !(dependency in graph);
-      })
-      .forEach(function (absent) {
-
-         var injectable = cache.get(absent);
-
-         return resolve.setInjectable(absent, injectable);
-      });
-  });
-};
-
-
-ResolveQueue.prototype.throwIfCyclic = function (graph) {
-
-  var IN_PROGRESS = 1;
-  var DONE = 2;
-  var visited = {};
-  var stack = [];
-  var key;
-
-
-  for (key in graph) {
-
-    visit(key);
-  }
-
-
-  function visit(key) {
-
-    if (visited[key] === DONE) return;
-
-    stack.push(key);
-
-    if (visited[key] === IN_PROGRESS) {
-
-      stack.splice(0, stack.indexOf(key));
-
-      throw new Error('Cyclic dependency: ' + stack.join(' -> '));
-    }
-
-    visited[key] = IN_PROGRESS;
-
-    graph[key].forEach(visit);
-
-    stack.pop();
-    visited[key] = DONE;
-  }
 };
 
 
@@ -171,7 +89,13 @@ ResolveQueue.prototype.run = function (resolve) {
 
 ResolveQueue.prototype.dequeue = function (resolve) {
 
-  return this.queue.splice(this.queue.indexOf(resolve), 1);
+  return this.resolves.splice(this.resolves.indexOf(resolve), 1);
+};
+
+
+ResolveQueue.prototype.isSuperceded = function () {
+
+  return this.transition !== this.router.transition;
 };
 
 
@@ -179,7 +103,7 @@ ResolveQueue.prototype.abort = function (err) {
 
   this.cancel = true;
 
-  if (err) this.errorHandler.call(null, err);
+  if (err) this.abortHandler.call(null, err);
 };
 
 
@@ -188,7 +112,7 @@ ResolveQueue.prototype.runDependentsOf = function (resolve) {
   var self = this;
 
   return self
-    .queue
+    .resolves
     .filter(function (remaining) {
 
       return remaining.isDependentOn(resolve.name);
@@ -206,12 +130,5 @@ ResolveQueue.prototype.runDependentsOf = function (resolve) {
 
 ResolveQueue.prototype.finish = function () {
 
-  var completed = this
-    .completed
-    .map(function (resolve) {
-
-      return resolve.commit();
-    });
-
-  return this.successHandler.call(null, completed);
+  return this.successHandler.call(null, this.completed);
 };

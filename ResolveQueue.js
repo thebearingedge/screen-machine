@@ -82,7 +82,10 @@ ResolveQueue.prototype.run = function (resolve) {
     })
     .catch(function (err) {
 
-      return self.abort(err);
+      if (!self.cancel) {
+
+        return self.abort(err);
+      }
     });
 };
 

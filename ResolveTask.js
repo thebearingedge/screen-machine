@@ -1,28 +1,28 @@
 
 'use strict';
 
-module.exports = ActiveResolve;
+module.exports = ResolveTask;
 
 
-function ActiveResolve(stateResolve, params, resolveCache) {
+function ResolveTask(resolve, params, resolveCache) {
 
-  this.stateResolve = stateResolve;
-  this.name = stateResolve.name;
+  this.delegate = resolve;
+  this.name = resolve.name;
   this.params = params;
   this.cache = resolveCache;
-  this.waitingFor = stateResolve.dependencies
-    ? stateResolve.dependencies.slice()
+  this.waitingFor = resolve.dependencies
+    ? resolve.dependencies.slice()
     : [];
 }
 
 
-ActiveResolve.prototype.isDependentOn = function (dependency) {
+ResolveTask.prototype.isDependentOn = function (dependency) {
 
   return this.waitingFor.indexOf(dependency) > -1;
 };
 
 
-ActiveResolve.prototype.setInjectable = function (dependency, value) {
+ResolveTask.prototype.setInjectable = function (dependency, value) {
 
   this.injectables || (this.injectables = {});
   this.injectables[dependency] = value;
@@ -32,24 +32,24 @@ ActiveResolve.prototype.setInjectable = function (dependency, value) {
 };
 
 
-ActiveResolve.prototype.isReady = function () {
+ResolveTask.prototype.isReady = function () {
 
   return !!!this.waitingFor.length;
 };
 
 
-ActiveResolve.prototype.execute = function () {
+ResolveTask.prototype.execute = function () {
 
   var self = this;
 
-  return new ActiveResolve.Promise(function (resolve, reject) {
+  return new ResolveTask.Promise(function (resolve, reject) {
 
     var resultOrPromise;
 
     try {
 
       resultOrPromise = self
-        .stateResolve
+        .delegate
         .execute(self.params, self.injectables);
     }
     catch (e) {
@@ -62,7 +62,7 @@ ActiveResolve.prototype.execute = function () {
 };
 
 
-ActiveResolve.prototype.commit = function () {
+ResolveTask.prototype.commit = function () {
 
   this.cache.set(this.name, this.result);
 

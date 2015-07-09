@@ -1,19 +1,19 @@
 
 'use strict';
 
-module.exports = ResolveQueue;
+module.exports = ResolveJob;
 
 
-function ResolveQueue(resolves) {
+function ResolveJob(tasks) {
 
   this.cancel = false;
   this.wait = 0;
-  this.resolves = resolves;
+  this.tasks = tasks;
   this.completed = [];
 }
 
 
-ResolveQueue.prototype.setTransition = function (router) {
+ResolveJob.prototype.setTransitionReference = function (router) {
 
   this.router = router;
   this.transition = router.transition;
@@ -22,7 +22,7 @@ ResolveQueue.prototype.setTransition = function (router) {
 };
 
 
-ResolveQueue.prototype.onComplete = function (callback) {
+ResolveJob.prototype.onComplete = function (callback) {
 
   this.successHandler = callback;
 
@@ -30,7 +30,7 @@ ResolveQueue.prototype.onComplete = function (callback) {
 };
 
 
-ResolveQueue.prototype.onAbort = function (callback) {
+ResolveJob.prototype.onAbort = function (callback) {
 
   this.abortHandler = callback;
 
@@ -38,17 +38,17 @@ ResolveQueue.prototype.onAbort = function (callback) {
 };
 
 
-ResolveQueue.prototype.start = function () {
+ResolveJob.prototype.start = function () {
 
-  this.wait = this.resolves.length;
+  this.wait = this.tasks.length;
 
   var self = this;
 
   return self
-    .resolves
-    .filter(function (resolve) {
+    .tasks
+    .filter(function (task) {
 
-      return resolve.isReady();
+      return task.isReady();
     })
     .forEach(function (ready) {
 
@@ -57,12 +57,12 @@ ResolveQueue.prototype.start = function () {
 };
 
 
-ResolveQueue.prototype.run = function (resolve) {
+ResolveJob.prototype.run = function (task) {
 
   var self = this;
 
   return self
-    .dequeue(resolve)
+    .dequeue(task)
     .execute()
     .then(function (result) {
 
@@ -73,11 +73,11 @@ ResolveQueue.prototype.run = function (resolve) {
         return self.abort();
       }
 
-      resolve.result = result;
-      self.completed.push(resolve);
+      task.result = result;
+      self.completed.push(task);
 
       return --self.wait
-        ? self.runDependentsOf(resolve)
+        ? self.runDependentsOf(task)
         : self.finish();
     })
     .catch(function (err) {
@@ -90,19 +90,19 @@ ResolveQueue.prototype.run = function (resolve) {
 };
 
 
-ResolveQueue.prototype.dequeue = function (resolve) {
+ResolveJob.prototype.dequeue = function (task) {
 
-  return this.resolves.splice(this.resolves.indexOf(resolve), 1);
+  return this.tasks.splice(this.tasks.indexOf(task), 1);
 };
 
 
-ResolveQueue.prototype.isSuperceded = function () {
+ResolveJob.prototype.isSuperceded = function () {
 
   return this.transition !== this.router.transition;
 };
 
 
-ResolveQueue.prototype.abort = function (err) {
+ResolveJob.prototype.abort = function (err) {
 
   this.cancel = true;
 
@@ -110,20 +110,20 @@ ResolveQueue.prototype.abort = function (err) {
 };
 
 
-ResolveQueue.prototype.runDependentsOf = function (resolve) {
+ResolveJob.prototype.runDependentsOf = function (task) {
 
   var self = this;
 
   return self
-    .resolves
+    .tasks
     .filter(function (remaining) {
 
-      return remaining.isDependentOn(resolve.name);
+      return remaining.isDependentOn(task.name);
     })
     .forEach(function (dependent) {
 
       return dependent
-        .setInjectable(resolve.name, resolve.result)
+        .setInjectable(task.name, task.result)
         .isReady()
           ? self.run(dependent)
           : undefined;
@@ -131,7 +131,7 @@ ResolveQueue.prototype.runDependentsOf = function (resolve) {
 };
 
 
-ResolveQueue.prototype.finish = function () {
+ResolveJob.prototype.finish = function () {
 
   return this.successHandler.call(null, this.completed);
 };

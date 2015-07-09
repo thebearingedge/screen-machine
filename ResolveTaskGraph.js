@@ -1,31 +1,31 @@
 
 'use strict';
 
-module.exports = ResolveGraph;
+module.exports = ResolveTaskGraph;
 
 
-function ResolveGraph(resolves, resolveCache) {
+function ResolveTaskGraph(tasks, resolveCache) {
 
   this.cache = resolveCache;
-  this.resolves = resolves;
-  this.graph = resolves
-    .reduce(function (graph, resolve) {
+  this.tasks = tasks;
+  this.graph = tasks
+    .reduce(function (graph, task) {
 
-      graph[resolve.name] = resolve.waitingFor;
+      graph[task.name] = task.waitingFor;
 
       return graph;
     }, {});
 }
 
 
-ResolveGraph.prototype.ensureDependencies = function () {
+ResolveTaskGraph.prototype.ensureDependencies = function () {
 
   var graph = this.graph;
   var cache = this.cache;
 
-  this.resolves.forEach(function (resolve) {
+  this.tasks.forEach(function (task) {
 
-    return resolve
+    return task
       .waitingFor
       .filter(function (dependency) {
 
@@ -35,7 +35,7 @@ ResolveGraph.prototype.ensureDependencies = function () {
 
          var cached = cache.get(absent);
 
-         return resolve.setInjectable(absent, cached);
+         return task.setInjectable(absent, cached);
       });
   });
 
@@ -43,7 +43,7 @@ ResolveGraph.prototype.ensureDependencies = function () {
 };
 
 
-ResolveGraph.prototype.throwIfCyclic = function () {
+ResolveTaskGraph.prototype.throwIfCyclic = function () {
 
   var graph = this.graph;
   var IN_PROGRESS = 1;
@@ -83,7 +83,7 @@ ResolveGraph.prototype.throwIfCyclic = function () {
 };
 
 
-ResolveGraph.prototype.getResolves = function () {
+ResolveTaskGraph.prototype.getTasks = function () {
 
-  return this.resolves;
+  return this.tasks;
 };

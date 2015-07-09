@@ -4,9 +4,9 @@
 var resolveCache = require('./resolveCache');
 var SimpleResolve = require('./SimpleResolve');
 var DependentResolve = require('./DependentResolve');
-var ActiveResolve = require('./ActiveResolve');
-var ResolveGraph = require('./ResolveGraph');
-var ResolveQueue = require('./ResolveQueue');
+var ResolveTask = require('./ResolveTask');
+var ResolveTaskGraph = require('./ResolveTaskGraph');
+var ResolveJob = require('./ResolveJob');
 
 
 module.exports = {
@@ -19,21 +19,21 @@ module.exports = {
   },
 
 
-  activate: function (stateResolve, params) {
+  createTask: function (resolve, params) {
 
-    return new ActiveResolve(stateResolve, params, resolveCache);
+    return new ResolveTask(resolve, params, resolveCache);
   },
 
 
-  createQueue: function (activeResolves) {
+  createJob: function (tasks) {
 
-    var graph = new ResolveGraph(activeResolves, resolveCache);
-    var resolves = graph
+    var graph = new ResolveTaskGraph(tasks, resolveCache);
+    var jobTasks = graph
       .ensureDependencies()
       .throwIfCyclic()
-      .getResolves();
+      .getTasks();
 
-    return new ResolveQueue(resolves);
+    return new ResolveJob(jobTasks);
   }
 
 };

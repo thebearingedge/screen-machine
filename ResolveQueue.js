@@ -206,5 +206,12 @@ ResolveQueue.prototype.runDependentsOf = function (resolve) {
 
 ResolveQueue.prototype.finish = function () {
 
-  return this.successHandler.call(null, this.completed);
+  var completed = this
+    .completed
+    .map(function (resolve) {
+
+      return resolve.commit();
+    });
+
+  return this.successHandler.call(null, completed);
 };

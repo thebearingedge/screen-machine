@@ -65,4 +65,6 @@ ActiveResolve.prototype.execute = function () {
 ActiveResolve.prototype.commit = function () {
 
   this.cache.set(this.name, this.result);
+
+  return this;
 };

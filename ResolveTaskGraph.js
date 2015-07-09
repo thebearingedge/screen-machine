@@ -27,7 +27,7 @@ ResolveTaskGraph.prototype.ensureDependencies = function () {
   tasks
     .filter(function (task) {
 
-      return task.isReady();
+      return !task.isReady();
     })
     .forEach(function (dependent) {
 

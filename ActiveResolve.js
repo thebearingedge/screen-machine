@@ -25,7 +25,6 @@ ActiveResolve.prototype.isDependentOn = function (dependency) {
 ActiveResolve.prototype.setInjectable = function (dependency, value) {
 
   this.injectables || (this.injectables = {});
-
   this.injectables[dependency] = value;
   this.waitingFor.splice(this.waitingFor.indexOf(dependency), 1);
 
@@ -63,7 +62,7 @@ ActiveResolve.prototype.execute = function () {
 };
 
 
-ActiveResolve.prototype.finalize = function () {
+ActiveResolve.prototype.commit = function () {
 
   this.cache.set(this.name, this.result);
 };

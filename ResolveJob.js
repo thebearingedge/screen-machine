@@ -11,6 +11,7 @@ function ResolveJob(tasks, transition, callback) {
   this.transition = transition;
   this.callback = callback;
   this.completed = [];
+  this.results = {};
   this.cancelled = false;
 }
 
@@ -48,7 +49,7 @@ ResolveJob.prototype.run = function (task) {
         return self.abort();
       }
 
-      task.result = result;
+      task.result = self.results[task.name] = result;
       self.completed.push(task);
 
       return --self.wait
@@ -94,7 +95,7 @@ ResolveJob.prototype.runDependentsOf = function (task) {
 
 ResolveJob.prototype.finish = function () {
 
-  return this.callback.call(null, null, this.completed);
+  return this.callback.call(null, null, this.completed, this.results);
 };
 
 

@@ -4,10 +4,11 @@
 module.exports = ResolveJob;
 
 
-function ResolveJob(tasks, callback) {
+function ResolveJob(tasks, transition, callback) {
 
   this.tasks = tasks;
   this.wait = tasks.length;
+  this.transition = transition;
   this.callback = callback;
   this.completed = [];
   this.canceled = false;
@@ -41,6 +42,11 @@ ResolveJob.prototype.run = function (task) {
     .then(function (result) {
 
       if (self.canceled) return;
+
+      if (self.transition.isSuperceded()) {
+
+        return self.abort();
+      }
 
       task.result = result;
       self.completed.push(task);

@@ -18,9 +18,9 @@ function DependentResolve(resolveKey, stateNode, resolveCache) {
     .slice(0, invokableIndex)
     .map(function (dependency) {
 
-      return dependency.indexOf('@') === -1
-        ? dependency + '@' + stateNode.name
-        : dependency;
+      return dependency.indexOf('@') > -1
+        ? dependency
+        : dependency + '@' + stateNode.name;
     });
 }
 

@@ -34,7 +34,7 @@ ResolveTask.prototype.setDependency = function (dependency, value) {
 
 ResolveTask.prototype.isReady = function () {
 
-  return !!!this.waitingFor.length;
+  return this.waitingFor.length > 0;
 };
 
 

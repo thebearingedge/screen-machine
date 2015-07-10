@@ -1,10 +1,10 @@
 
 'use strict';
 
-module.exports = ResolveTaskGraph;
+module.exports = ResolveDependencyGraph;
 
 
-function ResolveTaskGraph(resolveTasks, resolveCache) {
+function ResolveDependencyGraph(resolveTasks, resolveCache) {
 
   this.tasks = resolveTasks;
   this.cache = resolveCache;
@@ -18,7 +18,7 @@ function ResolveTaskGraph(resolveTasks, resolveCache) {
 }
 
 
-ResolveTaskGraph.prototype.ensureDependencies = function () {
+ResolveDependencyGraph.prototype.ensureDependencies = function () {
 
   var self = this;
 
@@ -45,7 +45,7 @@ ResolveTaskGraph.prototype.ensureDependencies = function () {
 };
 
 
-ResolveTaskGraph.prototype.throwIfCyclic = function () {
+ResolveDependencyGraph.prototype.throwIfCyclic = function () {
 
   var graph = this.graph;
   var VISITING = 1;
@@ -85,7 +85,7 @@ ResolveTaskGraph.prototype.throwIfCyclic = function () {
 };
 
 
-ResolveTaskGraph.prototype.getTasks = function () {
+ResolveDependencyGraph.prototype.getTasks = function () {
 
   return this.tasks;
 };

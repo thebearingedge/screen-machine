@@ -22,10 +22,10 @@ ResolveTask.prototype.isWaitingFor = function (dependency) {
 };
 
 
-ResolveTask.prototype.setDependency = function (dependency, value) {
+ResolveTask.prototype.setDependency = function (dependency, result) {
 
   this.dependencies || (this.dependencies = {});
-  this.dependencies[dependency] = value;
+  this.dependencies[dependency] = result;
   this.waitingFor.splice(this.waitingFor.indexOf(dependency), 1);
 
   return this;

@@ -11,7 +11,7 @@ function ResolveJob(tasks, transition, callback) {
   this.transition = transition;
   this.callback = callback;
   this.completed = [];
-  this.canceled = false;
+  this.cancelled = false;
 }
 
 
@@ -41,7 +41,7 @@ ResolveJob.prototype.run = function (task) {
     .execute()
     .then(function (result) {
 
-      if (self.canceled) return;
+      if (self.cancelled) return;
 
       if (self.transition.isSuperceded()) {
 
@@ -57,7 +57,7 @@ ResolveJob.prototype.run = function (task) {
     })
     .catch(function (err) {
 
-      if (!self.canceled) {
+      if (!self.cancelled) {
 
         return self.abort(err);
       }
@@ -100,7 +100,7 @@ ResolveJob.prototype.finish = function () {
 
 ResolveJob.prototype.abort = function (err) {
 
-  this.canceled = true;
+  this.cancelled = true;
 
   if (err) this.callback.call(null, err);
 };

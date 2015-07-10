@@ -4,11 +4,11 @@
 module.exports = ResolveJob;
 
 
-function ResolveJob(tasks, transition) {
+function ResolveJob(resolveTasks, currentTransition) {
 
-  this.tasks = tasks;
-  this.wait = tasks.length;
-  this.transition = transition;
+  this.tasks = resolveTasks;
+  this.remaining = resolveTasks.length;
+  this.transition = currentTransition;
   this.completed = [];
   this.results = {};
   this.cancelled = false;
@@ -39,7 +39,7 @@ ResolveJob.prototype.run = function (task) {
   var self = this;
 
   return self
-    .dequeue(task)
+    .dequeueTask(task)
     .execute()
     .then(function (result) {
 
@@ -53,7 +53,7 @@ ResolveJob.prototype.run = function (task) {
       task.result = self.results[task.name] = result;
       self.completed.push(task);
 
-      return --self.wait
+      return --self.remaining
         ? self.runDependentsOf(task)
         : self.finish();
     })
@@ -67,7 +67,7 @@ ResolveJob.prototype.run = function (task) {
 };
 
 
-ResolveJob.prototype.dequeue = function (task) {
+ResolveJob.prototype.dequeueTask = function (task) {
 
   return this.tasks.splice(this.tasks.indexOf(task), 1);
 };
@@ -87,14 +87,14 @@ ResolveJob.prototype.runDependentsOf = function (task) {
 
   return self
     .tasks
-    .filter(function (remaining) {
+    .filter(function (waiting) {
 
-      return remaining.isDependentOn(task.name);
+      return waiting.isWaitingFor(task.name);
     })
     .forEach(function (dependent) {
 
       return dependent
-        .setInjectable(task.name, task.result)
+        .setDependency(task.name, task.result)
         .isReady()
           ? self.run(dependent)
           : undefined;

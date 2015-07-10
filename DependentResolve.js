@@ -14,24 +14,24 @@ function DependentResolve(resolveKey, stateNode, resolveCache) {
   this.node = stateNode;
   this.cache = resolveCache;
   this.invokable = resolveDef[invokableIndex];
-  this.dependencies = resolveDef
+  this.injectables = resolveDef
     .slice(0, invokableIndex)
-    .map(function (dependency) {
+    .map(function (injectable) {
 
-      return dependency.indexOf('@') > -1
-        ? dependency
-        : dependency + '@' + stateNode.name;
+      return injectable.indexOf('@') > -1
+        ? injectable
+        : injectable + '@' + stateNode.name;
     });
 }
 
 
-DependentResolve.prototype.execute = function (params, injectables) {
+DependentResolve.prototype.execute = function (params, dependencies) {
 
   var args = this
-    .dependencies
-    .map(function (dependency) {
+    .injectables
+    .map(function (injectable) {
 
-      return injectables[dependency];
+      return dependencies[injectable];
     })
     .concat(params);
 

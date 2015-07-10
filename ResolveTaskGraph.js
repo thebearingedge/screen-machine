@@ -4,11 +4,11 @@
 module.exports = ResolveTaskGraph;
 
 
-function ResolveTaskGraph(tasks, resolveCache) {
+function ResolveTaskGraph(resolveTasks, resolveCache) {
 
+  this.tasks = resolveTasks;
   this.cache = resolveCache;
-  this.tasks = tasks;
-  this.graph = tasks
+  this.graph = resolveTasks
     .reduce(function (graph, task) {
 
       graph[task.name] = task.waitingFor;
@@ -20,11 +20,9 @@ function ResolveTaskGraph(tasks, resolveCache) {
 
 ResolveTaskGraph.prototype.ensureDependencies = function () {
 
-  var tasks = this.tasks;
-  var graph = this.graph;
-  var cache = this.cache;
+  var self = this;
 
-  tasks
+  self.tasks
     .filter(function (task) {
 
       return !task.isReady();
@@ -35,11 +33,11 @@ ResolveTaskGraph.prototype.ensureDependencies = function () {
         .waitingFor
         .filter(function (dependency) {
 
-          return !(dependency in graph);
+          return !(dependency in self.graph);
         })
         .forEach(function (absent) {
 
-          dependent.setInjectable(absent, cache.get(absent));
+          dependent.setDependency(absent, self.cache.get(absent));
         });
     });
 

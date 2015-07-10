@@ -6,26 +6,26 @@ module.exports = ResolveTask;
 
 function ResolveTask(resolve, params, resolveCache) {
 
-  this.delegate = resolve;
+  this.resolve = resolve;
   this.name = resolve.name;
   this.params = params;
   this.cache = resolveCache;
-  this.waitingFor = resolve.dependencies
-    ? resolve.dependencies.slice()
+  this.waitingFor = resolve.injectables
+    ? resolve.injectables.slice()
     : [];
 }
 
 
-ResolveTask.prototype.isDependentOn = function (dependency) {
+ResolveTask.prototype.isWaitingFor = function (dependency) {
 
-  return this.waitingFor.indexOf(dependency) > -1;
+  return this.waitingFor.length && this.waitingFor.indexOf(dependency) > -1;
 };
 
 
-ResolveTask.prototype.setInjectable = function (dependency, value) {
+ResolveTask.prototype.setDependency = function (dependency, value) {
 
-  this.injectables || (this.injectables = {});
-  this.injectables[dependency] = value;
+  this.dependencies || (this.dependencies = {});
+  this.dependencies[dependency] = value;
   this.waitingFor.splice(this.waitingFor.indexOf(dependency), 1);
 
   return this;
@@ -49,8 +49,8 @@ ResolveTask.prototype.execute = function () {
     try {
 
       resultOrPromise = self
-        .delegate
-        .execute(self.params, self.injectables);
+        .resolve
+        .execute(self.params, self.dependencies);
     }
     catch (e) {
 

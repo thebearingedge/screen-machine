@@ -25,7 +25,7 @@ module.exports = {
   },
 
 
-  createJob: function (tasks, transition, callback) {
+  createJob: function (tasks, transition) {
 
     var graph = new ResolveTaskGraph(tasks, resolveCache);
     var jobTasks = graph
@@ -33,7 +33,7 @@ module.exports = {
       .throwIfCyclic()
       .getTasks();
 
-    return new ResolveJob(jobTasks, transition, callback);
+    return new ResolveJob(jobTasks, transition);
   }
 
 };

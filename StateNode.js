@@ -96,6 +96,8 @@ StateNode.prototype.isStale = function (newParams) {
 StateNode.prototype.addResolve = function (resolve) {
 
   this._resolves.push(resolve);
+
+  return this;
 };
 
 
@@ -104,7 +106,9 @@ StateNode.prototype.filterParams = function (allParams) {
   return this
     ._paramKeys
     .reduce(function (ownParams, key) {
+
       ownParams[key] = allParams[key];
+
       return ownParams;
     }, {});
 };

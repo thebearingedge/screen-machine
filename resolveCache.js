@@ -25,6 +25,12 @@ module.exports = {
   get: function (resolveName) {
 
     return this.store[resolveName];
+  },
+
+
+  has: function (resolveName) {
+
+    return resolveName in this.store;
   }
 
 };

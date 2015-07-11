@@ -11,7 +11,7 @@ function DependentResolve(resolveKey, stateNode, resolveCache) {
 
   this.key = resolveKey;
   this.name = resolveKey + '@' + stateNode.name;
-  this.node = stateNode;
+  this.state = stateNode;
   this.cache = resolveCache;
   this.invokable = resolveDef[invokableIndex];
   this.injectables = resolveDef
@@ -35,7 +35,7 @@ DependentResolve.prototype.execute = function (params, dependencies) {
     })
     .concat(params);
 
-  return this.invokable.apply(this.node, args);
+  return this.invokable.apply(this.state, args);
 };
 
 

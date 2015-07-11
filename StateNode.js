@@ -112,3 +112,14 @@ StateNode.prototype.filterParams = function (allParams) {
       return ownParams;
     }, {});
 };
+
+
+StateNode.prototype.shutDown = function () {
+
+  this.views.forEach(function (view) {
+
+    view.unsetElement();
+  });
+
+  return this;
+};

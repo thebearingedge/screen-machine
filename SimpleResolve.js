@@ -8,7 +8,7 @@ function SimpleResolve(resolveKey, stateNode, resolveCache) {
 
   this.key = resolveKey;
   this.name = resolveKey + '@' + stateNode.name;
-  this.node = stateNode;
+  this.state = stateNode;
   this.cache = resolveCache;
   this.invokable = stateNode.resolve[resolveKey];
 }
@@ -16,7 +16,7 @@ function SimpleResolve(resolveKey, stateNode, resolveCache) {
 
 SimpleResolve.prototype.execute = function (params) {
 
-  return this.invokable.call(this.node, params);
+  return this.invokable.call(this.state, params);
 };
 
 

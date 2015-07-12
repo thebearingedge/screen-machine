@@ -23,15 +23,15 @@ function View(viewKey, state, renderer) {
     ? targetNames[1]
     : state.name;
 
-  this.targetStateId = (targetStateName === state.name)
-    ? state.id
-    : state.getAncestor(targetStateName).id;
+  this.targetState = (targetStateName === state.name)
+    ? state
+    : state.getAncestor(targetStateName);
 }
 
 
-View.prototype.rendersDuring = function (stateId) {
+View.prototype.rendersDuring = function (state) {
 
-  return this.targetStateId === stateId;
+  return this.targetState === state;
 };
 
 

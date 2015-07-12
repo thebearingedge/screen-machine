@@ -1,7 +1,7 @@
 
 
 // this whole this might not be necessary. if the view knows
-// the unique id of the state it renders during, can we not check at runtime?
+// the unique id of the state it renders within, can we not check at runtime?
 
 'use strict';
 

@@ -1,6 +1,6 @@
 
 
-// View might not delegate to renderer. Transition or other might do that.
+// View might not delegate to renderer.
 
 'use strict';
 

@@ -20,13 +20,13 @@ SimpleResolve.prototype.execute = function (params) {
 };
 
 
-SimpleResolve.prototype.getValue = function () {
+SimpleResolve.prototype.getResult = function () {
 
   return this.cache.get(this.name);
 };
 
 
-SimpleResolve.prototype.clearCache = function () {
+SimpleResolve.prototype.clearResult = function () {
 
   this.cache.unset(this.name);
 

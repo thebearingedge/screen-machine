@@ -10,7 +10,7 @@ module.exports = {
   build: function (name, stateDef) {
 
     if (arguments.length === 2) stateDef.name = name;
-    else stateDef = name;
+    else stateDef.name = name;
 
     if (!stateDef.name || typeof stateDef.name !== 'string') {
 
@@ -31,7 +31,6 @@ module.exports = {
     for (key in raw) {
 
       resolve = resolveFactory.instantiate(key, stateNode);
-
       stateNode.addResolve(resolve);
     }
 

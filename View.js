@@ -1,66 +1,66 @@
 
+
+// View might not delegate to renderer. Transition or other might do that.
+
 'use strict';
-
-var slice = [].slice;
-
 
 module.exports = View;
 
 
 function View(viewKey, state, renderer) {
 
+  // If I'm going to accept a `beforeRender` hook,
+  // then I should capture it now... maybe.
   this.viewKey = viewKey;
-  this.state = state;
+  this.data = state.data;
   this.renderer = renderer;
 
   var targetNames = viewKey.split('@');
 
-  this.hostState = targetNames[1]
+  this.targetViewportName = targetNames[0] || null;
+
+  var targetStateName = targetNames[1]
     ? targetNames[1]
     : state.name;
-  this.targetViewport = targetNames[0] || null;
+
+  this.targetStateId = (targetStateName === state.name)
+    ? state.id
+    : state.getAncestor(targetStateName).id;
 }
 
 
-View.prototype.isHostedBy = function (stateName) {
+View.prototype.rendersDuring = function (stateId) {
 
-  return this.targetStateName === stateName;
+  return this.targetStateId === stateId;
 };
 
 
-View.prototype.appearsWithin = function (viewportName) {
+View.prototype.nestsIn = function (viewportName) {
 
-  return this.targetViewport === viewportName;
+  return this.targetViewportName === viewportName;
 };
 
 
-View.prototype.render = function (viewPort, resolve) {
+View.prototype.isActive = function () {
 
-  this.renderer.compose(this, viewPort, resolve, this.state.data);
+  return !!this.component;
+};
+
+
+View.prototype.render = function (resolve) {
+
+  this.component = this.renderer.execute(this, resolve);
 
   return this;
 };
 
 
-View.prototype.getChildren = function () {
-
-  return slice.call(this.element.querySelectorAll('[sm-view]'))
-    .map(function (node) {
-
-      return {
-        node: node,
-        name: node.getAttribute('sm-view')
-      };
-    });
-};
-
-
 View.prototype.destroy = function () {
 
-  var element = this.element;
+  var component = this.component;
 
-  this.element = this.target = undefined;
-  this.renderer.destroy(element);
+  this.component = undefined;
+  this.renderer.destroy(component);
 
   return this;
 };

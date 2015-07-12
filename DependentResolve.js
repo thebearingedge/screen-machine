@@ -39,13 +39,13 @@ DependentResolve.prototype.execute = function (params, dependencies) {
 };
 
 
-DependentResolve.prototype.getValue = function () {
+DependentResolve.prototype.getResult = function () {
 
   return this.cache.get(this.name);
 };
 
 
-DependentResolve.prototype.clearCache = function () {
+DependentResolve.prototype.clearResult = function () {
 
   this.cache.unset(this.name);
 

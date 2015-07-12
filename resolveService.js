@@ -5,7 +5,7 @@ var resolveCache = require('./resolveCache');
 var SimpleResolve = require('./SimpleResolve');
 var DependentResolve = require('./DependentResolve');
 var ResolveTask = require('./ResolveTask');
-var ResolveDependencyGraph = require('./ResolveDependencyGraph');
+var ResolveGraph = require('./ResolveGraph');
 var ResolveJob = require('./ResolveJob');
 
 
@@ -27,7 +27,7 @@ module.exports = {
 
   createJob: function (tasks, transition) {
 
-    var graph = new ResolveDependencyGraph(tasks, resolveCache);
+    var graph = new ResolveGraph(tasks, resolveCache);
     var jobTasks = graph
       .ensureDependencies()
       .throwIfCyclic()

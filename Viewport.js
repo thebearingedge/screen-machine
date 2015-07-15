@@ -5,11 +5,13 @@ module.exports = Viewport;
 
 function Viewport(name) {
 
-  this.selector = name
-    ? 'sm-viewport[name="' + name + '"]'
-    : 'sm-viewport';
-  this.view = null;
-  this.children = [];
+  this.name = name;
+  this.selector = name.indexOf('@') > -1
+    ? 'sm-viewport'
+    : 'sm-viewport[name="' + name + '"]';
+  this.element = null;
+  this.currentView = null;
+  this.previousView = null;
 }
 
 
@@ -18,12 +20,6 @@ Viewport.prototype.attachTo = function (node) {
   this.element = node.querySelector(this.selector);
 
   return this;
-};
-
-
-Viewport.prototype.appearsDuring = function (state) {
-
-  return this.state === state;
 };
 
 
@@ -37,15 +33,15 @@ Viewport.prototype.detach = function () {
 
 Viewport.prototype.getChildren = function () {
 
-  return this.view.getViewports();
+  return this.currentView.getViewports();
 };
 
 
 Viewport.prototype.setView = function (view) {
 
-  if (!!this.view) return this.replaceView(view);
+  if (!!this.currentView) return this.replaceView(view);
 
-  this.view = view;
+  this.currentView = view;
 
   return this;
 };
@@ -53,8 +49,8 @@ Viewport.prototype.setView = function (view) {
 
 Viewport.prototype.replaceView = function (newView) {
 
-  this.previousView = this.view;
-  this.view = newView;
+  this.previousView = this.currentView;
+  this.currentView = newView;
 
   return this;
 };
@@ -82,5 +78,5 @@ Viewport.prototype.isDirty = function () {
 
 Viewport.prototype.close = function () {
 
-  this.view = null;
+  this.currentView = null;
 };

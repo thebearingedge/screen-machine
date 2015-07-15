@@ -50,9 +50,8 @@ State.prototype.getParentName = function () {
 
 State.prototype.inheritFrom = function (parentNode) {
 
-  // inherit id, includes, data, branch, and ancestry
+  // inherit includes, data, branch, and ancestry
 
-  this.id = parentNode.id + '.' + this.name;
   this.data = xtend({}, parentNode.data, this.data);
 
   xtend(this.$includes, parentNode.$includes);
@@ -160,4 +159,10 @@ State.prototype.getResolveResults = function () {
 
       return results;
     }, {});
+};
+
+
+State.prototype.hasViews = function () {
+
+  return !!this.views || !!this.template;
 };

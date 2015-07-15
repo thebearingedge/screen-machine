@@ -37,9 +37,9 @@ module.exports = {
   },
 
 
-  flushQueueOf: function (state) {
+  flushQueueOf: function (stateName) {
 
-    var queue = this.stateQueues[state.name];
+    var queue = this.stateQueues[stateName];
 
     while (queue && queue.length) {
 

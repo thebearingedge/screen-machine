@@ -11,12 +11,11 @@ var Viewport = require('./Viewport');
  *  'side@home': { blah blah blah }
  * }
  *
- * Different Views may populate the same Viewport at different State. We want
- * the State to hold references to its Viewports. One ocurrence of an implied
- * Viewport is all we need to a) instantiate the viewport and b) add it to the
- * implied State. A given State object may imply a Viewport that exists on a yet
- * unaccounted-for State, so we will queue info about the Viewport until we can
- * actually create it and set it on its State.
+ * Different Views may populate the same Viewport at different States. We want
+ * the State to hold references to its Viewports. We only need to create a
+ * Viewport the first time it is inferred. A given State object
+ * may imply a Viewport that exists on a yet unaccounted-for State,
+ * so we will enqueue the Viewport until we can set it on its State.
  */
 
 module.exports = {
@@ -27,34 +26,34 @@ module.exports = {
   queues: {},
 
 
-  stateViewports: {},
+  viewports: {},
 
 
   addState: function (state) {
 
     this.states[state.name] || (this.states[state.name] = state);
 
-    if (!state.hasViews()) return this;
+    if (!state.definesViews()) return this;
 
-    this.processState(state);
+    this.inferViewports(state);
     this.flushQueueOf(state);
 
     return this;
   },
 
 
-  processState: function (state) {
+  inferViewports: function (state) {
 
     if (!state.views) {
 
-      return this.registerOne(null, state.name);
+      return this.createOne(null, state.name);
     }
 
-    return this.registerMany(state.views, state);
+    return this.createMany(state.views, state);
   },
 
 
-  registerOne: function (nameAttr, viewportName, stateName) {
+  createOne: function (viewportName, stateName) {
 
     viewportName || (viewportName = '@' + stateName);
     this.viewports[stateName] || (this.viewports[stateName] = {});
@@ -68,7 +67,7 @@ module.exports = {
 
     if (!state) {
 
-      return this.enqueueViewport(viewport, stateName);
+      return this.enqueue(viewport, stateName);
     }
 
     state.$viewports.push(viewport);
@@ -77,7 +76,7 @@ module.exports = {
   },
 
 
-  registerMany: function (viewDefs, state) {
+  createMany: function (viewDefs, state) {
 
     var key, splitNames, viewportName, stateName;
 
@@ -87,12 +86,14 @@ module.exports = {
       viewportName = splitNames[0] || null;
       stateName = splitNames[1] || state.name;
 
-      this.registerOne(viewportName, stateName);
+      this.createOne(viewportName, stateName);
     }
+
+    return this;
   },
 
 
-  enqueueViewport: function (viewport, stateName) {
+  enqueue: function (viewport, stateName) {
 
     this.queues[stateName] || (this.queues[stateName] = []);
     this.queues[stateName].push(viewport);
@@ -112,4 +113,3 @@ module.exports = {
   }
 
 };
-

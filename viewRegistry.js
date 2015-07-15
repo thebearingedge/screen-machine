@@ -1,54 +1,54 @@
 
 
-// this whole this might not be necessary. if the view knows
-// the unique id of the state it renders within, can we not check at runtime?
+// // this whole this might not be necessary. if the view knows
+// // the unique id of the state it renders within, can we not check at runtime?
 
-'use strict';
+// 'use strict';
 
-module.exports = {
+// module.exports = {
 
-  states: {},
-
-
-  queues: {},
+//   states: {},
 
 
-  add: function (state, view) {
-
-    this.states[state.id] || (this.states[state.id] = state);
-
-    var targetStateId = view.targetStateId;
-    var targetState = this.states[targetStateId];
-
-    if (!targetState) {
-
-      return this.enqueue(targetStateId, view);
-    }
-
-    targetState.$views.push(view);
-    this.flushQueueOf(state);
-
-    return this;
-  },
+//   queues: {},
 
 
-  enqueue: function (targetStateId, view) {
+//   add: function (state, view) {
 
-    this.queues[targetStateId] || (this.queues[targetStateId] = []);
-    this.queues[targetStateId].push(view);
+//     this.states[state.id] || (this.states[state.id] = state);
 
-    return this;
-  },
+//     var targetStateId = view.targetStateId;
+//     var targetState = this.states[targetStateId];
+
+//     if (!targetState) {
+
+//       return this.enqueue(targetStateId, view);
+//     }
+
+//     targetState.$views.push(view);
+//     this.flushQueueOf(state);
+
+//     return this;
+//   },
 
 
-  flushQueueOf: function (state) {
+//   enqueue: function (targetStateId, view) {
 
-    var queue = this.queues[state.id];
+//     this.queues[targetStateId] || (this.queues[targetStateId] = []);
+//     this.queues[targetStateId].push(view);
 
-    while (queue && queue.length) {
+//     return this;
+//   },
 
-      state.$views.push(queue.pop());
-    }
-  }
 
-};
+//   flushQueueOf: function (state) {
+
+//     var queue = this.queues[state.id];
+
+//     while (queue && queue.length) {
+
+//       state.$views.push(queue.pop());
+//     }
+//   }
+
+// };

@@ -13,7 +13,7 @@ function State(stateDef) {
   this.$ancestors = {};
   this.$paramKeys = [];
   this.$resolves = [];
-  this.$views = [];
+  this.$viewports = [];
   this.$branch = [this];
 
   this.data = {};
@@ -162,7 +162,7 @@ State.prototype.getResolveResults = function () {
 };
 
 
-State.prototype.hasViews = function () {
+State.prototype.definesViews = function () {
 
   return !!this.views || !!this.template;
 };

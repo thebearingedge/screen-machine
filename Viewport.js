@@ -7,7 +7,7 @@ function Viewport(name) {
 
   this.name = name;
   this.selector = name.indexOf('@') > -1
-    ? 'sm-viewport'
+    ? 'sm-viewport:not([name])'
     : 'sm-viewport[name="' + name + '"]';
   this.element = null;
   this.currentView = null;
@@ -39,7 +39,7 @@ Viewport.prototype.getChildren = function () {
 
 Viewport.prototype.setView = function (view) {
 
-  if (!!this.currentView) return this.replaceView(view);
+  if (this.currentView) return this.replaceView(view);
 
   this.currentView = view;
 

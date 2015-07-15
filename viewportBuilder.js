@@ -35,14 +35,13 @@ module.exports = {
 
     if (!state.definesViews()) return this;
 
-    this.inferViewports(state);
-    this.flushQueueOf(state);
-
-    return this;
+    return this
+      .inferViewportsFrom(state)
+      .flushQueueOf(state);
   },
 
 
-  inferViewports: function (state) {
+  inferViewportsFrom: function (state) {
 
     if (!state.views) {
 
@@ -58,7 +57,7 @@ module.exports = {
     viewportName || (viewportName = '@' + stateName);
     this.viewports[stateName] || (this.viewports[stateName] = {});
 
-    if (this.viewports[stateName][viewportName]) return;
+    if (this.viewports[stateName][viewportName]) return this;
 
     var viewport = new Viewport(viewportName);
     var state = this.states[stateName];
@@ -110,6 +109,8 @@ module.exports = {
 
       state.$viewports.push(queue.pop());
     }
+
+    return this;
   }
 
 };

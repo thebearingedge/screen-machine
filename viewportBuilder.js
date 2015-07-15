@@ -75,11 +75,11 @@ module.exports = {
   },
 
 
-  createMany: function (viewDefs, state) {
+  createMany: function (state) {
 
     var key, splitNames, viewportName, stateName;
 
-    for (key in viewDefs) {
+    for (key in state.view) {
 
       splitNames = key.split('@');
       viewportName = splitNames[0] || null;

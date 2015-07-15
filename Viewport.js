@@ -3,9 +3,8 @@
 
 module.exports = Viewport;
 
-function Viewport(name, state) {
+function Viewport(name) {
 
-  this.state = state;
   this.selector = name
     ? 'sm-viewport[name="' + name + '"]'
     : 'sm-viewport';
@@ -14,15 +13,21 @@ function Viewport(name, state) {
 }
 
 
-Viewport.prototype.mountTo = function (fragment) {
+Viewport.prototype.attachTo = function (node) {
 
-  this.element = fragment.querySelector(this.selector);
+  this.element = node.querySelector(this.selector);
 
   return this;
 };
 
 
-Viewport.prototype.unmount = function () {
+Viewport.prototype.appearsDuring = function (state) {
+
+  return this.state === state;
+};
+
+
+Viewport.prototype.detach = function () {
 
   this.element = null;
 
@@ -41,6 +46,8 @@ Viewport.prototype.setView = function (view) {
   if (!!this.view) return this.replaceView(view);
 
   this.view = view;
+
+  return this;
 };
 
 
@@ -48,14 +55,22 @@ Viewport.prototype.replaceView = function (newView) {
 
   this.previousView = this.view;
   this.view = newView;
+
+  return this;
 };
 
 
 Viewport.prototype.cleanUp = function () {
 
-  return this.previousView
-    ? this.previousView.destroy()
-    : undefined;
+  var previousView = this.previousView;
+
+  if (!previousView) return;
+
+  previousView.destroy();
+
+  this.previousView = null;
+
+  return this;
 };
 
 

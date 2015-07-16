@@ -9,10 +9,16 @@ function Viewport(name) {
   this.selector = name.indexOf('@') > -1
     ? 'sm-viewport:not([name])'
     : 'sm-viewport[name="' + name + '"]';
-  this.element = null;
-  this.currentView = null;
-  this.previousView = null;
 }
+
+
+Viewport.prototype.element = null;
+
+
+Viewport.prototype.currentView = null;
+
+
+Viewport.prototype.previousView = null;
 
 
 Viewport.prototype.attachTo = function (node) {
@@ -70,13 +76,24 @@ Viewport.prototype.cleanUp = function () {
 };
 
 
+Viewport.prototype.update = function (resolveResults) {
+
+  this.currentView.update(resolveResults);
+
+  return this;
+};
+
+
+Viewport.prototype.publish = function (resolveResults) {
+
+  this.element.innerHTML = this.currentView.render(resolveResults);
+
+  return this;
+};
+
+
 Viewport.prototype.isDirty = function () {
 
   return !!this.previousView;
 };
 
-
-Viewport.prototype.close = function () {
-
-  this.currentView = null;
-};

@@ -7,8 +7,6 @@ module.exports = State;
 
 function State(stateDef) {
 
-  this.$parent = null;
-
   this.$includes = {};
   this.$ancestors = {};
   this.$paramKeys = [];
@@ -17,40 +15,26 @@ function State(stateDef) {
   this.$branch = [this];
 
   this.data = {};
-  this.onEnter = function () {};
-  this.onExit = function () {};
 
   xtend(this, stateDef);
 
   this.$includes[this.name] = true;
   this.$ancestors[this.name] = this;
 
-  this.parent = this.getParentName();
-}
-
-
-State.prototype.getParentName = function () {
-
-  if (this.parent !== undefined) return this.parent;
+  if (this.parent && typeof this.parent === 'string') return this;
 
   var splitNames = this.name.split('.');
 
-  if (splitNames.length === 1) {
+  this.parent = splitNames[1]
+    ? splitNames.slice(1).join('.')
+    : null;
+}
 
-    return null;
-  }
-  else {
 
-    splitNames.pop();
-
-    return splitNames.join('.');
-  }
-};
+State.prototype.$parent = null;
 
 
 State.prototype.inheritFrom = function (parentNode) {
-
-  // inherit includes, data, branch, and ancestry
 
   this.data = xtend({}, parentNode.data, this.data);
 
@@ -76,7 +60,7 @@ State.prototype.getBranch = function () {
 };
 
 
-State.prototype.isStale = function (newParams) {
+State.prototype.shouldReload = function (newParams) {
 
   if (this.$paramsKeys.length === 0) return false;
 
@@ -145,7 +129,7 @@ State.prototype.getAllViews = function () {
 
 State.prototype.getAncestor = function (stateName) {
 
-  return this.$ancestors[stateName];
+  return this.$ancestors[stateName] || null;
 };
 
 
@@ -165,4 +149,10 @@ State.prototype.getResolveResults = function () {
 State.prototype.definesViews = function () {
 
   return !!this.views || !!this.template;
+};
+
+
+State.prototype.addViewport = function (viewport) {
+
+  this.$viewports.push(viewport);
 };

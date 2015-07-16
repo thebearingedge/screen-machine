@@ -48,16 +48,16 @@ module.exports = {
       return this.createOne(null, state.name);
     }
 
-    return this.createMany(state.views, state);
+    return this.createMany(state);
   },
 
 
   createOne: function (viewportName, stateName) {
 
-    viewportName || (viewportName = '@' + stateName);
     this.viewports[stateName] || (this.viewports[stateName] = {});
+    viewportName || (viewportName = '@' + stateName);
 
-    if (this.viewports[stateName][viewportName]) return this;
+    if (this.has(stateName, viewportName)) return this;
 
     var viewport = new Viewport(viewportName);
     var state = this.states[stateName];
@@ -69,7 +69,7 @@ module.exports = {
       return this.enqueue(viewport, stateName);
     }
 
-    state.$viewports.push(viewport);
+    state.addViewport(viewport);
 
     return this;
   },
@@ -79,7 +79,7 @@ module.exports = {
 
     var key, splitNames, viewportName, stateName;
 
-    for (key in state.view) {
+    for (key in state.views) {
 
       splitNames = key.split('@');
       viewportName = splitNames[0] || null;
@@ -107,10 +107,16 @@ module.exports = {
 
     while (queue && queue.length) {
 
-      state.$viewports.push(queue.pop());
+      state.addViewport(queue.pop());
     }
 
     return this;
+  },
+
+
+  has: function (stateName, viewportName) {
+
+    return !!this.viewports[stateName][viewportName];
   }
 
 };

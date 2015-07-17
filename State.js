@@ -7,6 +7,7 @@ module.exports = State;
 
 function State(stateDef) {
 
+  this.$definition = stateDef;
   this.$includes = {};
   this.$ancestors = {};
   this.$paramKeys = [];
@@ -75,6 +76,16 @@ State.prototype.shouldReload = function (newParams) {
 };
 
 
+State.prototype.getResolveKeys = function () {
+
+  var resolves = this.$definition.resolve;
+
+  return resolves
+    ? Object.keys(resolves)
+    : [];
+};
+
+
 State.prototype.addResolve = function (resolve) {
 
   this.$resolves.push(resolve);
@@ -109,27 +120,15 @@ State.prototype.shutDown = function () {
 };
 
 
-State.prototype.getViews = function () {
-
-  return this.$views.slice();
-};
-
-
-State.prototype.getAllViews = function () {
-
-  return this
-    .getBranch()
-    .reverse()
-    .reduce(function (allViews, state) {
-
-      return allViews.concat(state.getViews());
-    }, []);
-};
-
-
 State.prototype.getAncestor = function (stateName) {
 
   return this.$ancestors[stateName] || null;
+};
+
+
+State.prototype.getResolves = function () {
+
+  return this.$resolves.slice();
 };
 
 
@@ -148,11 +147,13 @@ State.prototype.getResolveResults = function () {
 
 State.prototype.definesViews = function () {
 
-  return !!this.views || !!this.template;
+  return !!this.$definition.views || !!this.$definition.template;
 };
 
 
 State.prototype.addViewport = function (viewport) {
 
   this.$viewports.push(viewport);
+
+  return this;
 };

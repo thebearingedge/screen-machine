@@ -1,0 +1,7 @@
+{
+  "devel": true,
+  "laxbreak": true,
+  "globals": {
+    "riot": true
+  }
+}

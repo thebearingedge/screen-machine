@@ -1,4 +1,5 @@
 {
+  "expr": true,
   "devel": true,
   "laxbreak": true,
   "globals": {

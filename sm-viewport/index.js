@@ -3,13 +3,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
   'use strict';
 
-
+  var slice = [].slice;
   // Viewport surrounds a target element that will contain a rendered view
 
-  function Viewport(name) {
+  function Viewport(name, state) {
 
     this.name = name;
-    this.selector = name.indexOf('@') > -1
+    this.state = state;
+    this.$selector = name.indexOf('@') > -1
       ? 'sm-viewport:not([name])'
       : 'sm-viewport[name="' + name + '"]';
   }
@@ -29,9 +30,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
   Viewport.prototype.attachTo = function (node) {
 
-    this.$root = node.querySelector(this.selector);
+    this.$root = node;
 
     return this;
+  };
+
+
+  Viewport.prototype.isActive = function () {
+
+    return (this.$currentView && this.$content);
+  };
+
+
+  Viewport.prototype.attachWithin = function (node) {
+
+    this.$root = node.querySelector(this.$selector);
   };
 
 
@@ -103,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var previousView = this.$previousView;
 
-    if (!previousView) return;
+    if (!previousView) return this;
 
     previousView.destroy();
 
@@ -116,9 +129,12 @@ document.addEventListener('DOMContentLoaded', function () {
   // View creates and renders to its owning Viewport's child element
 
 
-  function View(tagName) {
+  function View(tagName, state, viewports) {
 
+    this.$children = [];
     this.tagName = tagName;
+    this.state = state;
+    this.viewports = viewports;
   }
 
 
@@ -126,6 +142,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     this.$node = document.createElement(this.tagName);
     this.$riotTag = riot.mount(this.$node, this.tagName, opts)[0];
+    this.loadChildren();
 
     return this.$node;
   };
@@ -142,82 +159,97 @@ document.addEventListener('DOMContentLoaded', function () {
 
   View.prototype.destroy = function () {
 
-    this.$node = null;
+    this.$children.forEach(function (child) {
+
+      child.close();
+    });
+
     this.$riotTag.unmount();
+    this.$riotTag = this.$node = null;
+  };
+
+
+  View.prototype.loadChildren = function () {
+
+    var self = this;
+
+    var children = slice.call(self.$node.querySelectorAll('sm-viewport'))
+      .map(function (node) {
+
+        var viewportName = node.getAttribute('name');
+        var viewport = self.viewports[viewportName];
+        var childView = self.state.getViewFor(viewportName);
+
+        return viewport
+          .attachTo(node)
+          .load(childView, { message: 'I\'m nested!' });
+      });
+
+    self.$children = children || [];
+  };
+  // PROGRAM
+
+
+
+
+  var viewports = {
+
   };
 
 
 
-  // PROGRAM
+  var rootState = {
+    name: 'root',
+    getViewFor: function (viewportName) {
+
+      viewportName || (viewportName = '');
+
+      return this.$views[viewportName + '@' + this.name];
+    }
+  };
+
+  var childState = {
+    name: 'child',
+    getViewFor: function (viewportName) {
+
+      viewportName || (viewportName = '');
+
+      return this.$views[viewportName + '@' + this.name];
+    }
+  };
 
 
-  var root = new Viewport('root');
+  var appMain = window.appMain = new View('app-main', rootState, viewports);
+  var appHome = window.appHome = new View('app-home', childState, viewports);
 
-  root.attachTo(document.body);
+  rootState.$views = {
+    'child1@root': appHome,
+    'child2@root': new View('app-home', childState, viewports)
+  };
 
-  var appMain = new View('app-main');
-  var appHome = new View('app-home');
+  childState.$views = {
+  };
 
-  setTimeout(publishAppMainView, 4000);
-  setTimeout(refreshAppMainView, 8000);
-  setTimeout(loadAppHomeView, 12000);
-  setTimeout(refreshAppHomeView, 16000);
-  setTimeout(closeRootViewport, 20000);
+  var root = window.root = new Viewport('root', rootState);
+  var child1 = window.child1 = new Viewport('child1' , childState);
+  var child2 = window.child2 = new Viewport('child2', childState);
 
-  // publishAppMainView();
-  // refreshAppMainView();
-  // loadAppHomeView();
-  // refreshAppHomeView();
-  // closeRootViewport();
+  viewports.root = root;
+  viewports.child1 = child1;
+  viewports.child2 = child2;
 
-  function publishAppMainView() {
+  root.attachWithin(document.body);
 
-    var name = 'World';
-    var log = '"root" Viewport loading "app-main" component - name: ';
-    console.log(log + '\'' + name + '\'');
+  var button = document.querySelector('button');
 
-    root.load(appMain, { name: 'World' });
-  }
+  button.onclick = function () {
 
+    if (root.isActive()) {
 
-  function refreshAppMainView() {
+      return root.close();
+    }
 
-    var newName = 'Good lookin\'';
-    var log = '"root" Viewport refreshing "app-main" with ';
-
-    console.log(log + '\'' + newName + '\'');
-
-    root.refreshView({ name: newName });
-  }
-
-
-  function loadAppHomeView() {
-
-    var message = 'Greetings from Screen Machine!';
-    var log = '"root" Viewport loading "app-home" component - message: ';
-
-    console.log(log + '\'' + message + '\'');
-
-    root.load(appHome, { message: message });
-  }
-
-
-  function refreshAppHomeView() {
-
-    var newMessage = '...goodbye';
-    var log = '"root" Viewport refreshing "app-home" with ';
-
-    console.log(log + '\'' + newMessage + '\'');
-
-    root.refreshView({ message: newMessage });
-  }
-
-
-  function closeRootViewport() {
-
-    console.log('"root" Viewport now closing.');
-
-    root.close();
-  }
+    return root.load(appMain, { name: 'World' });
+  };
 
 });

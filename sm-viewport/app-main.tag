@@ -5,4 +5,7 @@
 
   <p>This is the "app-main" component.</p>
 
+  <sm-viewport name='child1'></sm-viewport>
+  <sm-viewport name='child2'></sm-viewport>
+
 </app-main>

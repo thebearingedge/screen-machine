@@ -23,6 +23,14 @@ Viewport.prototype.previousView = null;
 
 Viewport.prototype.attachTo = function (node) {
 
+  this.element = node;
+
+  return this;
+};
+
+
+Viewport.prototype.attachWithin = function (node) {
+
   this.element = node.querySelector(this.selector);
 
   return this;
@@ -66,7 +74,7 @@ Viewport.prototype.cleanUp = function () {
 
   var previousView = this.previousView;
 
-  if (!previousView) return;
+  if (!previousView) return this;
 
   previousView.destroy();
 

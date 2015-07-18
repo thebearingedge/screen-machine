@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
   Viewport.prototype.$currentView = null;
 
 
-  Viewport.prototype.$previousView = null;
+  Viewport.prototype.$nextView = null;
 
 
   Viewport.prototype.$content = null;
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   Viewport.prototype.replaceView = function (newView) {
 
-    this.$previousView = this.$currentView;
+    this.$nextView = this.$currentView;
     this.$currentView = newView;
 
     return this;
@@ -114,13 +114,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   Viewport.prototype.cleanUp = function () {
 
-    var previousView = this.$previousView;
+    var nextView = this.$nextView;
 
-    if (!previousView) return this;
+    if (!nextView) return this;
 
-    previousView.destroy();
+    nextView.destroy();
 
-    this.$previousView = null;
+    this.$nextView = null;
 
     return this;
   };
@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var self = this;
 
-    var children = slice.call(self.$node.querySelectorAll('sm-viewport'))
+    self.$children = slice.call(self.$node.querySelectorAll('sm-viewport'))
       .map(function (node) {
 
         var viewportName = node.getAttribute('name');
@@ -185,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function () {
           .load(childView, { message: 'I\'m nested!' });
       });
 
-    self.$children = children || [];
   };
   // PROGRAM
 
@@ -219,24 +218,42 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 
 
+  var grandchildState = {
+    name: 'grandchild',
+    getViewFor: function (viewportName) {
+
+      viewportName || (viewportName = '');
+
+      return this.$views[viewportName + '@' + this.name];
+    }
+  };
+
+
   var appMain = window.appMain = new View('app-main', rootState, viewports);
   var appHome = window.appHome = new View('app-home', childState, viewports);
+  var appSide = window.appSide = new View('app-side', childState, viewports);
 
   rootState.$views = {
     'child1@root': appHome,
-    'child2@root': new View('app-home', childState, viewports)
+    'child2@root': appSide
   };
 
   childState.$views = {
   };
 
+  grandchildState.$views = {
+    '@grandchild': new View('app-home', grandchildState, viewports)
+  };
+
   var root = window.root = new Viewport('root', rootState);
   var child1 = window.child1 = new Viewport('child1' , childState);
   var child2 = window.child2 = new Viewport('child2', childState);
+  var grandchild = window.granchild = new Viewport('granchild', grandchildState);
 
   viewports.root = root;
   viewports.child1 = child1;
   viewports.child2 = child2;
+  viewports.grandchild = grandchild;
 
   root.attachWithin(document.body);
 

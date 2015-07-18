@@ -5,14 +5,14 @@ var xtend = require('xtend/mutable');
 
 module.exports = State;
 
-function State(stateDef) {
+function State(stateDef, paramCache) {
 
   this.$definition = stateDef;
+  this.$paramCache = paramCache;
   this.$includes = {};
   this.$ancestors = {};
   this.$paramKeys = [];
   this.$resolves = [];
-  this.$viewports = [];
   this.$branch = [this];
 
   this.data = {};
@@ -33,6 +33,9 @@ function State(stateDef) {
 
 
 State.prototype.$parent = null;
+
+
+State.prototype.$viewports = null;
 
 
 State.prototype.inheritFrom = function (parentNode) {
@@ -153,7 +156,9 @@ State.prototype.definesViews = function () {
 
 State.prototype.addViewport = function (viewport) {
 
+  this.$viewports || (this.$viewports = []);
   this.$viewports.push(viewport);
 
   return this;
 };
+

@@ -3,35 +3,32 @@
 
 module.exports = Viewport;
 
-function Viewport(name) {
+function Viewport(id) {
 
-  this.name = name;
-  this.selector = name.indexOf('@') > -1
-    ? 'sm-viewport:not([name])'
-    : 'sm-viewport[name="' + name + '"]';
+  this.$id = id;
 }
 
 
-Viewport.prototype.element = null;
-
-
-Viewport.prototype.currentView = null;
-
-
-Viewport.prototype.previousView = null;
+Viewport.prototype.$root = null;
+Viewport.prototype.$content = null;
+Viewport.prototype.$nextContent = undefined;
+Viewport.prototype.$nextView = undefined;
+Viewport.prototype.$currentView = null;
+Viewport.prototype.$lastView = null;
+Viewport.prototype.$defaultView = null;
 
 
 Viewport.prototype.attachTo = function (node) {
 
-  this.element = node;
+  this.$root = node;
 
   return this;
 };
 
 
-Viewport.prototype.attachWithin = function (node) {
+Viewport.prototype.attachWithin = function (dom) {
 
-  this.element = node.querySelector(this.selector);
+  this.$root = dom.querySelector(this.$id);
 
   return this;
 };
@@ -39,69 +36,94 @@ Viewport.prototype.attachWithin = function (node) {
 
 Viewport.prototype.detach = function () {
 
-  this.element = null;
+  this.$root = null;
 
   return this;
 };
 
 
-Viewport.prototype.getChildren = function () {
+Viewport.prototype.setDefaultView = function (view) {
 
-  return this.currentView.getViewports();
-};
-
-
-Viewport.prototype.setView = function (view) {
-
-  if (this.currentView) return this.replaceView(view);
-
-  this.currentView = view;
+  this.$defaultView = view;
 
   return this;
 };
 
 
-Viewport.prototype.replaceView = function (newView) {
+Viewport.prototype.load = function (view) {
 
-  this.previousView = this.currentView;
-  this.currentView = newView;
+  if (typeof this.$nextView !== undefined) return this;
 
-  return this;
-};
+  this.$nextView = typeof view === undefined
+    ? this.$defaultView
+    : view;
 
-
-Viewport.prototype.cleanUp = function () {
-
-  var previousView = this.previousView;
-
-  if (!previousView) return this;
-
-  previousView.destroy();
-
-  this.previousView = null;
+  this.$nextContent = this.$nextView
+    ? this.$nextView.render()
+    : undefined;
 
   return this;
 };
 
 
-Viewport.prototype.update = function (resolveResults) {
+Viewport.prototype.shouldRefresh = function () {
 
-  this.currentView.update(resolveResults);
+  return this.$currentView && !this.$nextContent;
+};
+
+
+Viewport.prototype.publish = function () {
+
+  if (!this.$nextView) return this.close();
+
+  var lastContent = this.$content;
+
+  if (lastContent) {
+
+    this.$root.replaceChild(this.$nextContent, lastContent);
+  }
+  else {
+
+    this.$root.appendChild(this.$nextContent);
+  }
+
+  this.$content = this.$nextContent;
+  this.$nextContent = undefined;
+
+  this.$currentView = this.$nextView;
+  this.$nextView = undefined;
+
+  return this.cleanup();
+};
+
+
+Viewport.prototype.refresh = function () {
+
+  if (this.$currentView) this.$currentView.update();
 
   return this;
 };
 
 
-Viewport.prototype.publish = function (resolveResults) {
+Viewport.prototype.close = function () {
 
-  this.element.innerHTML = this.currentView.render(resolveResults);
+  if (!this.$root) return this;
+
+  if (this.$content) this.$root.removeChild(this.$content);
+
+  if (this.$currentView) this.$currentView.destroy();
+
+  this.$currentView = this.$content = null;
+  this.$nextView = this.$nextContent = undefined;
+};
+
+
+Viewport.prototype.cleanup = function () {
+
+  if (!this.$lastView) return this;
+
+  this.$lastView.destroy();
+  this.$lastView = null;
 
   return this;
 };
-
-
-Viewport.prototype.isDirty = function () {
-
-  return !!this.previousView;
-};
-

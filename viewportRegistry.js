@@ -54,15 +54,14 @@ module.exports = {
 
   createOne: function (viewportName, stateName) {
 
-    this.viewports[stateName] || (this.viewports[stateName] = {});
     viewportName || (viewportName = '@' + stateName);
 
-    if (this.has(stateName, viewportName)) return this;
+    if (this.has(viewportName)) return this;
 
     var viewport = new Viewport(viewportName);
     var state = this.states[stateName];
 
-    this.viewports[stateName][viewportName] = viewport;
+    this.viewports[viewportName] = viewport;
 
     if (!state) {
 
@@ -116,7 +115,7 @@ module.exports = {
 
   has: function (stateName, viewportName) {
 
-    return !!this.viewports[stateName][viewportName];
+    return !!this.viewports[viewportName];
   }
 
 };

@@ -50,7 +50,6 @@ ViewLoader.prototype.setDefaultView = function (view) {
 };
 
 
-
 ViewLoader.prototype.load = function (view) {
 
   if (this.isLoaded()) return this;
@@ -102,7 +101,7 @@ ViewLoader.prototype.publishChange = function () {
 
 ViewLoader.prototype.shouldRefresh = function () {
 
-  return !!this.$currentView && (this.$nextView !== null);
+  return !this.isLoaded();
 };
 
 
@@ -116,7 +115,7 @@ ViewLoader.prototype.refresh = function () {
 
 ViewLoader.prototype.shouldClose = function () {
 
-  return;
+  return this.$nextView === null;
 };
 
 

@@ -81,7 +81,7 @@ RiotTagView.prototype.publishChildren = function () {
 
       return viewLoader
         .attachTo(element)
-        .pubish();
+        .publish();
     });
 
   return this;

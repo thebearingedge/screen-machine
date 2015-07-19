@@ -3,9 +3,9 @@
 
 module.exports = ViewLoader;
 
-function ViewLoader(id) {
+function ViewLoader(elementId) {
 
-  this.$id = id;
+  this.$id = elementId;
 }
 
 
@@ -26,9 +26,9 @@ ViewLoader.prototype.attachTo = function (node) {
 };
 
 
-ViewLoader.prototype.attachWithin = function (doc) {
+ViewLoader.prototype.attachWithin = function (node) {
 
-  this.$root = doc.querySelector(this.$id);
+  this.$root = node.querySelector(this.$id);
 
   return this;
 };
@@ -38,11 +38,13 @@ ViewLoader.prototype.detach = function () {
 
   this.$root = null;
 
-  return this;
+  return this
+    .close()
+    .cleanUp();
 };
 
 
-ViewLoader.prototype.setDefaultView = function (view) {
+ViewLoader.prototype.setDefault = function (view) {
 
   this.$defaultView = view;
 
@@ -54,7 +56,7 @@ ViewLoader.prototype.load = function (view) {
 
   if (this.isLoaded()) return this;
 
-  this.$nextView = typeof view === undefined
+  this.$nextView = typeof view === 'undefined'
     ? this.$defaultView
     : view;
 
@@ -68,11 +70,11 @@ ViewLoader.prototype.load = function (view) {
 
 ViewLoader.prototype.isLoaded = function () {
 
-  return (typeof this.$nextView !== undefined);
+  return (typeof this.$nextView !== 'undefined');
 };
 
 
-ViewLoader.prototype.publishChange = function () {
+ViewLoader.prototype.publish = function () {
 
   if (this.shouldRefresh()) return this.refresh();
 

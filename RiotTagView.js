@@ -3,29 +3,31 @@
 
 var slice = [].slice;
 
-module.exports = RiotTagView;
+
+module.exports = function (riot, document) {
+
+  RiotTagView.riot = riot;
+  RiotTagView.doc = document;
+
+  return RiotTagView;
+};
 
 
-function RiotTagView(tagName, state, renderer, document, viewports) {
+function RiotTagView(tagName, state, viewLoader) {
 
-  // I need to derive the target viewport name here
-  this.$targetName;
   this.$tagName = tagName;
   this.$state = state;
-  this.$riot = renderer;
-  this.$doc = document;
-  this.$viewports = viewports;
+  this.$loader = viewLoader;
 }
 
 
+RiotTagView.prototype.$element = null;
 RiotTagView.prototype.$children = null;
 
 
 RiotTagView.prototype.load = function () {
 
-  var targetViewport = this.$viewports[this.$targetName];
-
-  targetViewport.load(this);
+  this.$loader.load(this);
 
   return this;
 };
@@ -35,16 +37,16 @@ RiotTagView.prototype.render = function () {
 
   var opts = this.$state.getResolveResults();
 
-  this.$node = this.$doc.createElement(this.tagName);
-  this.$tag = this.$riot.mount(this.$node, this.tagName, opts)[0];
+  this.$element = RiotTagView.doc.createElement(this.$tagName);
+  this.$tag = RiotTagView.riot.mount(this.$element, this.$tagName, opts)[0];
 
   this.publishChildren();
 
-  return this.$node;
+  return this.$element;
 };
 
 
-RiotTagView.prototype.refresh = function () {
+RiotTagView.prototype.update = function () {
 
   this.$tag.opts = this.$state.getResolveResults();
   this.$tag.update();
@@ -55,15 +57,15 @@ RiotTagView.prototype.refresh = function () {
 
 RiotTagView.prototype.destroy = function () {
 
-  this.$children.forEach(function (viewport) {
+  this.$children.forEach(function (viewLoader) {
 
-    viewport
+    viewLoader
       .close()
       .detach();
   });
 
   this.$tag.unmount();
-  this.$tag = this.$node = this.$children = null;
+  this.$tag = this.$element = this.$children = null;
 };
 
 
@@ -71,13 +73,15 @@ RiotTagView.prototype.publishChildren = function () {
 
   var self = this;
 
-  self.$children = slice.call(self.$node.querySelectorAll('sm-viewport'))
-    .map(function (node) {
+  self.$children = slice.call(self.$element.querySelectorAll('sm-viewport'))
+    .map(function (element) {
 
-      var viewport = self.viewports[node.id];
+      var viewport = self.viewports[element.id];
 
       return viewport
-        .attachTo(node)
+        .attachTo(element)
         .pubish();
     });
+
+  return this;
 };

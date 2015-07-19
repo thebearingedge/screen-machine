@@ -1,6 +1,9 @@
 
 'use strict';
 
+var viewBuilder = require('./viewBuilder');
+
+
 module.exports = {
 
   init: function (rootState) {
@@ -22,9 +25,10 @@ module.exports = {
     }
 
     this.states[state.name] = state.inheritFrom(parentState || this.$root);
-    this.flushQueueOf(state.name);
 
-    return this;
+    viewBuilder.processState(state);
+
+    return this.flushQueueOf(state.name);
   },
 
 
@@ -45,6 +49,8 @@ module.exports = {
 
       this.add(queue.pop());
     }
+
+    return this;
   }
 
 };

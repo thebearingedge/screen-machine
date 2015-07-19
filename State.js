@@ -33,9 +33,7 @@ function State(stateDef, paramCache) {
 
 
 State.prototype.$parent = null;
-
-
-State.prototype.$viewports = null;
+State.prototype.$viewLoaders = null;
 
 
 State.prototype.inheritFrom = function (parentNode) {
@@ -148,17 +146,16 @@ State.prototype.getResolveResults = function () {
 };
 
 
-State.prototype.definesViews = function () {
+State.prototype.addViewLoader = function (loader) {
 
-  return !!this.$definition.views || !!this.$definition.template;
-};
-
-
-State.prototype.addViewport = function (viewport) {
-
-  this.$viewports || (this.$viewports = []);
-  this.$viewports.push(viewport);
+  this.$viewLoaders || (this.$viewLoaders = []);
+  this.$viewLoaders.push(loader);
 
   return this;
 };
 
+
+State.prototype.getViews = function () {
+
+  return this.$views;
+};

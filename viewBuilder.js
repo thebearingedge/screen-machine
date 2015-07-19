@@ -3,27 +3,19 @@
 
 var ViewLoader = require('./ViewLoader');
 
-/*
- * State objects can come with view keys that imply needed ViewLoaders:
- *
- * views: {
- *  main: { blah blah blah },
- *  'side@home': { blah blah blah }
- * }
- *
- * Different Views may populate the same ViewLoader at different States. We want
- * the State to hold references to its ViewLoaders. We only need to create a
- * ViewLoader the first time it is inferred. A given State object
- * may imply a ViewLoader that exists on a yet unaccounted-for State,
- * so we will enqueue the ViewLoader until we can set it on its State.
- */
 
 module.exports = {
 
+  config: function (View) {
+
+    this.View = View;
+  },
+
+
+  defaultViews: {},
+
+
   states: {},
-
-
-  queues: {},
 
 
   loaders: {},
@@ -33,11 +25,11 @@ module.exports = {
 
     this.states[state.name] || (this.states[state.name] = state);
 
-    if (!state.definesViews()) return this;
+    if (!state.views && !state.template) return this;
 
     return this
       .inferLoadersFrom(state)
-      .flushQueueOf(state);
+      .addViewsTo(state);
   },
 
 
@@ -45,77 +37,80 @@ module.exports = {
 
     if (!state.views) {
 
-      return this.createOne(null, state.name);
+      return this.createViewLoader(null, state);
     }
 
-    return this.createMany(state);
-  },
+    var loaderId, targetStateName, targetState;
 
+    for (loaderId in state.views) {
 
-  createOne: function (loaderId, stateName) {
-
-    loaderId || (loaderId = '@' + stateName);
-
-    if (this.has(loaderId)) return this;
-
-    var viewport = new ViewLoader(loaderId);
-    var state = this.states[stateName];
-
-    this.loaders[loaderId] = viewport;
-
-    if (!state) {
-
-      return this.enqueue(viewport, stateName);
-    }
-
-    state.addViewLoader(viewport);
-
-    return this;
-  },
-
-
-  createMany: function (state) {
-
-    var key, splitNames, loaderId, stateName;
-
-    for (key in state.views) {
-
-      splitNames = key.split('@');
-      loaderId = splitNames[0] || null;
-      stateName = splitNames[1] || state.name;
-
-      this.createOne(loaderId, stateName);
+      targetStateName = loaderId.split('@')[1] || state.name;
+      targetState = this.states[targetStateName];
+      this.createViewLoader(loaderId, targetState);
     }
 
     return this;
   },
 
 
-  enqueue: function (viewport, stateName) {
+  createViewLoader: function (loaderId, targetState) {
 
-    this.queues[stateName] || (this.queues[stateName] = []);
-    this.queues[stateName].push(viewport);
+    loaderId || (loaderId = '@' + targetState.name);
+
+    if (this.loaders[loaderId]) return this;
+
+    var viewLoader = this.loaders[loaderId] = new ViewLoader(loaderId);
+    var defaultView = this.defaultViews[loaderId];
+
+    if (defaultView) {
+
+      viewLoader.setDefault(defaultView);
+    }
+
+    targetState.addViewLoader(viewLoader);
 
     return this;
   },
 
 
-  flushQueueOf: function (state) {
+  addViewsTo: function (state) {
 
-    var queue = this.queues[state.name];
+    if (!state.views && !state.template) return this;
 
-    while (queue && queue.length) {
+    if (!state.views) {
 
-      state.addViewLoader(queue.pop());
+      return this.addOneView(state.template, null, state);
     }
 
     return this;
   },
 
 
-  has: function (stateName, loaderId) {
+  addOneView: function (template, loaderId, state) {
 
-    return !!this.loaders[loaderId];
+    loaderId || (loaderId = '@' + state.name);
+
+    var viewLoader = this.loaders[loaderId];
+    var view = new this.View(template, state, loaderId, viewLoader);
+
+    state.addView(view);
+
+    return this;
+  },
+
+
+  addManyViews: function (state) {
+
+    var loaderId, template;
+    var views = state.views;
+
+    for (loaderId in views) {
+
+      template = views[loaderId].template;
+      this.addOneView(template, loaderId, state);
+    }
+
+    return this;
   }
 
 };

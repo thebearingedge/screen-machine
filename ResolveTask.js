@@ -18,7 +18,7 @@ function ResolveTask(resolve, params, resolveCache) {
 
 ResolveTask.prototype.isWaitingFor = function (dependency) {
 
-  return this.waitingFor.length && this.waitingFor.indexOf(dependency) > -1;
+  return this.waitingFor.indexOf(dependency) > -1;
 };
 
 

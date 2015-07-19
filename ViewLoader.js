@@ -80,11 +80,9 @@ ViewLoader.prototype.publish = function () {
 
   if (this.shouldClose()) return this.close();
 
-  var lastContent = this.$content;
+  if (this.$content) {
 
-  if (lastContent) {
-
-    this.$root.replaceChild(this.$nextContent, lastContent);
+    this.$root.replaceChild(this.$nextContent, this.$content);
   }
   else {
 

@@ -1,40 +1,40 @@
 
 'use strict';
 
-var StateNode = require('./StateNode');
+var State = require('./State');
 var resolveFactory = require('./resolveFactory');
 
 
 module.exports = {
 
-  build: function (name, stateDef) {
+  build: function (name, definition) {
 
-    if (arguments.length === 2) stateDef.name = name;
-    else stateDef.name = name;
+    if (arguments.length === 2) definition.name = name;
+    else definition.name = name;
 
-    if (!stateDef.name || typeof stateDef.name !== 'string') {
+    if (!definition.name || typeof definition.name !== 'string') {
 
       throw new Error('State definitions must include a string name');
     }
 
-    var stateNode = new StateNode(stateDef);
+    var state = new State(definition);
 
-    return this.addResolves(stateNode);
+    return this.addResolves(state);
   },
 
 
-  addResolves: function (stateNode) {
+  addResolves: function (state) {
 
-    var raw = stateNode.resolve;
+    var raw = state.resolve;
     var key, resolve;
 
     for (key in raw) {
 
-      resolve = resolveFactory.instantiate(key, stateNode);
-      stateNode.addResolve(resolve);
+      resolve = resolveFactory.instantiate(key, state);
+      state.addResolve(resolve);
     }
 
-    return stateNode;
+    return state;
   }
 
 };

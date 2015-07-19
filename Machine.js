@@ -30,6 +30,14 @@ module.exports = {
     var fromParams = this.currentParams;
 
 
+    var sleepStates = fromState
+      .getBranch()
+      .filter(function (state) {
+
+        return !toState.includes(state.name);
+      });
+
+
     var resolveTasks = toState
       .getBranch()
       .filter(function (state) {
@@ -48,26 +56,85 @@ module.exports = {
       });
 
 
-    var runResolves = resolveService
-      .createJob(resolveTasks, transition)
-      .start();
+    var resolveJob = resolveService
+      .createJob(resolveTasks, transition);
 
 
-    var sleepStates = fromState
-      .getBranch()
-      .filter(function (state) {
+    var self = this;
 
-        return !toState.includes(state.name);
+    return resolveJob
+      .start()
+      .then(function (completed) {
+
+        return self
+          .commitResolves(completed)
+          .loadViews(toState)
+          .publishViews(toState)
+          .shutDownStates(sleepStates);
+      })
+      .catch(function (err) {
+
+        throw err; // BAH!
       });
+  },
 
 
-    var activeViews = toState
+  commitResolves: function (completed) {
+
+    completed
+      .forEach(function (task) {
+
+        task.commit();
+      });
+  },
+
+
+  publishViews: function (toState) {
+
+    toState
       .getBranch()
+      .reduce(function (viewLoaders, state) {
+
+        return viewLoaders.concat(state.getViewLoaders());
+      }, [])
+      .filter(function (viewLoader) {
+
+        return viewLoader.isLoaded() || viewLoader.shouldRefresh();
+      })
+      .forEach(function (viewLoader) {
+
+        viewLoader.publish();
+      });
+  },
+
+
+  loadViews: function (toState) {
+
+    toState
+      .getBranch()
+      .reverse()
       .reduce(function (views, state) {
 
         return views.concat(state.getViews());
-      }, []);
+      }, [])
+      .forEach(function (view) {
 
+        view.load();
+      });
+
+    return this;
+  },
+
+
+  shutDownStates: function (sleepStates) {
+
+    sleepStates
+      .forEach(function (state) {
+
+        state.sleep();
+      });
+
+    return this;
   }
 
 };

@@ -124,9 +124,9 @@ State.prototype.sleep = function () {
   });
   this.$resolves.forEach(function (resolve) {
 
-    resolve.clearResult();
+    resolve.clearCache();
   });
-  this.$params = null;
+  this.$paramCache = null;
 
   return this;
 };
@@ -157,12 +157,18 @@ State.prototype.getResolveResults = function () {
 };
 
 
-State.prototype.addViewLoader = function (loader) {
+State.prototype.addViewLoader = function (viewLoader) {
 
   this.$viewLoaders || (this.$viewLoaders = []);
-  this.$viewLoaders.push(loader);
+  this.$viewLoaders.push(viewLoader);
 
   return this;
+};
+
+
+State.prototype.getViewLoaders = function () {
+
+  return this.$viewLoaders.slice();
 };
 
 

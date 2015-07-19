@@ -26,7 +26,7 @@ SimpleResolve.prototype.getResult = function () {
 };
 
 
-SimpleResolve.prototype.clearResult = function () {
+SimpleResolve.prototype.clearCache = function () {
 
   this.cache.unset(this.name);
 

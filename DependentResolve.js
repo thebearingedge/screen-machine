@@ -45,7 +45,7 @@ DependentResolve.prototype.getResult = function () {
 };
 
 
-DependentResolve.prototype.clearResult = function () {
+DependentResolve.prototype.clearCache = function () {
 
   this.cache.unset(this.name);
 

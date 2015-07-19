@@ -1,6 +1,7 @@
 
 'use strict';
 
+var xtend = require('xtend/mutable');
 var ViewLoader = require('./ViewLoader');
 
 
@@ -15,10 +16,18 @@ module.exports = {
   defaultViews: {},
 
 
+  addDefaultViews: function (defaultViews) {
+
+    xtend(this.defaultViews, defaultViews);
+
+    return this;
+  },
+
+
   states: {},
 
 
-  loaders: {},
+  viewLoaders: {},
 
 
   processState: function (state) {
@@ -57,9 +66,9 @@ module.exports = {
 
     loaderId || (loaderId = '@' + targetState.name);
 
-    if (this.loaders[loaderId]) return this;
+    if (this.viewLoaders[loaderId]) return this;
 
-    var viewLoader = this.loaders[loaderId] = new ViewLoader(loaderId);
+    var viewLoader = this.viewLoaders[loaderId] = new ViewLoader(loaderId);
     var defaultView = this.defaultViews[loaderId];
 
     if (defaultView) {
@@ -79,36 +88,29 @@ module.exports = {
 
     if (!state.views) {
 
-      return this.addOneView(state.template, null, state);
+      return this.createView(state.template, null, state);
+    }
+
+    var loaderId;
+    var template;
+
+    for (loaderId in state.views) {
+
+      template = state.views[loaderId].template;
+      this.createView(template, loaderId, state);
     }
 
     return this;
   },
 
 
-  addOneView: function (template, loaderId, state) {
+  createView: function (template, loaderId, state) {
 
     loaderId || (loaderId = '@' + state.name);
 
-    var viewLoader = this.loaders[loaderId];
-    var view = new this.View(template, state, loaderId, viewLoader);
+    var view = new this.View(template, state, loaderId, this.viewLoaders);
 
     state.addView(view);
-
-    return this;
-  },
-
-
-  addManyViews: function (state) {
-
-    var loaderId, template;
-    var views = state.views;
-
-    for (loaderId in views) {
-
-      template = views[loaderId].template;
-      this.addOneView(template, loaderId, state);
-    }
 
     return this;
   }

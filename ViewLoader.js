@@ -5,7 +5,7 @@ module.exports = ViewLoader;
 
 function ViewLoader(elementId) {
 
-  this.$id = elementId;
+  this.selector = 'sm-view[id="' + elementId + '"]';
 }
 
 
@@ -28,7 +28,7 @@ ViewLoader.prototype.attachTo = function (node) {
 
 ViewLoader.prototype.attachWithin = function (node) {
 
-  this.$root = node.querySelector(this.$id);
+  this.$root = node.querySelector(this.selector);
 
   return this;
 };

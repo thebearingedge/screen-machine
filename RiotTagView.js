@@ -13,11 +13,12 @@ module.exports = function (riot, document) {
 };
 
 
-function RiotTagView(tagName, state, viewLoader) {
+function RiotTagView(tagName, state, targetName, viewLoaders) {
 
   this.$tagName = tagName;
   this.$state = state;
-  this.$loader = viewLoader;
+  this.$targetName = targetName;
+  this.$loaders = viewLoaders;
 }
 
 
@@ -27,7 +28,7 @@ RiotTagView.prototype.$children = null;
 
 RiotTagView.prototype.load = function () {
 
-  this.$loader.load(this);
+  this.$loaders[this.$targetName].load(this);
 
   return this;
 };
@@ -73,12 +74,12 @@ RiotTagView.prototype.publishChildren = function () {
 
   var self = this;
 
-  self.$children = slice.call(self.$element.querySelectorAll('sm-viewport'))
+  self.$children = slice.call(self.$element.querySelectorAll('sm-view'))
     .map(function (element) {
 
-      var viewport = self.viewports[element.id];
+      var viewLoader = self.$loaders[element.id];
 
-      return viewport
+      return viewLoader
         .attachTo(element)
         .pubish();
     });

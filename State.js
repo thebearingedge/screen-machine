@@ -34,6 +34,7 @@ function State(stateDef, paramCache) {
 
 State.prototype.$parent = null;
 State.prototype.$viewLoaders = null;
+State.prototype.$params = null;
 
 
 State.prototype.inheritFrom = function (parentNode) {
@@ -108,13 +109,16 @@ State.prototype.filterParams = function (allParams) {
 };
 
 
-State.prototype.shutDown = function () {
+State.prototype.sleep = function () {
 
-  this.$views.forEach(function (view) {
+  this.$viewLoaders.forEach(function (viewLoader) {
 
-    view.destroy();
+    viewLoader.detach();
   });
+  this.$resolves.forEach(function (resolve) {
 
+    resolve.clearResult();
+  });
   this.$params = null;
 
   return this;

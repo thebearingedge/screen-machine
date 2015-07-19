@@ -27,7 +27,7 @@ ResolveJob.prototype.start = function () {
     })
     .forEach(function (ready) {
 
-      return self.run(ready);
+      self.run(ready);
     });
 
   return self.promise;
@@ -39,7 +39,7 @@ ResolveJob.prototype.run = function (task) {
   var self = this;
 
   return self
-    .dequeueTask(task)
+    .dequeue(task)
     .execute()
     .then(function (result) {
 
@@ -71,7 +71,7 @@ ResolveJob.prototype.run = function (task) {
 };
 
 
-ResolveJob.prototype.dequeueTask = function (task) {
+ResolveJob.prototype.dequeue = function (task) {
 
   return this.tasks.splice(this.tasks.indexOf(task), 1);
 };

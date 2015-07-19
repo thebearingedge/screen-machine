@@ -27,8 +27,6 @@ module.exports = {
 
     var transition = this.transition = new Transition(this);
     var fromState = this.currentState;
-    var fromParams = this.currentParams;
-
 
     var sleepStates = fromState
       .getBranch()
@@ -37,12 +35,11 @@ module.exports = {
         return !toState.includes(state.name);
       });
 
-
     var resolveTasks = toState
       .getBranch()
       .filter(function (state) {
 
-        return state.isStale(fromParams, toParams);
+        return state.isStale(toParams);
       })
       .reduce(function (resolves, state) {
 
@@ -55,10 +52,8 @@ module.exports = {
         return resolveService.createTask(resolve, params);
       });
 
-
     var resolveJob = resolveService
       .createJob(resolveTasks, transition);
-
 
     var self = this;
 

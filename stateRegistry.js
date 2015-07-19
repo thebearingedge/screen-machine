@@ -1,7 +1,9 @@
 
 'use strict';
 
+var State = require('./State');
 var viewBuilder = require('./viewBuilder');
+var resolveService = require('./resolveService');
 
 
 module.exports = {
@@ -14,7 +16,23 @@ module.exports = {
   },
 
 
-  add: function (state) {
+  add: function (name, definition) {
+
+    if (arguments.length === 2) definition.name = name;
+    else definition = name;
+
+    if (!definition.name || typeof definition.name !== 'string') {
+
+      throw new Error('State definitions must include a string name');
+    }
+
+    var state = new State(definition);
+
+    return this.register(state);
+  },
+
+
+  register: function (state) {
 
     var parentName = state.parent;
     var parentState = this.states[parentName];
@@ -25,25 +43,25 @@ module.exports = {
     }
 
     this.states[state.name] = state.inheritFrom(parentState || this.$root);
-
     viewBuilder.processState(state);
+    resolveService.addResolvesTo(state);
 
-    return this.flushQueueOf(state.name);
+    return this.flushQueueOf(state);
   },
 
 
-  enqueue: function (parent, state) {
+  enqueue: function (parentName, state) {
 
-    this.stateQueues[parent] || (this.stateQueues[parent] = []);
-    this.stateQueues[parent].push(state);
+    this.stateQueues[parentName] || (this.stateQueues[parentName] = []);
+    this.stateQueues[parentName].push(state);
 
     return this;
   },
 
 
-  flushQueueOf: function (stateName) {
+  flushQueueOf: function (state) {
 
-    var queue = this.stateQueues[stateName];
+    var queue = this.stateQueues[state.name];
 
     while (queue && queue.length) {
 

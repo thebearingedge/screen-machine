@@ -4,24 +4,22 @@
 module.exports = ResolveJob;
 
 
-function ResolveJob(resolveTasks, currentTransition) {
+function ResolveJob(tasks, transition) {
 
-  this.tasks = resolveTasks;
-  this.remaining = resolveTasks.length;
-  this.transition = currentTransition;
+  this.tasks = tasks;
+  this.transition = transition;
+  this.remaining = tasks.length;
   this.completed = [];
-  this.results = {};
-  this.cancelled = false;
+  this.stop = false;
+  this.promise = new ResolveJob.Promise(this.finish, this.abort);
 }
 
 
-ResolveJob.prototype.start = function (callback) {
+ResolveJob.prototype.start = function () {
 
   var self = this;
 
-  self.callback = callback;
-
-  return self
+  self
     .tasks
     .filter(function (task) {
 
@@ -31,6 +29,8 @@ ResolveJob.prototype.start = function (callback) {
 
       return self.run(ready);
     });
+
+  return self.promise;
 };
 
 
@@ -43,25 +43,29 @@ ResolveJob.prototype.run = function (task) {
     .execute()
     .then(function (result) {
 
-      if (self.cancelled) return;
+      if (self.stop) return;
 
       if (self.transition.isSuperceded()) {
 
-        return self.abort();
+        self.stop = true;
+
+        return self.promise.reject();
       }
 
-      task.result = self.results[task.name] = result;
+      task.result = result;
       self.completed.push(task);
 
       return --self.remaining
         ? self.runDependentsOf(task)
-        : self.finish();
+        : self.promise.resolve(self.completed);
     })
     .catch(function (err) {
 
-      if (!self.cancelled) {
+      if (!self.stop) {
 
-        return self.abort(err);
+        self.stop = true;
+
+        return self.promise.reject(err);
       }
     });
 };
@@ -75,9 +79,7 @@ ResolveJob.prototype.dequeueTask = function (task) {
 
 ResolveJob.prototype.abort = function (err) {
 
-  this.cancelled = true;
-
-  if (err) this.callback.call(null, err);
+  return err;
 };
 
 
@@ -102,7 +104,7 @@ ResolveJob.prototype.runDependentsOf = function (task) {
 };
 
 
-ResolveJob.prototype.finish = function () {
+ResolveJob.prototype.finish = function (completed) {
 
-  return this.callback.call(null, null, this.completed, this.results);
+  return completed;
 };

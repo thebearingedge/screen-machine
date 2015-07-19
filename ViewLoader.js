@@ -9,7 +9,7 @@ function ViewLoader(elementId) {
 }
 
 
-ViewLoader.prototype.$root = null;
+ViewLoader.prototype.$element = null;
 ViewLoader.prototype.$content = null;
 ViewLoader.prototype.$nextContent = undefined;
 ViewLoader.prototype.$nextView = undefined;
@@ -18,17 +18,17 @@ ViewLoader.prototype.$lastView = null;
 ViewLoader.prototype.$defaultView = null;
 
 
-ViewLoader.prototype.attachTo = function (node) {
+ViewLoader.prototype.attachTo = function (element) {
 
-  this.$root = node;
+  this.$element = element;
 
   return this;
 };
 
 
-ViewLoader.prototype.attachWithin = function (node) {
+ViewLoader.prototype.attachWithin = function (element) {
 
-  this.$root = node.querySelector(this.selector);
+  this.$element = element.querySelector(this.selector);
 
   return this;
 };
@@ -36,7 +36,7 @@ ViewLoader.prototype.attachWithin = function (node) {
 
 ViewLoader.prototype.detach = function () {
 
-  this.$root = null;
+  this.$element = null;
 
   return this
     .close()
@@ -82,11 +82,11 @@ ViewLoader.prototype.publish = function () {
 
   if (this.$content) {
 
-    this.$root.replaceChild(this.$nextContent, this.$content);
+    this.$element.replaceChild(this.$nextContent, this.$content);
   }
   else {
 
-    this.$root.appendChild(this.$nextContent);
+    this.$element.appendChild(this.$nextContent);
   }
 
   this.$content = this.$nextContent;
@@ -121,9 +121,9 @@ ViewLoader.prototype.shouldClose = function () {
 
 ViewLoader.prototype.close = function () {
 
-  if (!this.$root) return this;
+  if (!this.$element) return this;
 
-  if (this.$content) this.$root.removeChild(this.$content);
+  if (this.$content) this.$element.removeChild(this.$content);
 
   if (this.$currentView) this.$currentView.destroy();
 

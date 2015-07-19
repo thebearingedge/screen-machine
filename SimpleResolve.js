@@ -4,13 +4,13 @@
 module.exports = SimpleResolve;
 
 
-function SimpleResolve(resolveKey, stateNode, resolveCache) {
+function SimpleResolve(resolveKey, state, resolveCache) {
 
   this.key = resolveKey;
-  this.name = resolveKey + '@' + stateNode.name;
-  this.state = stateNode;
+  this.name = resolveKey + '@' + state.name;
+  this.state = state;
   this.cache = resolveCache;
-  this.invokable = stateNode.resolve[resolveKey];
+  this.invokable = state.resolve[resolveKey];
 }
 
 

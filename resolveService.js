@@ -11,11 +11,24 @@ var ResolveJob = require('./ResolveJob');
 
 module.exports = {
 
-  instantiate: function (resolveKey, stateNode) {
+  instantiate: function (resolveKey, state) {
 
-    return Array.isArray(stateNode[resolveKey])
-      ? new DependentResolve(resolveKey, stateNode, resolveCache)
-      : new SimpleResolve(resolveKey, stateNode, resolveCache);
+    return Array.isArray(state[resolveKey])
+      ? new DependentResolve(resolveKey, state, resolveCache)
+      : new SimpleResolve(resolveKey, state, resolveCache);
+  },
+
+
+  processState: function (state) {
+
+    var resolveKey;
+    var resolve;
+
+    for (resolveKey in state.resolve) {
+
+      resolve = this.instantiate(resolveKey, state);
+      state.addResolve(resolve);
+    }
   },
 
 

@@ -4,14 +4,14 @@
 module.exports = DependentResolve;
 
 
-function DependentResolve(resolveKey, stateNode, resolveCache) {
+function DependentResolve(resolveKey, state, resolveCache) {
 
-  var resolveDef = stateNode.resolve[resolveKey];
+  var resolveDef = state.resolve[resolveKey];
   var invokableIndex = resolveDef.length - 1;
 
   this.key = resolveKey;
-  this.name = resolveKey + '@' + stateNode.name;
-  this.state = stateNode;
+  this.name = resolveKey + '@' + state.name;
+  this.state = state;
   this.cache = resolveCache;
   this.invokable = resolveDef[invokableIndex];
   this.injectables = resolveDef
@@ -20,7 +20,7 @@ function DependentResolve(resolveKey, stateNode, resolveCache) {
 
       return injectable.indexOf('@') > -1
         ? injectable
-        : injectable + '@' + stateNode.name;
+        : injectable + '@' + state.name;
     });
 }
 

@@ -5,10 +5,9 @@ var xtend = require('xtend/mutable');
 
 module.exports = State;
 
-function State(stateDef, paramCache) {
+function State(stateDef) {
 
   this.$definition = stateDef;
-  this.$paramCache = paramCache;
   this.$includes = {};
   this.$ancestors = {};
   this.$paramKeys = [];
@@ -34,7 +33,7 @@ function State(stateDef, paramCache) {
 
 State.prototype.$parent = null;
 State.prototype.$viewLoaders = null;
-State.prototype.$params = null;
+State.prototype.$paramCache = null;
 
 
 State.prototype.inheritFrom = function (parentNode) {
@@ -63,17 +62,17 @@ State.prototype.getBranch = function () {
 };
 
 
-State.prototype.shouldReload = function (newParams) {
+State.prototype.isStale = function (newParams) {
 
-  if (this.$paramsKeys.length === 0) return false;
+  if (!this.$paramsKeys.length && !this.$resolves.length) return false;
 
-  if (!this.$params) return true;
+  if (!this.$paramCache) return true;
 
   var self = this;
 
   return self.$paramsKeys.some(function (key) {
 
-    return self.$params[key] != newParams[key];
+    return self.$paramCache[key] !== newParams[key];
   });
 };
 
@@ -106,6 +105,14 @@ State.prototype.filterParams = function (allParams) {
 
       return ownParams;
     }, {});
+};
+
+
+State.prototype.cacheParams = function (allParams) {
+
+  this.$paramCache = this.filterParams(allParams);
+
+  return this;
 };
 
 
@@ -161,5 +168,7 @@ State.prototype.addViewLoader = function (loader) {
 
 State.prototype.getViews = function () {
 
-  return this.$views;
+  return this.$views
+    ? this.$views.slice()
+    : [];
 };

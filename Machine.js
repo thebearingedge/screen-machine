@@ -63,6 +63,7 @@ module.exports = {
 
         return self
           .commitResolves(completed)
+          .commitTransition(toState, toParams)
           .loadViews(toState)
           .publishViews(toState)
           .shutDownStates(sleepStates);
@@ -80,25 +81,6 @@ module.exports = {
       .forEach(function (task) {
 
         task.commit();
-      });
-  },
-
-
-  publishViews: function (toState) {
-
-    toState
-      .getBranch()
-      .reduce(function (viewLoaders, state) {
-
-        return viewLoaders.concat(state.getViewLoaders());
-      }, [])
-      .filter(function (viewLoader) {
-
-        return viewLoader.isLoaded() || viewLoader.shouldRefresh();
-      })
-      .forEach(function (viewLoader) {
-
-        viewLoader.publish();
       });
   },
 
@@ -121,6 +103,25 @@ module.exports = {
   },
 
 
+  publishViews: function (toState) {
+
+    toState
+      .getBranch()
+      .reduce(function (viewLoaders, state) {
+
+        return viewLoaders.concat(state.getViewLoaders());
+      }, [])
+      .filter(function (viewLoader) {
+
+        return viewLoader.isLoaded() || viewLoader.shouldRefresh();
+      })
+      .forEach(function (viewLoader) {
+
+        viewLoader.publish();
+      });
+  },
+
+
   shutDownStates: function (sleepStates) {
 
     sleepStates
@@ -128,6 +129,16 @@ module.exports = {
 
         state.sleep();
       });
+
+    return this;
+  },
+
+
+  commitTransition: function (toState, toParams) {
+
+    this.currentState = toState;
+    this.params = toParams;
+    this.transition = null;
 
     return this;
   }

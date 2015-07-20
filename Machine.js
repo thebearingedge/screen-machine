@@ -35,6 +35,9 @@ module.exports = {
         return !toState.includes(state.name);
       });
 
+    // This is incorrect behavior.
+    // We should only be launching resolves for the new states.
+    // Find the transitionRoot
     var resolveTasks = toState
       .getBranch()
       .filter(function (state) {

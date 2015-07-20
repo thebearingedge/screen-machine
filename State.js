@@ -64,13 +64,13 @@ State.prototype.getBranch = function () {
 
 State.prototype.isStale = function (newParams) {
 
-  if (!this.$paramsKeys.length && !this.$resolves.length) return false;
+  if (!this.$paramKeys.length && !this.$resolves.length) return false;
 
   if (!this.$paramCache) return true;
 
   var self = this;
 
-  return self.$paramsKeys.some(function (key) {
+  return self.$paramKeys.some(function (key) {
 
     return self.$paramCache[key] !== newParams[key];
   });
@@ -122,10 +122,12 @@ State.prototype.sleep = function () {
 
     viewLoader.detach();
   });
+
   this.$resolves.forEach(function (resolve) {
 
     resolve.clearCache();
   });
+
   this.$paramCache = null;
 
   return this;

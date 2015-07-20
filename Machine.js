@@ -18,8 +18,8 @@ module.exports = {
 
   init: function (state, params) {
 
-    this.state.current = state;
-    this.state.params = params;
+    this.currentState = state;
+    this.currentParams = params;
   },
 
 

@@ -11,13 +11,17 @@ function ResolveJob(tasks, transition) {
   this.remaining = tasks.length;
   this.completed = [];
   this.stop = false;
-  this.promise = new ResolveJob.Promise(this.finish, this.abort);
 }
 
 
-ResolveJob.prototype.start = function () {
+ResolveJob.prototype.callback = null;
+
+
+ResolveJob.prototype.start = function (callback) {
 
   var self = this;
+
+  self.callback = callback;
 
   self
     .tasks
@@ -30,7 +34,7 @@ ResolveJob.prototype.start = function () {
       self.run(ready);
     });
 
-  return self.promise;
+  return self;
 };
 
 
@@ -47,9 +51,7 @@ ResolveJob.prototype.run = function (task) {
 
       if (self.transition.isSuperceded()) {
 
-        self.stop = true;
-
-        return self.promise.reject();
+        return self.abort();
       }
 
       task.result = result;
@@ -57,15 +59,13 @@ ResolveJob.prototype.run = function (task) {
 
       return --self.remaining
         ? self.runDependentsOf(task)
-        : self.promise.resolve(self.completed);
+        : self.callback.call(null, null, self.completed);
     })
     .catch(function (err) {
 
       if (!self.stop) {
 
-        self.stop = true;
-
-        return self.promise.reject(err);
+        return self.abort(err);
       }
     });
 };
@@ -79,7 +79,9 @@ ResolveJob.prototype.dequeue = function (task) {
 
 ResolveJob.prototype.abort = function (err) {
 
-  return err;
+  this.stop = true;
+
+  if (err) this.callback.call(null, err);
 };
 
 
@@ -101,10 +103,4 @@ ResolveJob.prototype.runDependentsOf = function (task) {
           ? self.run(dependent)
           : undefined;
     });
-};
-
-
-ResolveJob.prototype.finish = function (completed) {
-
-  return completed;
 };

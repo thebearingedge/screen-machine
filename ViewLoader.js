@@ -101,7 +101,7 @@ ViewLoader.prototype.publish = function () {
 
 ViewLoader.prototype.shouldRefresh = function () {
 
-  return !this.isLoaded();
+  return !this.isLoaded() && !this.$lastView;
 };
 
 

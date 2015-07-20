@@ -138,6 +138,12 @@ State.prototype.getAncestor = function (stateName) {
 };
 
 
+State.prototype.getParent = function () {
+
+  return this.$parent;
+};
+
+
 State.prototype.getResolves = function () {
 
   return this.$resolves.slice();

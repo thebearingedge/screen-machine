@@ -28,18 +28,21 @@ module.exports = {
     var transition = this.transition = new Transition(this);
     var fromState = this.currentState;
 
-    var sleepStates = fromState
+    var exitingStates = fromState
       .getBranch()
       .filter(function (state) {
 
         return !toState.includes(state.name);
       });
 
-    // This is incorrect behavior.
-    // We should only be launching resolves for the new states.
-    // Find the pivotState
-    var resolveTasks = toState
-      .getBranch()
+    var pivotState = exitingStates[0].getParent();
+
+    var toBranch = toState.getBranch();
+
+    var enteringStates = toBranch
+      .slice(toBranch.indexOf(pivotState) + 1);
+
+    var resolveTasks = enteringStates
       .filter(function (state) {
 
         return state.isStale(toParams);
@@ -50,9 +53,7 @@ module.exports = {
       }, [])
       .map(function (resolve) {
 
-        var params = resolve.state.filterParams(toParams);
-
-        return resolveService.createTask(resolve, params);
+        return resolveService.createTask(resolve, toParams);
       });
 
     var resolveJob = resolveService
@@ -67,9 +68,9 @@ module.exports = {
         return self
           .commitResolves(completed)
           .commitTransition(toState, toParams)
-          .loadViews(toState)
-          .publishViews(toState)
-          .shutDownStates(sleepStates);
+          .loadViews(enteringStates)
+          .publishViews(toBranch)
+          .finish(exitingStates);
       })
       .catch(function (err) {
 
@@ -88,10 +89,20 @@ module.exports = {
   },
 
 
-  loadViews: function (toState) {
+  commitTransition: function (toState, toParams) {
 
-    toState
-      .getBranch()
+    this.currentState = toState;
+    this.params = toParams;
+    this.transition = null;
+
+    return this;
+  },
+
+
+  loadViews: function (enteringStates) {
+
+    enteringStates
+      .slice()
       .reverse()
       .reduce(function (views, state) {
 
@@ -106,10 +117,9 @@ module.exports = {
   },
 
 
-  publishViews: function (toState) {
+  publishViews: function (toBranch) {
 
-    toState
-      .getBranch()
+    toBranch
       .reduce(function (viewLoaders, state) {
 
         return viewLoaders.concat(state.getViewLoaders());
@@ -122,26 +132,18 @@ module.exports = {
 
         viewLoader.publish();
       });
-  },
-
-
-  shutDownStates: function (sleepStates) {
-
-    sleepStates
-      .forEach(function (state) {
-
-        state.sleep();
-      });
 
     return this;
   },
 
 
-  commitTransition: function (toState, toParams) {
+  cleanUp: function (exitingStates) {
 
-    this.currentState = toState;
-    this.params = toParams;
-    this.transition = null;
+    exitingStates
+      .forEach(function (state) {
+
+        state.sleep();
+      });
 
     return this;
   }

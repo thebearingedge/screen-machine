@@ -37,7 +37,7 @@ module.exports = {
 
     // This is incorrect behavior.
     // We should only be launching resolves for the new states.
-    // Find the transitionRoot
+    // Find the pivotState
     var resolveTasks = toState
       .getBranch()
       .filter(function (state) {

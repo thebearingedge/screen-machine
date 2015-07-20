@@ -62,19 +62,24 @@ module.exports = {
     var self = this;
 
     return resolveJob
-      .start()
-      .then(function (completed) {
+      .start(function (err, completed) {
 
-        return self
-          .commitResolves(completed)
-          .commitTransition(toState, toParams)
-          .loadViews(enteringStates)
-          .publishViews(toBranch)
-          .finish(exitingStates);
-      })
-      .catch(function (err) {
+        if (err) {
 
-        throw err; // BAH!
+          throw err; // BAH!
+        }
+
+        if (completed) {
+
+          return self
+            .commitResolves(completed)
+            .commitTransition(toState, toParams)
+            .loadViews(enteringStates)
+            .publishViews(toBranch)
+            .finish(exitingStates);
+        }
+
+        // do something when superceded
       });
   },
 

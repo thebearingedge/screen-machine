@@ -13,11 +13,11 @@ module.exports = function (riot, document) {
 };
 
 
-function RiotTagView(tagName, state, targetName, viewLoaders) {
+function RiotTagView(tagName, state, loaderId, viewLoaders) {
 
   this.$tagName = tagName;
   this.$state = state;
-  this.$targetName = targetName;
+  this.$loaderId = loaderId;
   this.$loaders = viewLoaders;
 }
 
@@ -28,7 +28,7 @@ RiotTagView.prototype.$children = null;
 
 RiotTagView.prototype.load = function () {
 
-  this.$loaders[this.$targetName].load(this);
+  this.$loaders[this.$loaderId].load(this);
 
   return this;
 };

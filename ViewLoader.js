@@ -54,13 +54,13 @@ ViewLoader.prototype.setDefault = function (view) {
 
 ViewLoader.prototype.load = function (view) {
 
-  if (this.isLoaded() || (view === this.$currentView)) return this;
+  if (this.isLoaded()) return this;
 
   this.$nextView = typeof view === 'undefined'
     ? this.$defaultView
     : view;
 
-  this.$nextContent = this.$nextView
+  this.$nextContent = this.$nextView !== this.$currentView
     ? this.$nextView.render()
     : undefined;
 
@@ -89,19 +89,13 @@ ViewLoader.prototype.publish = function () {
     this.$element.appendChild(this.$nextContent);
   }
 
-  this.$content = this.$nextContent;
-  this.$nextContent = undefined;
-
-  this.$currentView = this.$nextView;
-  this.$nextView = undefined;
-
   return this;
 };
 
 
 ViewLoader.prototype.shouldRefresh = function () {
 
-  return !!this.$currentView && !this.isLoaded() && !this.$lastView;
+  return this.$currentView === this.$nextView;
 };
 
 
@@ -135,6 +129,18 @@ ViewLoader.prototype.close = function () {
 
 
 ViewLoader.prototype.cleanup = function () {
+
+  this.$content = this.$nextContent
+    ? this.$nextContent
+    : this.$content;
+
+  this.$nextContent = undefined;
+
+  this.$currentView = this.$nextView === this.$currentView
+    ? this.$currentView
+    : this.$nextView;
+
+  this.$nextView = undefined;
 
   if (!this.$lastView) return this;
 

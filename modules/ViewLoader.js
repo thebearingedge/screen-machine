@@ -54,11 +54,7 @@ ViewLoader.prototype.setDefault = function (view) {
 
 ViewLoader.prototype.loadDefaultView = function () {
 
-  if (this.isLoaded()) return this;
-
-  this.$nextView = this.$defaultView;
-
-  return this.renderNextContent();
+  return this.loadView(this.$defaultView);
 };
 
 

@@ -6,31 +6,31 @@ module.exports = {
   store: {},
 
 
-  set: function (resolveName, value) {
+  set: function (resolveId, value) {
 
-    this.store[resolveName] = value;
-
-    return this;
-  },
-
-
-  unset: function (resolveName) {
-
-    delete this.store[resolveName];
+    this.store[resolveId] = value;
 
     return this;
   },
 
 
-  get: function (resolveName) {
+  unset: function (resolveId) {
 
-    return this.store[resolveName];
+    delete this.store[resolveId];
+
+    return this;
   },
 
 
-  has: function (resolveName) {
+  get: function (resolveId) {
 
-    return resolveName in this.store;
+    return this.store[resolveId];
+  },
+
+
+  has: function (resolveId) {
+
+    return resolveId in this.store;
   }
 
 };

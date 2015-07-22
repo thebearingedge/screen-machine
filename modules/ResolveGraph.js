@@ -37,7 +37,9 @@ ResolveGraph.prototype.ensureDependencies = function () {
         })
         .forEach(function (absent) {
 
-          dependent.setDependency(absent, self.cache.get(absent));
+          var cached = self.cache.get(absent);
+
+          dependent.setDependency(absent, cached);
         });
     });
 

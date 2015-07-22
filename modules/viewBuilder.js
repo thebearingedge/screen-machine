@@ -1,7 +1,6 @@
 
 'use strict';
 
-var xtend = require('xtend/mutable');
 var ViewLoader = require('./ViewLoader');
 
 
@@ -13,12 +12,12 @@ module.exports = {
   },
 
 
-  defaultViews: {},
+  defaultViews: null,
 
 
-  addDefaultViews: function (defaultViews) {
+  setDefaultViews: function (defaultViews) {
 
-    xtend(this.defaultViews, defaultViews);
+    this.defaultViews = defaultViews;
 
     return this;
   },
@@ -49,7 +48,9 @@ module.exports = {
       return this.createViewLoader(null, state);
     }
 
-    var loaderId, targetStateName, targetState;
+    var loaderId;
+    var targetStateName;
+    var targetState;
 
     for (loaderId in state.views) {
 
@@ -69,7 +70,9 @@ module.exports = {
     if (this.viewLoaders[loaderId]) return this;
 
     var viewLoader = this.viewLoaders[loaderId] = new ViewLoader(loaderId);
-    var defaultView = this.defaultViews[loaderId];
+    var defaultView = this.defaultViews
+      ? this.defaultViews[loaderId]
+      : null;
 
     if (defaultView) {
 

@@ -56,8 +56,7 @@ module.exports = {
         return resolveService.createTask(resolve, toParams);
       });
 
-    var resolveJob = resolveService
-      .createJob(resolveTasks, transition);
+    var resolveJob = resolveService.createJob(resolveTasks, transition);
 
     var self = this;
 
@@ -91,6 +90,8 @@ module.exports = {
 
         task.commit();
       });
+
+    return this;
   },
 
 

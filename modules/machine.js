@@ -32,7 +32,7 @@ module.exports = {
       .getBranch()
       .filter(function (state) {
 
-        return !toState.includes(state.name);
+        return !toState.contains(state.name);
       });
 
     var pivotState = exitingStates[0].getParent();
@@ -42,7 +42,7 @@ module.exports = {
     var enteringStates = toBranch
       .slice(toBranch.indexOf(pivotState) + 1);
 
-    var resolveTasks = enteringStates
+    var resolveTasks = toBranch
       .filter(function (state) {
 
         return state.isStale(toParams);
@@ -58,7 +58,6 @@ module.exports = {
 
     var resolveJob = resolveService.createJob(resolveTasks, transition);
 
-    var self = this;
 
     return resolveJob
       .start(function (err, completed) {
@@ -70,7 +69,7 @@ module.exports = {
 
         if (completed) {
 
-          return self
+          return this
             .commitResolves(completed)
             .commitTransition(toState, toParams)
             .loadViews(enteringStates)
@@ -79,7 +78,7 @@ module.exports = {
         }
 
         // do something when superceded
-      });
+      }.bind(this));
   },
 
 

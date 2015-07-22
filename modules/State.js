@@ -5,13 +5,14 @@ var xtend = require('xtend/mutable');
 
 module.exports = State;
 
-function State(stateDef) {
 
-  this.$definition = stateDef;
+function State(definition) {
+
+  this.$definition = definition;
   this.$includes = {};
   this.$branch = [this];
 
-  xtend(this, stateDef);
+  xtend(this, definition);
 
   this.$includes[this.name] = true;
 
@@ -131,7 +132,7 @@ State.prototype.isStale = function (newParams) {
   if (!this.$resolves) return false;
 
   if (!this.$paramCache) return true;
-  
+
   return this.$paramKeys.some(function (key) {
 
     return this.$paramCache[key] !== newParams[key];
@@ -155,7 +156,6 @@ State.prototype.sleep = function () {
 
   return this;
 };
-
 
 
 State.prototype.addViewLoader = function (viewLoader) {

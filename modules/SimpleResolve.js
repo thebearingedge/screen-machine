@@ -7,7 +7,7 @@ module.exports = SimpleResolve;
 function SimpleResolve(resolveKey, state, resolveCache) {
 
   this.key = resolveKey;
-  this.name = resolveKey + '@' + state.name;
+  this.id = resolveKey + '@' + state.name;
   this.state = state;
   this.cache = resolveCache;
   this.invokable = state.resolve[resolveKey];
@@ -22,13 +22,13 @@ SimpleResolve.prototype.execute = function (params) {
 
 SimpleResolve.prototype.getResult = function () {
 
-  return this.cache.get(this.name);
+  return this.cache.get(this.id);
 };
 
 
 SimpleResolve.prototype.clearCache = function () {
 
-  this.cache.unset(this.name);
+  this.cache.unset(this.id);
 
   return this;
 };

@@ -10,7 +10,7 @@ function DependentResolve(resolveKey, state, resolveCache) {
   var invokableIndex = resolveDef.length - 1;
 
   this.key = resolveKey;
-  this.name = resolveKey + '@' + state.name;
+  this.id = resolveKey + '@' + state.name;
   this.state = state;
   this.cache = resolveCache;
   this.invokable = resolveDef[invokableIndex];
@@ -41,13 +41,13 @@ DependentResolve.prototype.execute = function (params, dependencies) {
 
 DependentResolve.prototype.getResult = function () {
 
-  return this.cache.get(this.name);
+  return this.cache.get(this.id);
 };
 
 
 DependentResolve.prototype.clearCache = function () {
 
-  this.cache.unset(this.name);
+  this.cache.unset(this.id);
 
   return this;
 };

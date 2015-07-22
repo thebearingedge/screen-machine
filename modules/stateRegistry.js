@@ -65,7 +65,7 @@ module.exports = {
 
     while (queue && queue.length) {
 
-      this.add(queue.pop());
+      this.register(queue.pop());
     }
 
     return this;

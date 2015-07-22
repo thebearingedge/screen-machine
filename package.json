@@ -22,8 +22,10 @@
   "devDependencies": {
     "chai": "^3.0.0",
     "chai-as-promised": "^5.1.0",
+    "cheerio": "^0.19.0",
     "http-server": "^0.8.0",
     "istanbul": "^0.3.15",
+    "jsdom": "^5.6.1",
     "mocha": "^2.2.5",
     "native-promise-only": "^0.8.0-a",
     "sinon": "^1.15.3",

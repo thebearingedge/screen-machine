@@ -131,13 +131,11 @@ State.prototype.isStale = function (newParams) {
   if (!this.$resolves) return false;
 
   if (!this.$paramCache) return true;
+  
+  return this.$paramKeys.some(function (key) {
 
-  var self = this;
-
-  return self.$paramKeys.some(function (key) {
-
-    return self.$paramCache[key] !== newParams[key];
-  });
+    return this.$paramCache[key] !== newParams[key];
+  }, this);
 };
 
 

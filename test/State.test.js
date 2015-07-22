@@ -119,7 +119,7 @@ describe('State', function () {
   });
 
 
-  describe('.getParent() => this', function () {
+  describe('.getParent() => State', function () {
 
     it('should return its parent State', function () {
 

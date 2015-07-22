@@ -63,9 +63,9 @@ module.exports = {
   },
 
 
-  createViewLoader: function (loaderId, targetState) {
+  createViewLoader: function (loaderId, state) {
 
-    loaderId || (loaderId = '@' + targetState.name);
+    loaderId || (loaderId = '@' + state.name);
 
     if (this.viewLoaders[loaderId]) return this;
 
@@ -74,12 +74,8 @@ module.exports = {
       ? this.defaultViews[loaderId]
       : null;
 
-    if (defaultView) {
-
-      viewLoader.setDefault(defaultView);
-    }
-
-    targetState.addViewLoader(viewLoader);
+    viewLoader.setDefault(defaultView);
+    state.addViewLoader(viewLoader);
 
     return this;
   },

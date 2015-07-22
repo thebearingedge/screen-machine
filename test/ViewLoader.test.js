@@ -16,7 +16,7 @@ var ViewLoader = require('../modules/ViewLoader');
 describe('ViewLoader', function () {
 
 
-  var loader;
+  var loader, nextView, nextContent;
 
 
   beforeEach(function () {
@@ -114,7 +114,7 @@ describe('ViewLoader', function () {
 
       var view = {};
 
-      loader.$currentView = view;
+      loader.$view = view;
 
       expect(loader.shouldRefresh()).to.equal(false);
 
@@ -130,11 +130,288 @@ describe('ViewLoader', function () {
 
     it('should update its current view', function () {
 
-      loader.$currentView = { update: sinon.spy() };
+      loader.$view = { update: sinon.spy() };
 
       loader.refresh();
 
-      expect(loader.$currentView.update.calledOnce).to.equal(true);
+      expect(loader.$view.update.calledOnce).to.equal(true);
+    });
+
+  });
+
+
+  beforeEach(function () {
+
+    nextContent = {};
+
+    nextView = {
+      render: function () { return nextContent; }
+    };
+
+  });
+
+
+  describe('.renderNextContent() => this', function () {
+
+    it('should get next content from the next view', function () {
+
+      expect(loader.$nextContent).to.equal(undefined);
+
+      loader.$nextView = nextView;
+
+      loader.renderNextContent();
+
+      expect(loader.$nextContent).to.equal(nextContent);
+    });
+
+    it('should not get next content if current view is next', function () {
+
+      expect(loader.$nextContent).to.equal(undefined);
+
+      var content = {};
+
+      loader.$content = content;
+      loader.$view = nextView;
+      loader.$nextView = nextView;
+
+      loader.renderNextContent();
+
+      expect(loader.$nextContent).to.equal(undefined);
+    });
+
+  });
+
+
+  describe('.loadView(Object view) => this', function () {
+
+    var renderNextContent;
+
+
+    beforeEach(function () {
+
+      renderNextContent = sinon.stub(loader, 'renderNextContent');
+    });
+
+
+    it('should not load another view', function () {
+
+      loader.$nextView = nextView;
+
+      loader.loadView({});
+
+      expect(loader.$nextView).to.equal(nextView);
+      expect(renderNextContent.called).to.equal(false);
+    });
+
+
+    it('should load the next view and render it', function () {
+
+      loader.loadView(nextView);
+
+      expect(loader.$nextView).to.equal(nextView);
+      expect(renderNextContent.calledOnce).to.equal(true);
+    });
+
+  });
+
+
+  describe('.loadDefaultView(Object view) => this', function () {
+
+    var renderNextContent;
+
+
+    beforeEach(function () {
+
+      renderNextContent = sinon.stub(loader, 'renderNextContent');
+    });
+
+
+    it('should not load another view', function () {
+
+      loader.$nextView = nextView;
+
+      loader.loadDefaultView({});
+
+      expect(loader.$nextView).to.equal(nextView);
+      expect(renderNextContent.called).to.equal(false);
+    });
+
+
+    it('should load its next default view and render it', function () {
+
+      loader.$defaultView = nextView;
+
+      loader.loadDefaultView();
+
+      expect(loader.$nextView).to.equal(nextView);
+      expect(renderNextContent.calledOnce).to.equal(true);
+    });
+
+  });
+
+
+  describe('.publish() => this', function () {
+
+    it('should refresh its view', function () {
+
+      sinon.stub(loader, 'shouldRefresh').returns(true);
+
+      var refresh = sinon.stub(loader, 'refresh');
+      loader.publish();
+
+      expect(refresh.calledOnce).to.equal(true);
+    });
+
+
+    it('should close itself', function () {
+
+      sinon.stub(loader, 'shouldRefresh').returns(false);
+      sinon.stub(loader, 'shouldClose').returns(true);
+
+      var close = sinon.stub(loader, 'close');
+
+      loader.publish();
+
+      expect(close.calledOnce).to.equal(true);
+    });
+
+
+    it('should publish its content and cycle its view', function () {
+
+      sinon.stub(loader, 'shouldRefresh').returns(false);
+      sinon.stub(loader, 'shouldClose').returns(false);
+
+      var content = loader.$content = {};
+      var nextContent = loader.$nextContent = {};
+
+      var element = loader.$element = {
+
+        replaceChild: sinon.spy()
+      };
+
+      var nextView = loader.$nextView = {};
+
+      loader.publish();
+
+      expect(element.replaceChild)
+        .to.have.been.calledWithExactly(nextContent, content);
+
+      expect(loader.$content).to.equal(nextContent);
+      expect(loader.$nextContent).to.equal(undefined);
+
+      expect(loader.$view).to.equal(nextView);
+      expect(loader.$nextView).to.equal(undefined);
+    });
+
+
+    it('should replace its content and cycle its view', function () {
+
+      sinon.stub(loader, 'shouldRefresh').returns(false);
+      sinon.stub(loader, 'shouldClose').returns(false);
+
+      loader.$content = null;
+
+      var nextContent = loader.$nextContent = {};
+      var nextView = loader.$nextView = {};
+      var view = loader.$view = {};
+
+      var element = loader.$element = {
+
+        appendChild: sinon.spy()
+      };
+
+      loader.publish();
+
+      expect(element.appendChild)
+        .to.have.been.calledWithExactly(nextContent);
+
+      expect(loader.$content).to.equal(nextContent);
+      expect(loader.$nextContent).to.equal(undefined);
+
+      expect(loader.$lastView).to.equal(view);
+      expect(loader.$view).to.equal(nextView);
+      expect(loader.$nextView).to.equal(undefined);
+    });
+
+  });
+
+
+  describe('.close() => this', function () {
+
+    afterEach(function () {
+
+      expect(loader.$view).to.equal(null);
+      expect(loader.$content).to.equal(null);
+      expect(loader.$nextView).to.equal(undefined);
+      expect(loader.$nextContent).to.equal(undefined);
+    });
+
+
+    it('should remove its content', function () {
+
+      var content = loader.$content = {};
+
+      loader.$element = {
+        removeChild: sinon.spy()
+      };
+
+      loader.close();
+
+      expect(loader.$element.removeChild)
+        .to.have.been.calledWithExactly(content);
+    });
+
+
+    it('should destroy its view', function () {
+
+      var view = loader.$view = { destroy: sinon.spy() };
+
+      loader.close();
+
+      expect(view.destroy.calledOnce).to.equal(true);
+    });
+
+  });
+
+
+  describe('.cleanUp() => this', function () {
+
+    afterEach(function () {
+
+      expect(loader.$lastView).to.equal(null);
+    });
+
+    it('should do nothing', function () {
+
+      expect(loader.cleanUp()).to.be.ok;
+    });
+
+    it('should destroy its last view', function () {
+
+      var lastView = loader.$lastView = {
+        destroy: sinon.spy()
+      };
+
+      loader.cleanUp();
+
+      expect(lastView.destroy.calledOnce).to.equal(true);
+    });
+
+  });
+
+
+  describe('.detach() => this', function () {
+
+    it('should close and forget element', function () {
+
+      sinon.stub(loader, 'close');
+
+      loader.$element = {};
+
+      loader.detach();
+
+      expect(loader.close.calledOnce).to.equal(true);
+      expect(loader.$element).to.equal(null);
     });
 
   });

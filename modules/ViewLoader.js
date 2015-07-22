@@ -13,7 +13,7 @@ ViewLoader.prototype.$element = null;
 ViewLoader.prototype.$content = null;
 ViewLoader.prototype.$nextContent = undefined;
 ViewLoader.prototype.$nextView = undefined;
-ViewLoader.prototype.$currentView = null;
+ViewLoader.prototype.$view = null;
 ViewLoader.prototype.$lastView = null;
 ViewLoader.prototype.$defaultView = null;
 
@@ -36,11 +36,11 @@ ViewLoader.prototype.attachWithin = function (element) {
 
 ViewLoader.prototype.detach = function () {
 
+  this.close();
+
   this.$element = null;
 
-  return this
-    .close()
-    .cleanUp();
+  return this;
 };
 
 
@@ -52,15 +52,30 @@ ViewLoader.prototype.setDefault = function (view) {
 };
 
 
-ViewLoader.prototype.load = function (view) {
+ViewLoader.prototype.loadDefaultView = function () {
 
   if (this.isLoaded()) return this;
 
-  this.$nextView = typeof view === 'undefined'
-    ? this.$defaultView
-    : view;
+  this.$nextView = this.$defaultView;
 
-  this.$nextContent = this.$nextView !== this.$currentView
+  return this.renderNextContent();
+};
+
+
+ViewLoader.prototype.loadView = function (view) {
+
+  if (this.isLoaded()) return this;
+
+  this.$lastView = this.$view;
+  this.$nextView = view;
+
+  return this.renderNextContent();
+};
+
+
+ViewLoader.prototype.renderNextContent = function () {
+
+  this.$nextContent = this.$nextView && this.$nextView !== this.$view
     ? this.$nextView.render()
     : undefined;
 
@@ -89,19 +104,27 @@ ViewLoader.prototype.publish = function () {
     this.$element.appendChild(this.$nextContent);
   }
 
+  this.$content = this.$nextContent;
+  this.$nextContent = undefined;
+
+  this.$lastView = this.$view;
+  this.$view = this.$nextView;
+  this.$nextView = undefined;
+
   return this;
 };
 
 
 ViewLoader.prototype.shouldRefresh = function () {
 
-  return this.$currentView === this.$nextView;
+  return this.$view && this.$view === this.$nextView;
 };
 
 
 ViewLoader.prototype.refresh = function () {
 
-  this.$currentView.update();
+  this.$view.update();
+  this.$nextView = undefined;
 
   return this;
 };
@@ -115,37 +138,30 @@ ViewLoader.prototype.shouldClose = function () {
 
 ViewLoader.prototype.close = function () {
 
-  if (!this.$element) return this;
+  if (this.$element && this.$content) {
 
-  if (this.$content) this.$element.removeChild(this.$content);
+    this.$element.removeChild(this.$content);
+  }
 
-  if (this.$currentView) this.$currentView.destroy();
+  if (this.$view) {
 
-  this.$currentView = this.$content = null;
+    this.$view.destroy();
+  }
+
+  this.$view = this.$content = null;
   this.$nextView = this.$nextContent = undefined;
 
   return this;
 };
 
 
-ViewLoader.prototype.cleanup = function () {
+ViewLoader.prototype.cleanUp = function () {
 
-  this.$content = this.$nextContent
-    ? this.$nextContent
-    : this.$content;
+  if (this.$lastView) {
 
-  this.$nextContent = undefined;
-
-  this.$currentView = this.$nextView === this.$currentView
-    ? this.$currentView
-    : this.$nextView;
-
-  this.$nextView = undefined;
-
-  if (!this.$lastView) return this;
-
-  this.$lastView.destroy();
-  this.$lastView = null;
+    this.$lastView.destroy();
+    this.$lastView = null;
+  }
 
   return this;
 };

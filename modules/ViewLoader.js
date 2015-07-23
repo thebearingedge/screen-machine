@@ -3,9 +3,10 @@
 
 module.exports = ViewLoader;
 
+
 function ViewLoader(elementId) {
 
-  this.selector = 'sm-view[id="' + elementId + '"]';
+  this.idSelector = '#' + elementId;
 }
 
 
@@ -15,7 +16,6 @@ ViewLoader.prototype.$nextContent = undefined;
 ViewLoader.prototype.$nextView = undefined;
 ViewLoader.prototype.$view = null;
 ViewLoader.prototype.$lastView = null;
-ViewLoader.prototype.$defaultView = null;
 
 
 ViewLoader.prototype.attachTo = function (element) {
@@ -28,7 +28,7 @@ ViewLoader.prototype.attachTo = function (element) {
 
 ViewLoader.prototype.attachWithin = function (element) {
 
-  this.$element = element.querySelector(this.selector);
+  this.$element = element.querySelector(this.idSelector);
 
   return this;
 };
@@ -41,20 +41,6 @@ ViewLoader.prototype.detach = function () {
   this.$element = null;
 
   return this;
-};
-
-
-ViewLoader.prototype.setDefault = function (view) {
-
-  this.$defaultView = view;
-
-  return this;
-};
-
-
-ViewLoader.prototype.loadDefaultView = function () {
-
-  return this.loadView(this.$defaultView);
 };
 
 
@@ -85,7 +71,15 @@ ViewLoader.prototype.isLoaded = function () {
 };
 
 
+ViewLoader.prototype.isActive = function () {
+
+  return !!(this.$view || this.$nextView);
+};
+
+
 ViewLoader.prototype.publish = function () {
+
+  if (!this.isActive()) return this;
 
   if (this.shouldRefresh()) return this.refresh();
 

@@ -32,9 +32,9 @@ module.exports = {
   },
 
 
-  createTask: function (resolve, transitionParams) {
+  createTask: function (resolve, params) {
 
-    var ownParams = resolve.state.filterParams(transitionParams);
+    var ownParams = resolve.state.filterParams(params);
 
     return new ResolveTask(resolve, ownParams, resolveCache);
   },

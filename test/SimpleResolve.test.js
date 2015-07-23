@@ -20,6 +20,7 @@ describe('SimpleResolve', function () {
   beforeEach(function () {
 
     cache = xtend(resolveCache);
+    cache.$store = {};
 
     state = new State({
       name: 'bar',
@@ -42,7 +43,7 @@ describe('SimpleResolve', function () {
 
     it('should retrieve its result from cache', function () {
 
-      cache.store['foo@bar'] = 42;
+      cache.$store['foo@bar'] = 42;
 
       expect(resolve.getResult()).to.equal(42);
     });

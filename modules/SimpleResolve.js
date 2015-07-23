@@ -16,7 +16,7 @@ function SimpleResolve(resolveKey, state, resolveCache) {
 
 SimpleResolve.prototype.execute = function (params) {
 
-  return this.invokable.call(this.state, params);
+  return this.invokable.call(null, params);
 };
 
 

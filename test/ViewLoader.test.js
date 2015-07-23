@@ -11,27 +11,26 @@ chai.use(sinonChai);
 
 
 var ViewLoader = require('../modules/ViewLoader');
+var domNode = jsdom('<div><sm-view id="app"></sm-view></div>');
 
 
 describe('ViewLoader', function () {
 
-
   var loader, nextView, nextContent;
-
 
   beforeEach(function () {
 
-    loader = new ViewLoader('@');
+    loader = new ViewLoader('app');
   });
 
 
-  it('should have an attribute selector', function () {
+  it('should have an id selector', function () {
 
-    expect(loader.selector).to.equal('sm-view[id="@"]');
+    expect(loader.idSelector).to.equal('#app');
   });
 
 
-  describe('.attachTo(Object node) => this', function () {
+  describe('.attachTo(Object node) -> this', function () {
 
     it('should hold a reference to a DOM node', function () {
 
@@ -45,14 +44,13 @@ describe('ViewLoader', function () {
   });
 
 
-  describe('.attachWithin(Object node) => this', function () {
+  describe('.attachWithin(Object node) -> this', function () {
 
     it('should find and hold a reference to a child DOM node', function () {
 
-      var node = jsdom('<div><sm-view id="@"></sm-view></div>');
-      var smView = node.querySelector('sm-view');
+      var smView = domNode.querySelector('#app');
 
-      loader.attachWithin(node);
+      loader.attachWithin(domNode);
 
       expect(loader.$element).to.equal(smView);
     });
@@ -60,21 +58,7 @@ describe('ViewLoader', function () {
   });
 
 
-  describe('.setDefault(Object view) => this', function () {
-
-    it('should store a default view', function () {
-
-      var view = {};
-
-      loader.setDefault(view);
-
-      expect(loader.$defaultView).to.equal(view);
-    });
-
-  });
-
-
-  describe('.isLoaded() => Boolean', function () {
+  describe('.isLoaded() -> Boolean', function () {
 
     it('should be "loaded" if its next view is defined', function () {
 
@@ -92,7 +76,7 @@ describe('ViewLoader', function () {
   });
 
 
-  describe('.shouldClose() => Boolean', function () {
+  describe('.shouldClose() -> Boolean', function () {
 
     it('should close if its next view is `null`', function () {
 
@@ -108,7 +92,7 @@ describe('ViewLoader', function () {
   });
 
 
-  describe('.shouldRefresh() => Boolean', function () {
+  describe('.shouldRefresh() -> Boolean', function () {
 
     it('should refresh if its next view is its current view', function () {
 
@@ -126,7 +110,7 @@ describe('ViewLoader', function () {
   });
 
 
-  describe('.refresh() => this', function () {
+  describe('.refresh() -> this', function () {
 
     it('should update its current view', function () {
 
@@ -151,7 +135,7 @@ describe('ViewLoader', function () {
   });
 
 
-  describe('.renderNextContent() => this', function () {
+  describe('.renderNextContent() -> this', function () {
 
     it('should get next content from the next view', function () {
 
@@ -182,7 +166,7 @@ describe('ViewLoader', function () {
   });
 
 
-  describe('.loadView(Object view) => this', function () {
+  describe('.loadView(Object view) -> this', function () {
 
     var renderNextContent;
 
@@ -215,45 +199,17 @@ describe('ViewLoader', function () {
   });
 
 
-  describe('.loadDefaultView(Object view) => this', function () {
+  describe('.publish() -> this', function () {
 
-    var renderNextContent;
+    it('should do nothing', function () {
 
-
-    beforeEach(function () {
-
-      renderNextContent = sinon.stub(loader, 'renderNextContent');
+      expect(loader.publish()).to.be.ok;
     });
 
-
-    it('should not load another view', function () {
-
-      loader.$nextView = nextView;
-
-      loader.loadDefaultView({});
-
-      expect(loader.$nextView).to.equal(nextView);
-      expect(renderNextContent.called).to.equal(false);
-    });
-
-
-    it('should load its next default view and render it', function () {
-
-      loader.$defaultView = nextView;
-
-      loader.loadDefaultView();
-
-      expect(loader.$nextView).to.equal(nextView);
-      expect(renderNextContent.calledOnce).to.equal(true);
-    });
-
-  });
-
-
-  describe('.publish() => this', function () {
 
     it('should refresh its view', function () {
 
+      sinon.stub(loader, 'isActive').returns(true);
       sinon.stub(loader, 'shouldRefresh').returns(true);
 
       var refresh = sinon.stub(loader, 'refresh');
@@ -265,6 +221,7 @@ describe('ViewLoader', function () {
 
     it('should close itself', function () {
 
+      sinon.stub(loader, 'isActive').returns(true);
       sinon.stub(loader, 'shouldRefresh').returns(false);
       sinon.stub(loader, 'shouldClose').returns(true);
 
@@ -336,7 +293,7 @@ describe('ViewLoader', function () {
   });
 
 
-  describe('.close() => this', function () {
+  describe('.close() -> this', function () {
 
     afterEach(function () {
 
@@ -374,14 +331,14 @@ describe('ViewLoader', function () {
   });
 
 
-  describe('.cleanUp() => this', function () {
+  describe('.cleanUp() -> this', function () {
 
     afterEach(function () {
 
       expect(loader.$lastView).to.equal(null);
     });
 
-    it('should do nothing', function () {
+    it('should do nothing if no last view', function () {
 
       expect(loader.cleanUp()).to.be.ok;
     });
@@ -400,9 +357,9 @@ describe('ViewLoader', function () {
   });
 
 
-  describe('.detach() => this', function () {
+  describe('.detach() -> this', function () {
 
-    it('should close and forget element', function () {
+    it('should close and release the DOM', function () {
 
       sinon.stub(loader, 'close');
 

@@ -35,7 +35,7 @@ DependentResolve.prototype.execute = function (params, dependencies) {
     })
     .concat(params);
 
-  return this.invokable.apply(this.state, args);
+  return this.invokable.apply(null, args);
 };
 
 

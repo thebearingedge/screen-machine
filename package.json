@@ -2,7 +2,7 @@
   "name": "screen-machine",
   "version": "0.0.1",
   "description": "Screen Machine",
-  "main": "State.js",
+  "main": "index.js",
   "scripts": {
     "test": "./node_modules/.bin/istanbul test ./node_modules/.bin/_mocha",
     "cover": "npm test --coverage && npm run coverage",
@@ -28,6 +28,7 @@
     "jsdom": "^5.6.1",
     "mocha": "^2.2.5",
     "native-promise-only": "^0.8.0-a",
+    "riot": "^2.2.2",
     "sinon": "^1.15.3",
     "sinon-chai": "^2.8.0"
   },

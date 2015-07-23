@@ -3,12 +3,12 @@
 
 module.exports = {
 
-  store: {},
+  $store: {},
 
 
   set: function (resolveId, value) {
 
-    this.store[resolveId] = value;
+    this.$store[resolveId] = value;
 
     return this;
   },
@@ -16,7 +16,7 @@ module.exports = {
 
   unset: function (resolveId) {
 
-    delete this.store[resolveId];
+    delete this.$store[resolveId];
 
     return this;
   },
@@ -24,13 +24,7 @@ module.exports = {
 
   get: function (resolveId) {
 
-    return this.store[resolveId];
-  },
-
-
-  has: function (resolveId) {
-
-    return resolveId in this.store;
+    return this.$store[resolveId];
   }
 
 };

@@ -49,13 +49,10 @@ module.exports = function riotView(riot, document) {
 
   RiotTagView.prototype.destroy = function () {
 
-    if (this.$children) {
+    this.$children.forEach(function (viewLoader) {
 
-        this.$children.forEach(function (viewLoader) {
-
-          viewLoader.detach();
-        });
-    }
+      viewLoader.detach();
+    });
 
     this.$tag.unmount();
     this.$element = this.$tag = this.$children = null;

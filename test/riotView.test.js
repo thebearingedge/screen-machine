@@ -78,6 +78,42 @@ describe('riotView', function () {
   });
 
 
+  describe('.update() -> this', function () {
+
+    it('should update element with new opts', function () {
+
+      var element = simpleView.render();
+
+      state.getResolveResults.restore();
+
+      expect(element.innerHTML)
+        .to.equal('<span>Welcome to Huntington</span>');
+
+      sinon.stub(state, 'getResolveResults').returns({ place: 'Santa Ana' });
+
+      simpleView.update();
+
+      expect(element.innerHTML)
+        .to.equal('<span>Welcome to Santa Ana</span>');
+    });
+
+  });
+
+
+  describe('.load() -> this', function () {
+
+    it('should load into its designated viewLoader', function () {
+
+      simpleView.load();
+
+      expect(simpleLoader.$nextView).to.equal(simpleView);
+      expect(simpleLoader.$nextContent.innerHTML)
+        .to.equal('<span>Welcome to Huntington</span>');
+    });
+
+  });
+
+
   describe('.publishChildren() -> this', function () {
 
     it('should render publish nested views', function () {
@@ -102,42 +138,6 @@ describe('riotView', function () {
             '</nested-tag>' +
           '</sm-view>'
         );
-    });
-
-  });
-
-
-  describe('.load() -> this', function () {
-
-    it('should load into its designated viewLoader', function () {
-
-      simpleView.load();
-
-      expect(simpleLoader.$nextView).to.equal(simpleView);
-      expect(simpleLoader.$nextContent.innerHTML)
-        .to.equal('<span>Welcome to Huntington</span>');
-    });
-
-  });
-
-
-  describe('.update() -> this', function () {
-
-    it('should update element with new opts', function () {
-
-      var element = simpleView.render();
-
-      state.getResolveResults.restore();
-
-      expect(element.innerHTML)
-        .to.equal('<span>Welcome to Huntington</span>');
-
-      sinon.stub(state, 'getResolveResults').returns({ place: 'Santa Ana' });
-
-      simpleView.update();
-
-      expect(element.innerHTML)
-        .to.equal('<span>Welcome to Santa Ana</span>');
     });
 
   });

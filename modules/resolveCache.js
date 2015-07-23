@@ -1,7 +1,9 @@
 
 'use strict';
 
-module.exports = {
+var xtend = require('xtend');
+
+var cache = {
 
   $store: {},
 
@@ -27,4 +29,22 @@ module.exports = {
     return this.$store[resolveId];
   }
 
+};
+
+
+module.exports = function resolveCache(options) {
+
+  var instance;
+
+  if (options && options.stateless) {
+
+    instance = xtend(cache);
+    instance.$store = {};
+  }
+  else {
+
+    instance = cache;
+  }
+
+  return instance;
 };

@@ -2,24 +2,39 @@
 'use strict';
 
 var chai = require('chai');
-var sinon = require('sinon');
 var sinonChai = require('sinon-chai');
 var expect = chai.expect;
 
 chai.use(sinonChai);
 
-var xtend = require('xtend');
-var resolveCache = require('../modules/resolveCache');
 
+var resolveCache = require('../modules/resolveCache');
 
 describe('resolveCache', function () {
 
   var cache;
 
+  it('should be a singleton', function () {
+
+    var first = resolveCache();
+    var second = resolveCache();
+
+    expect(first).to.equal(second);
+  });
+
+
+  it('should be a factory', function () {
+
+    var first = resolveCache({ stateless: true });
+    var second = resolveCache({ stateless: true });
+
+    expect(first).not.to.equal(second);
+    expect(first.$store).not.to.equal(second.$store);
+  });
+
   beforeEach(function () {
 
-    cache = xtend(resolveCache);
-    cache.$store = {};
+    cache = resolveCache({ stateless: true });
   });
 
 

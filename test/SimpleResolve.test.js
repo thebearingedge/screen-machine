@@ -8,7 +8,7 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-var xtend = require('xtend');
+
 var SimpleResolve = require('../modules/SimpleResolve');
 var State = require('../modules/State');
 var resolveCache = require('../modules/resolveCache');
@@ -19,8 +19,7 @@ describe('SimpleResolve', function () {
 
   beforeEach(function () {
 
-    cache = xtend(resolveCache);
-    cache.$store = {};
+    cache = resolveCache({ stateless: true });
 
     state = new State({
       name: 'bar',

@@ -15,7 +15,5 @@ Transition.prototype.superceded = false;
 
 Transition.prototype.isSuperceded = function () {
 
-  this.superceded = (this !== this.machine.transition);
-
-  return this.superceded;
+  return (this.superceded = (this !== this.machine.transition));
 };

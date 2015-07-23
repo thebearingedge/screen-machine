@@ -7,13 +7,16 @@ module.exports = ResolveTask;
 function ResolveTask(resolve, params, resolveCache) {
 
   this.resolve = resolve;
-  this.name = resolve.name;
+  this.id = resolve.id;
   this.params = params;
   this.cache = resolveCache;
   this.waitingFor = resolve.injectables
     ? resolve.injectables.slice()
     : [];
 }
+
+
+ResolveTask.prototype.$dependencies = undefined;
 
 
 ResolveTask.prototype.isWaitingFor = function (dependency) {
@@ -24,8 +27,8 @@ ResolveTask.prototype.isWaitingFor = function (dependency) {
 
 ResolveTask.prototype.setDependency = function (dependency, result) {
 
-  this.dependencies || (this.dependencies = {});
-  this.dependencies[dependency] = result;
+  this.$dependencies || (this.$dependencies = {});
+  this.$dependencies[dependency] = result;
   this.waitingFor.splice(this.waitingFor.indexOf(dependency), 1);
 
   return this;
@@ -50,7 +53,7 @@ ResolveTask.prototype.execute = function () {
 
       resultOrPromise = self
         .resolve
-        .execute(self.params, self.dependencies);
+        .execute(self.params, self.$dependencies);
     }
     catch (e) {
 
@@ -64,7 +67,7 @@ ResolveTask.prototype.execute = function () {
 
 ResolveTask.prototype.commit = function () {
 
-  this.cache.set(this.name, this.result);
+  this.cache.set(this.id, this.result);
 
   return this;
 };

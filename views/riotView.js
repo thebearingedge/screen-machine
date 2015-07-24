@@ -2,7 +2,13 @@
 'use strict';
 
 
-module.exports = function riotView(riot, document) {
+module.exports = function riotView(document, riot, router) {
+
+  riot.tag('sm-link', '<a href="{ href }"></yield></a>', function (opts) {
+
+    this.href = router.href(opts.state, opts.params);
+  });
+
 
   function RiotTagView(tagName, state, loaderId, viewLoaders) {
 

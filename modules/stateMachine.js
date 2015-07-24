@@ -4,24 +4,17 @@
 module.exports = stateMachine;
 
 
-function stateMachine(resolveService, Transition) {
+function stateMachine(startState, startParams, resolveService, Transition) {
 
-  return {
+  var machine = {
 
-    currentState: null,
+    currentState: startState,
 
 
-    currentParams: null,
+    currentParams: startParams,
 
 
     transition: null,
-
-
-    init: function (state, params) {
-
-      this.currentState = state;
-      this.currentParams = params;
-    },
 
 
     transitionTo: function (toState, toParams) {
@@ -159,4 +152,5 @@ function stateMachine(resolveService, Transition) {
 
   };
 
+  return machine;
 }

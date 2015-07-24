@@ -27,7 +27,7 @@ describe('riotView', function () {
   beforeEach(function () {
 
     document = global.document = jsdom();
-    RiotTagView = riotView(riot, document);
+    RiotTagView = riotView(document, riot);
   });
 
 

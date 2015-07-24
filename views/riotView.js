@@ -14,7 +14,7 @@ module.exports = function riotView(riot, document) {
 
 
   RiotTagView.prototype.$element = null;
-  RiotTagView.prototype.$children = null;
+  RiotTagView.prototype.$child = null;
 
 
   RiotTagView.prototype.load = function () {
@@ -32,7 +32,7 @@ module.exports = function riotView(riot, document) {
     this.$element = document.createElement(this.$tagName);
     this.$tag = riot.mount(this.$element, this.$tagName, opts)[0];
 
-    this.publishChildren();
+    this.publishChild();
 
     return this.$element;
   };
@@ -49,34 +49,28 @@ module.exports = function riotView(riot, document) {
 
   RiotTagView.prototype.destroy = function () {
 
-    this.$children.forEach(function (viewLoader) {
+    if (this.$child) {
 
-      viewLoader.detach();
-    });
+      this.$child.detach();
+    }
 
     this.$tag.unmount();
-    this.$element = this.$tag = this.$children = null;
+    this.$element = this.$tag = this.$child = null;
 
     return this;
   };
 
 
-  RiotTagView.prototype.publishChildren = function () {
+  RiotTagView.prototype.publishChild = function () {
 
-    var self = this;
+    var childElement = this.$element.querySelector('sm-view');
 
-    self.$children = Array
-      .prototype
-      .slice
-      .call(self.$element.querySelectorAll('sm-view'))
-      .map(function (element) {
+    if (childElement) {
 
-        var viewLoader = self.$loaders[element.id];
-
-        return viewLoader
-          .attachTo(element)
-          .publish();
-      });
+      this.$child = this.$loaders[childElement.id]
+        .attachTo(childElement)
+        .publish();
+    }
 
     return this;
   };

@@ -69,8 +69,6 @@ function viewBuilder(View, ViewLoader, defaultViews) {
 
     addViewsTo: function (state) {
 
-      if (!state.views && !state.template) return this;
-
       if (!state.views) {
 
         return this.createView(state.template, null, state);

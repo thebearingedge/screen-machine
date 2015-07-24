@@ -18,6 +18,7 @@ var riot = require('riot');
 require('./riot-tags/simple-tag');
 require('./riot-tags/parent-tag');
 require('./riot-tags/nested-tag');
+require('./riot-tags/nested-nested-tag');
 
 describe('riotView', function () {
 
@@ -37,8 +38,8 @@ describe('riotView', function () {
 
 
   var state;
-  var simpleView, parentView, nestedView;
-  var simpleLoader, parentLoader, nestedLoader;
+  var simpleView, parentView, nestedView, nestedNestedView;
+  var simpleLoader, parentLoader, nestedLoader, nestedNestedLoader;
   var viewLoaders;
 
   beforeEach(function () {
@@ -50,16 +51,23 @@ describe('riotView', function () {
     simpleLoader = new ViewLoader('simple');
     parentLoader = new ViewLoader('parent');
     nestedLoader = new ViewLoader('nested');
+    nestedNestedLoader = new ViewLoader('nested.nested');
 
     viewLoaders = {
       simple: simpleLoader,
       parent: parentLoader,
-      nested: nestedLoader
+      nested: nestedLoader,
+      'nested.nested': nestedNestedLoader
     };
 
     simpleView = new RiotTagView('simple-tag', state, 'simple', viewLoaders);
     parentView = new RiotTagView('parent-tag', state, 'parent', viewLoaders);
-    nestedView = new RiotTagView('nested-tag', state, 'nested', viewLoaders);
+    nestedView = new RiotTagView(
+      'nested-tag', state, 'nested', viewLoaders
+    );
+    nestedNestedView = new RiotTagView(
+      'nested-nested-tag', state, 'nested.nested', viewLoaders
+    );
   });
 
 
@@ -114,9 +122,9 @@ describe('riotView', function () {
   });
 
 
-  describe('.publishChildren() -> this', function () {
+  describe('.publishChild() -> this', function () {
 
-    it('should render publish nested views', function () {
+    it('should publish a nested view', function () {
 
       var element = parentView.render();
 
@@ -127,14 +135,33 @@ describe('riotView', function () {
         );
 
       nestedView.load();
-      parentView.publishChildren();
+      parentView.publishChild();
 
       expect(element.innerHTML)
         .to.equal(
           '<h1>Say hello to my little friend.</h1> ' +
           '<sm-view id="nested">' +
             '<nested-tag riot-tag="nested-tag">' +
-              '<p>Here\'s Johnny!</p>' +
+              '<p>Here\'s Johnny!</p> ' +
+              '<sm-view id="nested.nested"></sm-view>' +
+            '</nested-tag>' +
+          '</sm-view>'
+        );
+
+      nestedNestedView.load();
+      nestedView.publishChild();
+
+      expect(element.innerHTML)
+        .to.equal(
+          '<h1>Say hello to my little friend.</h1> ' +
+          '<sm-view id="nested">' +
+            '<nested-tag riot-tag="nested-tag">' +
+              '<p>Here\'s Johnny!</p> ' +
+              '<sm-view id="nested.nested">' +
+                '<nested-nested-tag riot-tag="nested-nested-tag">' +
+                  '<span>Are we there yet?</span>' +
+                '</nested-nested-tag>' +
+              '</sm-view>' +
             '</nested-tag>' +
           '</sm-view>'
         );
@@ -157,25 +184,27 @@ describe('riotView', function () {
 
       expect(unmount.calledOnce).to.equal(true);
       expect(simpleView.$element).to.equal(null);
-      expect(simpleView.$children).to.equal(null);
+      expect(simpleView.$child).to.equal(null);
       expect(simpleView.$tag).to.equal(null);
     });
 
 
-    it('should detach its children', function () {
-
-      var detach;
+    it('should detach its child', function () {
 
       nestedView.load();
       parentView.load();
 
-      detach = sinon.spy(nestedLoader, 'detach');
+      var detach = sinon.spy(nestedLoader, 'detach');
 
-      expect(parentView.$children.length).to.equal(1);
+      expect(parentView.$child).to.equal(nestedLoader);
 
       parentView.destroy();
 
       expect(detach.calledOnce).to.equal(true);
+      expect(nestedLoader.$element).to.equal(null);
+      expect(nestedLoader.$view).to.equal(null);
+      expect(nestedView.$element).to.equal(null);
+      expect(nestedView.$tag).to.equal(null);
     });
 
   });

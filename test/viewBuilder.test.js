@@ -26,7 +26,7 @@ describe('viewBuilder', function () {
 
     it('should noop on a state with no view keys', function () {
 
-       expect(ViewLoader.calledOnce).to.equal(true);
+      expect(ViewLoader.calledOnce).to.equal(true);
 
       var state = new State({ name: 'foo' });
 
@@ -71,14 +71,12 @@ describe('viewBuilder', function () {
       });
 
       expect(fooState.$views).to.equal(null);
-      expect(fooState.$viewLoaders).to.equal(null);
 
       builder.processState(fooState);
 
       expect(View.calledTwice).to.equal(true);
       expect(fooState.$views.length).to.equal(2);
     });
-
 
   });
 

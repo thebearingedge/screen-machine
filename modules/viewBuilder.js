@@ -5,21 +5,23 @@
 module.exports = viewBuilder;
 
 
-function viewBuilder(View, ViewLoader, defaultViews) {
+function viewBuilder(View, ViewLoader) {
 
   return {
 
     states: {},
 
 
-    viewLoaders: {},
+    viewLoaders: {
+      '': new ViewLoader()
+    },
 
 
     processState: function (state) {
 
-      this.states[state.name] || (this.states[state.name] = state);
+      this.states[state.name] = state;
 
-      if (!state.views && !state.template) return this;
+      if (!state.component) return this;
 
       return this
         .inferLoadersFrom(state)
@@ -29,39 +31,22 @@ function viewBuilder(View, ViewLoader, defaultViews) {
 
     inferLoadersFrom: function (state) {
 
-      if (!state.views) {
+      var stateName = state.name;
+      var parentName = state.parent;
 
-        return this.createViewLoader(null, state);
+      if (parentName && !this.viewLoaders[parentName]) {
+
+        var parentLoader = new ViewLoader(parentName);
+        this.viewLoaders[parentName] = parentLoader;
+        this.states[parentName].addViewLoader(parentLoader);
       }
 
-      var loaderId;
-      var targetStateName;
-      var targetState;
+      if (state.preload && !this.viewLoaders[stateName]) {
 
-      for (loaderId in state.views) {
-
-        targetStateName = loaderId.split('@')[1] || state.name;
-        targetState = this.states[targetStateName];
-        this.createViewLoader(loaderId, targetState);
+        var stateLoader = new ViewLoader(stateName);
+        this.viewLoaders[stateName] = stateLoader;
+        state.addViewLoader(stateLoader);
       }
-
-      return this;
-    },
-
-
-    createViewLoader: function (loaderId, state) {
-
-      loaderId || (loaderId = '@' + state.name);
-
-      if (this.viewLoaders[loaderId]) return this;
-
-      var viewLoader = this.viewLoaders[loaderId] = new ViewLoader(loaderId);
-      var defaultView = defaultViews
-        ? defaultViews[loaderId] || null
-        : null;
-
-      viewLoader.setDefault(defaultView);
-      state.addViewLoader(viewLoader);
 
       return this;
     },
@@ -69,31 +54,23 @@ function viewBuilder(View, ViewLoader, defaultViews) {
 
     addViewsTo: function (state) {
 
-      if (!state.views) {
+      var viewLoaders = this.viewLoaders;
 
-        return this.createView(state.template, null, state);
-      }
+      ['component', 'preload']
+        .forEach(function (key) {
 
-      var loaderId;
-      var template;
+          var loaderId, view;
 
-      for (loaderId in state.views) {
+          if (!state[key]) return;
 
-        template = state.views[loaderId].template;
-        this.createView(template, loaderId, state);
-      }
+          loaderId = key === 'component'
+            ? state.parent || ''
+            : state.name;
 
-      return this;
-    },
+          view = new View(state[key], state, loaderId, viewLoaders);
 
-
-    createView: function (template, loaderId, state) {
-
-      loaderId || (loaderId = '@' + state.name);
-
-      var view = new this.View(template, state, loaderId, this.viewLoaders);
-
-      state.addView(view);
+          state.addView(view);
+        });
 
       return this;
     }

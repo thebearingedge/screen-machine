@@ -11,8 +11,8 @@ function stateRegistry(State, viewBuilder, resolveService) {
     init: function (rootState) {
 
       this.states = { '': rootState };
-      this.$root = rootState;
-      this.stateQueues = {};
+      this.root = rootState;
+      this.queues = {};
     },
 
 
@@ -42,8 +42,8 @@ function stateRegistry(State, viewBuilder, resolveService) {
         return this.enqueue(parentName, state);
       }
 
-      this.states[state.name] = state.inheritFrom(parentState || this.$root);
-      viewBuilder.processState(state);
+      this.states[state.name] = state.inheritFrom(parentState || this.root);
+      viewBuilder.buildViewsFor(state);
       resolveService.addResolvesTo(state);
 
       return this.flushQueueOf(state);
@@ -52,8 +52,8 @@ function stateRegistry(State, viewBuilder, resolveService) {
 
     enqueue: function (parentName, state) {
 
-      this.stateQueues[parentName] || (this.stateQueues[parentName] = []);
-      this.stateQueues[parentName].push(state);
+      this.queues[parentName] || (this.queues[parentName] = []);
+      this.queues[parentName].push(state);
 
       return this;
     },
@@ -61,7 +61,7 @@ function stateRegistry(State, viewBuilder, resolveService) {
 
     flushQueueOf: function (state) {
 
-      var queue = this.stateQueues[state.name];
+      var queue = this.queues[state.name];
 
       while (queue && queue.length) {
 

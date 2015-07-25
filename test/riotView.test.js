@@ -10,7 +10,7 @@ chai.use(sinonChai);
 
 var ViewLoader = require('../modules/ViewLoader');
 var State = require('../modules/State');
-var riotView = require('../views/riotView');
+var riotView = require('../riotView');
 
 var jsdom = require('jsdom').jsdom;
 var riot = require('riot');

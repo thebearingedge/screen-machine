@@ -4,9 +4,11 @@
 module.exports = ViewLoader;
 
 
-function ViewLoader(elementId) {
+function ViewLoader(stateName) {
 
-  this.idSelector = '#' + elementId;
+  this.selector = stateName
+    ? '#' + stateName
+    : 'sm-view';
 }
 
 
@@ -28,7 +30,7 @@ ViewLoader.prototype.attachTo = function (element) {
 
 ViewLoader.prototype.attachWithin = function (element) {
 
-  this.$element = element.querySelector(this.idSelector);
+  this.$element = element.querySelector(this.selector);
 
   return this;
 };

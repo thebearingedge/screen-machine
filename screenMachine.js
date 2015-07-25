@@ -2,12 +2,14 @@
 'use strict';
 
 var State = require('./modules/State');
-var machine = require('./modules/machine');
+var stateMachine = require('./modules/stateMachine');
 var registry = require('./modules/stateRegistry');
 var ResolveTask = require('./modules/ResolveTask');
 
 
 module.exports = function screenMachine(config) {
+
+
 
   config || (config = {});
   ResolveTask.Promise = (config.promise || Promise);
@@ -17,13 +19,15 @@ module.exports = function screenMachine(config) {
 
     start: function (state, params) {
 
-      return machine.init(state, params);
+      return stateMachine.init(state, params);
     },
 
 
     state: function () {
 
-      return registry.add(arguments);
+      registry.add.apply(registry, arguments);
+
+      return this;
     },
 
 
@@ -31,13 +35,13 @@ module.exports = function screenMachine(config) {
 
       var state = registry.states[stateName];
 
-      return machine.transitionTo(state, params);
+      return stateMachine.transitionTo(state, params);
     },
 
 
     go: function () {
 
-      return this.transitionTo(arguments);
+      return this.transitionTo.apply(this, arguments);
     }
 
   };

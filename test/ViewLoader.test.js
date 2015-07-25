@@ -26,7 +26,13 @@ describe('ViewLoader', function () {
 
   it('should have an id selector', function () {
 
-    expect(loader.idSelector).to.equal('#app');
+    expect(loader.selector).to.equal('#app');
+  });
+
+
+  it('should have a tag selector', function () {
+
+    expect(new ViewLoader().selector).to.equal('sm-view');
   });
 
 

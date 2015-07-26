@@ -30,7 +30,7 @@ describe('stateRegistry', function () {
     };
 
     registry = stateRegistry(viewService, resolveService);
-    rootState = registry.root;
+    rootState = registry.$root;
   });
 
 

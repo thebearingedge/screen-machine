@@ -43,7 +43,7 @@ function stateRegistry(viewService, resolveService) {
         return this.enqueue(parentName, state);
       }
 
-      this.states[state.name] = state.inheritFrom(parentState || this.root);
+      this.states[state.name] = state.inheritFrom(parentState || this.$root);
       viewService.buildViewsFor(state);
       resolveService.addResolvesTo(state);
 
@@ -79,7 +79,7 @@ function stateRegistry(viewService, resolveService) {
 
   rootState.addViewport(viewService.viewports['']);
 
-  registry.root = rootState;
+  registry.$root = rootState;
   registry.states[''] = rootState;
 
   return registry;

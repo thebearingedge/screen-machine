@@ -8,13 +8,16 @@ module.exports = Transition;
 function Transition(from, to, params, resolveService, machine) {
 
   var exiting = getExiting(from, to);
-  var pivot = exiting[0].getParent();
+  var pivotState = exiting[0].getParent();
   var toBranch = to.getBranch();
-  var entering = toBranch.slice(toBranch.indexOf(pivot) + 1);
+  var entering = toBranch.slice(toBranch.indexOf(pivotState) + 1);
   var resolveCache = resolveService.getCache();
   var resolveTasks = getTasks(toBranch, params, resolveService, resolveCache);
-  var resolveJob = resolveService.createJob(resolveTasks, resolveCache, this);
+  var resolveJob = resolveTasks.length
+    ? resolveService.createJob(resolveTasks, resolveCache, this)
+    : null;
 
+  this.Promise = resolveService.Promise;
   this.params = params;
   this.machine = machine;
   this.resolveCache = resolveCache;
@@ -27,15 +30,42 @@ function Transition(from, to, params, resolveService, machine) {
 Transition.prototype.superceded = false;
 
 
-Transition.prototype.isSuperceded = function () {
+Transition.prototype.isSuperceded = function isSuperceded() {
 
   return (this.superceded = (this !== this.machine.transition));
 };
 
 
-Transition.prototype.attempt = function () {
+Transition.prototype.attempt = function attempt() {
 
+  var resolveJob = this.resolveJob;
 
+  var results = {
+    resolveCache: this.resolveCache,
+    entering: this.entering,
+    exiting: this.exiting
+  };
+
+  if (!resolveJob) {
+
+    results.tasks = [];
+
+    return this.Promise.resolve(results);
+  }
+
+  return new this.Promise(function (resolve, reject) {
+
+    resolveJob.start(function (err, completed) {
+
+      if (err) return reject(err);
+
+      if (!completed) return reject(null);
+
+      results.tasks = completed;
+
+      return resolve(results);
+    });
+  });
 };
 
 

@@ -10,14 +10,14 @@ function ResolveJob(tasks, transition) {
   this.transition = transition;
   this.remaining = tasks.length;
   this.completed = [];
-  this.stop = false;
 }
 
 
+ResolveJob.prototype.aborted = false;
 ResolveJob.prototype.callback = null;
 
 
-ResolveJob.prototype.start = function (callback) {
+ResolveJob.prototype.start = function start(callback) {
 
   var self = this;
 
@@ -38,7 +38,7 @@ ResolveJob.prototype.start = function (callback) {
 };
 
 
-ResolveJob.prototype.run = function (task) {
+ResolveJob.prototype.run = function run(task) {
 
   var self = this;
 
@@ -47,14 +47,14 @@ ResolveJob.prototype.run = function (task) {
     .execute()
     .then(function (result) {
 
-      if (self.stop) return;
+      if (self.aborted) return;
 
       if (self.transition.isSuperceded()) {
 
         return self.abort();
       }
 
-      task.stash(result);
+      task.result = result;
       self.completed.push(task);
 
       return --self.remaining
@@ -63,7 +63,7 @@ ResolveJob.prototype.run = function (task) {
     })
     .catch(function (err) {
 
-      if (!self.stop) {
+      if (!self.aborted) {
 
         return self.abort(err);
       }
@@ -71,21 +71,21 @@ ResolveJob.prototype.run = function (task) {
 };
 
 
-ResolveJob.prototype.dequeue = function (task) {
+ResolveJob.prototype.dequeue = function dequeue(task) {
 
   return this.tasks.splice(this.tasks.indexOf(task), 1);
 };
 
 
-ResolveJob.prototype.abort = function (err) {
+ResolveJob.prototype.abort = function abort(err) {
 
-  this.stop = true;
+  this.aborted = true;
 
   if (err) this.callback.call(null, err);
 };
 
 
-ResolveJob.prototype.runDependentsOf = function (task) {
+ResolveJob.prototype.runDependentsOf = function runDependentsOf(task) {
 
   var self = this;
 

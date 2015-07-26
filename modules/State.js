@@ -83,13 +83,13 @@ State.prototype.getResolves = function () {
 };
 
 
-State.prototype.getResolveResults = function () {
+State.prototype.getResolveResults = function (resolveCache) {
 
   return this
     .$resolves
     .reduce(function (results, resolve) {
 
-      results[resolve.key] = resolve.getResult();
+      results[resolve.key] = resolveCache.get(resolve.id);
 
       return results;
     }, {});
@@ -167,7 +167,7 @@ State.prototype.addViewport = function (viewLoader) {
 };
 
 
-State.prototype.getViewLoaders = function () {
+State.prototype.getViewports = function () {
 
   return this.$viewports
     ? this.$viewports.slice()

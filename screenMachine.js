@@ -26,6 +26,7 @@ function ScreenMachine(options) {
   var events = eventBus(options.events);
   var machine = stateMachine(events, resolves);
 
+  machine.init(registry.$root, {});
 
   this.state = function state() {
 

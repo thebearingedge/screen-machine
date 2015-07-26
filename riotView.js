@@ -23,9 +23,9 @@ module.exports = function riotView(document, riot, router) {
   RiotTagView.prototype.$child = null;
 
 
-  RiotTagView.prototype.load = function () {
+  RiotTagView.prototype.load = function (resolved) {
 
-    this.$loaders[this.$loaderId].loadView(this);
+    this.$loaders[this.$loaderId].loadView(this, resolved);
 
     return this;
   };

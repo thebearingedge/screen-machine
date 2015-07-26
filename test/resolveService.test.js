@@ -194,7 +194,7 @@ describe('resolveService', function () {
     });
 
 
-    it('should NOT throw if the task dependencies are ACYCLIC', function () {
+    it('should NOT THROW if the task dependencies are ACYCLIC', function () {
 
       var cache = service.getCache();
 

@@ -16,6 +16,9 @@ function resolveService(Promise) {
 
   return {
 
+    Promise: Promise,
+
+
     stateless: false,
 
 
@@ -54,7 +57,7 @@ function resolveService(Promise) {
 
       var taskParams = resolve.state.filterParams(transitionParams);
 
-      return new ResolveTask(resolve, taskParams, resolveCache, Promise);
+      return new ResolveTask(resolve, taskParams, resolveCache, this.Promise);
     },
 
 

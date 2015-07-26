@@ -20,29 +20,29 @@ function ResolveTask(resolve, params, resolveCache, Promise) {
 ResolveTask.prototype.$dependencies = undefined;
 
 
-ResolveTask.prototype.isWaitingFor = function (dependency) {
+ResolveTask.prototype.isWaitingFor = function isWaitingFor(dep) {
 
-  return this.waitingFor.indexOf(dependency) > -1;
+  return this.waitingFor.indexOf(dep) > -1;
 };
 
 
-ResolveTask.prototype.setDependency = function (dependency, result) {
+ResolveTask.prototype.setDependency = function setDependency(dep, result) {
 
   this.$dependencies || (this.$dependencies = {});
-  this.$dependencies[dependency] = result;
-  this.waitingFor.splice(this.waitingFor.indexOf(dependency), 1);
+  this.$dependencies[dep] = result;
+  this.waitingFor.splice(this.waitingFor.indexOf(dep), 1);
 
   return this;
 };
 
 
-ResolveTask.prototype.isReady = function () {
+ResolveTask.prototype.isReady = function isReady() {
 
   return !this.waitingFor.length;
 };
 
 
-ResolveTask.prototype.execute = function () {
+ResolveTask.prototype.execute = function execute() {
 
   var self = this;
 
@@ -66,9 +66,7 @@ ResolveTask.prototype.execute = function () {
 };
 
 
-ResolveTask.prototype.stash = function (result) {
-
-  this.result = result;
+ResolveTask.prototype.commit = function commit() {
 
   this.cache.set(this.id, this.result);
 

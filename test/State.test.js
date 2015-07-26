@@ -10,6 +10,7 @@ chai.use(sinonChai);
 
 
 var State = require('../modules/State');
+var resolveCache = require('../modules/resolveCache');
 
 
 describe('State', function () {
@@ -73,17 +74,17 @@ describe('State', function () {
   });
 
 
-  describe('.getViewLoaders() => Array<ViewLoader>', function () {
+  describe('.getViewports() => Array<ViewLoader>', function () {
 
     it('should return its viewports', function () {
 
-      expect(state.getViewLoaders()).to.deep.equal([]);
+      expect(state.getViewports()).to.deep.equal([]);
 
       var fakeLoader = {};
 
       state.$viewports = [fakeLoader];
 
-      expect(state.getViewLoaders()[0]).to.equal(fakeLoader);
+      expect(state.getViewports()[0]).to.equal(fakeLoader);
     });
 
   });
@@ -165,22 +166,28 @@ describe('State', function () {
   });
 
 
-  describe('.getResolveResults() => Object', function () {
+  describe('.getResolveResults(cache) => Object', function () {
 
     it('should aggregate results from its resolves', function () {
 
       var fooResolve = {
-        key: 'foo',
-        getResult: sinon.stub().returns('bar')
+        id: 'foo@state',
+        key: 'foo'
       };
       var bazResolve = {
-        key: 'baz',
-        getResult: sinon.stub().returns('qux')
+        id: 'baz@state',
+        key: 'baz'
+      };
+      var cache = resolveCache({ stateless: true });
+
+      cache.$store = {
+        'foo@state': 'bar',
+        'baz@state': 'qux'
       };
 
       state.$resolves = [fooResolve, bazResolve];
 
-      expect(state.getResolveResults())
+      expect(state.getResolveResults(cache))
         .to.deep.equal({ foo: 'bar', baz: 'qux'});
     });
 

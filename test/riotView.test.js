@@ -15,10 +15,7 @@ var riotView = require('../riotView');
 var jsdom = require('jsdom').jsdom;
 var riot = require('riot');
 
-require('./riot-tags/simple-tag');
-require('./riot-tags/parent-tag');
-require('./riot-tags/nested-tag');
-require('./riot-tags/nested-nested-tag');
+require('./riot-tags');
 
 describe('riotView', function () {
 

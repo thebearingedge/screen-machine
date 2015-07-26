@@ -4,7 +4,7 @@
 module.exports = DependentResolve;
 
 
-function DependentResolve(resolveKey, state, resolveCache) {
+function DependentResolve(resolveKey, state) {
 
   var resolveDef = state.resolve[resolveKey];
   var invokableIndex = resolveDef.length - 1;
@@ -12,7 +12,6 @@ function DependentResolve(resolveKey, state, resolveCache) {
   this.key = resolveKey;
   this.id = resolveKey + '@' + state.name;
   this.state = state;
-  this.cache = resolveCache;
   this.invokable = resolveDef[invokableIndex];
   this.injectables = resolveDef
     .slice(0, invokableIndex)
@@ -36,18 +35,4 @@ DependentResolve.prototype.execute = function (params, dependencies) {
     .concat(params);
 
   return this.invokable.apply(null, args);
-};
-
-
-DependentResolve.prototype.getResult = function () {
-
-  return this.cache.get(this.id);
-};
-
-
-DependentResolve.prototype.clearCache = function () {
-
-  this.cache.unset(this.id);
-
-  return this;
 };

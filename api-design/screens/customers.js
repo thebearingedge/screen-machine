@@ -24,9 +24,8 @@ function customersScreen(machine) {
     .state('customers.profile', {
       path: '/:customerId',
       component: 'customer-profile',
-      defaultChild: 'customer-report',
       resolve: {
-        details: function (params) {
+        customer: function (params) {
           return customerApi.fetchOne(params.customerId);
         },
         report: function (params) {
@@ -35,7 +34,7 @@ function customersScreen(machine) {
               customerid: params.customerId
             });
         }
-      }
+      },
+      preload: 'customer-report'
     });
-
 }

@@ -1,153 +1,41 @@
 
 'use strict';
 
+var Transition = require('./Transition');
+
+
 module.exports = stateMachine;
 
 
-function stateMachine(startState, startParams, resolveService, Transition) {
+function stateMachine(eventBus, resolveService) {
 
   var machine = {
 
-    currentState: startState,
+    currentState: null,
 
 
-    currentParams: startParams,
+    currentParams: null,
 
 
     transition: null,
 
 
-    transitionTo: function (toState, toParams) {
+    init: function (startState, startParams) {
 
-      var exitingStates = this.getExitingStates(this.currentState, toState);
-      var pivotState = exitingStates[0].getParent();
-      var newBranch = toState.getBranch();
-      var enteringStates = newBranch.slice(newBranch.indexOf(pivotState) + 1);
-      var transition = this.transition = new Transition(this);
-      var resolveTasks = this.getResolveTasks(newBranch, toParams);
-      var resolveJob = resolveService.createJob(resolveTasks, transition);
-
-      return resolveJob
-        .start(function (err, completed) {
-
-          if (err) {
-
-            throw err; // BAH!
-          }
-
-          if (completed) {
-
-            return this
-              .commitResolves(completed)
-              .commitTransition(toState, toParams)
-              .loadViews(enteringStates)
-              .publishViews(newBranch)
-              .finish(exitingStates);
-          }
-
-          // do something when superceded
-        }.bind(this));
-    },
-
-
-    getExitingStates: function (fromState, toState) {
-
-      return fromState
-        .getBranch()
-        .filter(function (state) {
-
-          return !toState.contains(state.name);
-        });
-    },
-
-
-    getResolveTasks: function (newBranch, toParams) {
-
-      return newBranch
-        .filter(function (state) {
-
-          return state.isStale(toParams);
-        })
-        .reduce(function (resolves, state) {
-
-          return resolves.concat(state.getResolves());
-        }, [])
-        .map(function (resolve) {
-
-          return resolveService.createTask(resolve, toParams);
-        });
-    },
-
-
-    commitResolves: function (completed) {
-
-      completed
-        .forEach(function (task) {
-
-          task.commit();
-        });
+      this.currentState = startState;
+      this.currentParams = startParams;
 
       return this;
     },
 
 
-    commitTransition: function (toState, toParams) {
+    transitionTo: function (to, params) {
 
-      this.currentState = toState;
-      this.params = toParams;
-      this.transition = null;
+      var from = this.currentState;
+      var fromParams = this.currentParams;
 
-      return this;
-    },
-
-
-    loadViews: function (enteringStates) {
-
-      enteringStates
-        .slice()
-        .reverse()
-        .reduce(function (views, state) {
-
-          return views.concat(state.getViews());
-        }, [])
-        .forEach(function (view) {
-
-          view.load();
-        });
-
-      return this;
-    },
-
-
-    publishViews: function (newBranch) {
-
-      newBranch
-        .reduce(function (viewLoaders, state) {
-
-          return viewLoaders.concat(state.getViewLoaders());
-        }, [])
-        .filter(function (viewLoader) {
-
-          return viewLoader.isLoaded() || viewLoader.shouldRefresh();
-        })
-        .forEach(function (viewLoader) {
-
-          viewLoader.publish();
-        });
-
-      return this;
-    },
-
-
-    finish: function (exitingStates) {
-
-      exitingStates
-        .forEach(function (state) {
-
-          state.sleep();
-        });
-
-      return this;
+      this.transition = new Transition(from, to, params, resolveService, this);
+      eventBus.notify('stateTransitionStart', to, params, from, fromParams);
     }
 
   };

@@ -19,6 +19,9 @@ describe('stateRegistry', function () {
   beforeEach(function () {
 
     viewBuilder = {
+      viewLoaders: {
+        '': {}
+      },
       buildViewsFor: function () {}
     };
 
@@ -26,9 +29,8 @@ describe('stateRegistry', function () {
       addResolvesTo: function () {}
     };
 
-    registry = stateRegistry(State, viewBuilder, resolveService);
-    rootState = new State({ name: '' });
-    registry.init(rootState);
+    registry = stateRegistry(viewBuilder, resolveService);
+    rootState = registry.root;
   });
 
 

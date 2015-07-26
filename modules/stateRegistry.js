@@ -1,19 +1,19 @@
 
 'use strict';
 
+var State = require('./State');
+
 module.exports = stateRegistry;
 
 
-function stateRegistry(State, viewBuilder, resolveService) {
+function stateRegistry(viewBuilder, resolveService) {
 
-  return {
+  var registry = {
 
-    init: function (rootState) {
+    states: {},
 
-      this.states = { '': rootState };
-      this.root = rootState;
-      this.queues = {};
-    },
+
+    queues: {},
 
 
     add: function (name, definition) {
@@ -73,4 +73,13 @@ function stateRegistry(State, viewBuilder, resolveService) {
 
   };
 
+
+  var rootState = new State({ name: '' });
+
+  rootState.addViewLoader(viewBuilder.viewLoaders['']);
+
+  registry.root = rootState;
+  registry.states[''] = rootState;
+
+  return registry;
 }

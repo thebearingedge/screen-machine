@@ -4,12 +4,13 @@
 module.exports = ResolveTask;
 
 
-function ResolveTask(resolve, params, resolveCache) {
+function ResolveTask(resolve, params, resolveCache, Promise) {
 
   this.resolve = resolve;
   this.id = resolve.id;
   this.params = params;
   this.cache = resolveCache;
+  this.Promise = Promise;
   this.waitingFor = resolve.injectables
     ? resolve.injectables.slice()
     : [];
@@ -45,7 +46,7 @@ ResolveTask.prototype.execute = function () {
 
   var self = this;
 
-  return new ResolveTask.Promise(function (resolve, reject) {
+  return new this.Promise(function (resolve, reject) {
 
     var resultOrPromise;
 

@@ -1,11 +1,13 @@
 
 'use strict';
 
+var ViewLoader = require('./ViewLoader');
+
 
 module.exports = viewBuilder;
 
 
-function viewBuilder(View, ViewLoader) {
+function viewBuilder(View) {
 
   return {
 

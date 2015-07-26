@@ -28,14 +28,7 @@ describe('ResolveTask', function () {
       };
       params = { foo: 'bar' };
       cache = resolveCache({ stateless: true });
-      task = new ResolveTask(resolve, params, cache);
-      ResolveTask.Promise = Promise;
-    });
-
-
-    afterEach(function () {
-
-      ResolveTask.Promise = undefined;
+      task = new ResolveTask(resolve, params, cache, Promise);
     });
 
 
@@ -69,7 +62,7 @@ describe('ResolveTask', function () {
 
         var promise = task.execute();
 
-        expect(promise instanceof ResolveTask.Promise).to.equal(true);
+        expect(promise instanceof Promise).to.equal(true);
         expect(resolve.execute)
           .to.have.been.calledWithExactly({ foo: 'bar' }, undefined);
         expect(promise).to.eventually.be.fulfilled;
@@ -82,7 +75,7 @@ describe('ResolveTask', function () {
 
         var promise = task.execute();
 
-        expect(promise instanceof ResolveTask.Promise).to.equal(true);
+        expect(promise instanceof Promise).to.equal(true);
         expect(resolve.execute)
           .to.have.been.calledWithExactly({ foo: 'bar' }, undefined);
         expect(promise).to.eventually.be.rejected;
@@ -104,8 +97,7 @@ describe('ResolveTask', function () {
       };
       params = { foo: 'bar' };
       cache = resolveCache({ stateless: true });
-      task = new ResolveTask(resolve, params, cache);
-      ResolveTask.Promise = Promise;
+      task = new ResolveTask(resolve, params, cache, Promise);
     });
 
 

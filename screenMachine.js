@@ -1,27 +1,27 @@
 
 'use strict';
 
-var State = require('./modules/State');
+var eventBus = require('./modules/eventBus');
 var stateMachine = require('./modules/stateMachine');
-var registry = require('./modules/stateRegistry');
-var ResolveTask = require('./modules/ResolveTask');
+var stateRegistry = require('./modules/stateRegistry');
+var resolveService = require('./modules/resolveService');
+var viewBuilder = require('./modules/viewBuilder');
 
 
-module.exports = function screenMachine(config) {
+module.exports = screenMachine;
 
 
+function screenMachine(config) {
 
-  config || (config = {});
-  ResolveTask.Promise = (config.promise || Promise);
-  registry.init(new State({ name: '' }));
+  var Promise = config.promises || Promise;
+  var Component = config.components;
+  var views = viewBuilder(Component);
+  var resolves = resolveService(Promise);
+  var registry = stateRegistry(views, resolves);
+  var events = eventBus(config.events);
+  var machine = stateMachine(events, resolves);
 
   return {
-
-    start: function (state, params) {
-
-      return stateMachine.init(state, params);
-    },
-
 
     state: function () {
 
@@ -35,7 +35,7 @@ module.exports = function screenMachine(config) {
 
       var state = registry.states[stateName];
 
-      return stateMachine.transitionTo(state, params);
+      return machine.transitionTo(state, params);
     },
 
 
@@ -45,6 +45,4 @@ module.exports = function screenMachine(config) {
     }
 
   };
-
-
-};
+}

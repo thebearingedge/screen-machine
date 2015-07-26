@@ -13,52 +13,47 @@ var viewBuilder = require('../modules/viewBuilder');
 
 describe('viewBuilder', function () {
 
-  var View, ViewLoader, builder;
+  var View, builder;
 
   beforeEach(function () {
 
-    ViewLoader = sinon.spy();
     View = sinon.spy();
-    builder = viewBuilder(View, ViewLoader);
+    builder = viewBuilder(View);
   });
 
   describe('.processState(Object state) -> this', function () {
 
     it('should noop on a state with no view keys', function () {
 
-      expect(ViewLoader.calledOnce).to.equal(true);
-
       var state = new State({ name: 'foo' });
 
       builder.processState(state);
 
       expect(View.called).to.equal(false);
-      expect(ViewLoader.calledOnce).to.equal(true);
+      expect(builder.viewLoaders.foo).to.equal(undefined);
     });
 
 
-    it('should build one ViewLoader per child', function () {
+    it('should build one ViewLoader for all children', function () {
 
       var fooState = new State({ name: 'foo', component: 'foo-component' });
       var barState = new State({ name: 'foo.bar', component: 'bar-component' });
       var bazState = new State({ name: 'foo.baz', component: 'baz-component' });
 
-      expect(ViewLoader.calledOnce).to.equal(true);
-
       builder.processState(fooState);
 
-      expect(ViewLoader.calledOnce).to.equal(true);
+      expect(builder.viewLoaders.foo).to.equal(undefined);
       expect(fooState.$viewLoaders).to.equal(null);
 
       builder.processState(barState);
 
-      expect(ViewLoader.calledTwice).to.equal(true);
-      expect(fooState.$viewLoaders.length).to.equal(1);
+      var fooLoader = fooState.$viewLoaders[0];
 
       builder.processState(bazState);
 
-      expect(ViewLoader.calledTwice).to.equal(true);
       expect(fooState.$viewLoaders[1]).to.equal(undefined);
+      expect(fooState.$viewLoaders[0]).to.equal(fooLoader);
+      expect(builder.viewLoaders.foo).to.equal(fooLoader);
     });
 
 

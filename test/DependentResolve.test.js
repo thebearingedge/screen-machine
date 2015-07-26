@@ -10,15 +10,12 @@ chai.use(sinonChai);
 
 var DependentResolve = require('../modules/DependentResolve');
 var State = require('../modules/State');
-var resolveCache = require('../modules/resolveCache');
 
 describe('DependentResolve', function () {
 
-  var resolve, state, cache;
+  var resolve, state;
 
   beforeEach(function () {
-
-    cache = resolveCache({ stateless: true });
 
     state = new State({
       name: 'bar',
@@ -27,7 +24,7 @@ describe('DependentResolve', function () {
       }
     });
 
-    resolve = new DependentResolve('foo', state, cache);
+    resolve = new DependentResolve('foo', state);
   });
 
 
@@ -41,35 +38,9 @@ describe('DependentResolve', function () {
 
     state.resolve.foo[0] = 'baz';
 
-    resolve = new DependentResolve('foo', state, cache);
+    resolve = new DependentResolve('foo', state);
 
     expect(resolve.injectables[0]).to.equal('baz@bar');
-  });
-
-
-  describe('.getResult() => <Any>', function () {
-
-    it('should retrieve its result from cache', function () {
-
-      cache.$store['foo@bar'] = 42;
-
-      expect(resolve.getResult()).to.equal(42);
-    });
-
-  });
-
-
-  describe('.clearCache() => this', function () {
-
-    it('should clear its result from cache', function () {
-
-      var unset = sinon.spy(cache, 'unset');
-
-      resolve.clearCache();
-
-      expect(unset).to.have.been.calledWithExactly('foo@bar');
-    });
-
   });
 
 

@@ -9,46 +9,67 @@ var ResolveGraph = require('./ResolveGraph');
 var ResolveJob = require('./ResolveJob');
 
 
-module.exports = {
-
-  instantiate: function (resolveKey, state) {
-
-    return Array.isArray(state[resolveKey])
-      ? new DependentResolve(resolveKey, state, resolveCache)
-      : new SimpleResolve(resolveKey, state, resolveCache);
-  },
+module.exports = resolveService;
 
 
-  processState: function (state) {
+function resolveService(Promise) {
 
-    var resolveKey;
-    var resolve;
 
-    for (resolveKey in state.resolve) {
+  return {
 
-      resolve = this.instantiate(resolveKey, state);
-      state.addResolve(resolve);
+    stateless: false,
+
+
+    getCache: function () {
+
+      return resolveCache({ stateless: this.stateless });
+    },
+
+
+    instantiate: function (resolveKey, state) {
+
+      return Array.isArray(state.resolve[resolveKey])
+        ? new DependentResolve(resolveKey, state)
+        : new SimpleResolve(resolveKey, state);
+    },
+
+
+    processState: function (state) {
+
+      if (typeof state.resolve !== 'object') return this;
+
+      var resolveKey;
+      var resolve;
+
+      for (resolveKey in state.resolve) {
+
+        resolve = this.instantiate(resolveKey, state);
+        state.addResolve(resolve);
+      }
+
+      return this;
+    },
+
+
+    createTask: function (resolve, params, resolveCache) {
+
+      var ownParams = resolve.state.filterParams(params);
+
+      return new ResolveTask(resolve, ownParams, resolveCache, Promise);
+    },
+
+
+    createJob: function (tasks, resolveCache, transition) {
+
+      var graph = new ResolveGraph(tasks, resolveCache);
+      var jobTasks = graph
+        .ensureDependencies()
+        .throwIfCyclic()
+        .getTasks();
+
+      return new ResolveJob(jobTasks, transition);
     }
-  },
 
+  };
 
-  createTask: function (resolve, params) {
-
-    var ownParams = resolve.state.filterParams(params);
-
-    return new ResolveTask(resolve, ownParams, resolveCache);
-  },
-
-
-  createJob: function (tasks, transition) {
-
-    var graph = new ResolveGraph(tasks, resolveCache);
-    var jobTasks = graph
-      .ensureDependencies()
-      .throwIfCyclic()
-      .getTasks();
-
-    return new ResolveJob(jobTasks, transition);
-  }
-
-};
+}

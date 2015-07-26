@@ -33,6 +33,12 @@ Transition.prototype.isSuperceded = function () {
 };
 
 
+Transition.prototype.attempt = function () {
+
+
+};
+
+
 function getExiting(fromState, toState) {
 
   return fromState

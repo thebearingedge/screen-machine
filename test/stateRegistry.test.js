@@ -14,12 +14,12 @@ var State = require('../modules/State');
 
 describe('stateRegistry', function () {
 
-  var registry, viewBuilder, resolveService, rootState;
+  var registry, viewService, resolveService, rootState;
 
   beforeEach(function () {
 
-    viewBuilder = {
-      viewLoaders: {
+    viewService = {
+      viewports: {
         '': {}
       },
       buildViewsFor: function () {}
@@ -29,7 +29,7 @@ describe('stateRegistry', function () {
       addResolvesTo: function () {}
     };
 
-    registry = stateRegistry(viewBuilder, resolveService);
+    registry = stateRegistry(viewService, resolveService);
     rootState = registry.root;
   });
 

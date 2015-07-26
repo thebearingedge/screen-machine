@@ -12,6 +12,8 @@ var State = require('../modules/State');
 var resolveService = require('../modules/resolveService');
 var SimpleResolve = require('../modules/SimpleResolve');
 var DependentResolve = require('../modules/DependentResolve');
+var ResolveTask = require('../modules/ResolveTask');
+var ResolveJob = require('../modules/ResolveJob');
 
 describe('resolveService', function () {
 
@@ -21,27 +23,29 @@ describe('resolveService', function () {
   beforeEach(function () {
 
     service = resolveService(Promise);
+    service.stateless = true;
   });
 
 
   describe('.getCache() -> Object resolveCache', function () {
 
-    it('should return the same resolveCache', function () {
-
-      var cache1 = service.getCache();
-      var cache2 = service.getCache();
-
-      expect(cache1).to.equal(cache2);
-    });
-
     it('should return a new resolveCache', function () {
-
-      service.stateless = true;
 
       var cache1 = service.getCache();
       var cache2 = service.getCache();
 
       expect(cache1).not.to.equal(cache2);
+    });
+
+
+    it('should return the same resolveCache', function () {
+
+      service.stateless = false;
+
+      var cache1 = service.getCache();
+      var cache2 = service.getCache();
+
+      expect(cache1).to.equal(cache2);
     });
 
   });
@@ -55,6 +59,7 @@ describe('resolveService', function () {
 
       state = new State({ name: 'foo' });
     });
+
 
     it('should create a SimpleResolve', function () {
 
@@ -82,7 +87,7 @@ describe('resolveService', function () {
   });
 
 
-  describe('.processState(state) -> this', function () {
+  describe('.addResolvesTo(state) -> this', function () {
 
     var state;
 
@@ -96,12 +101,12 @@ describe('resolveService', function () {
 
       var spy = sinon.spy(service, 'instantiate');
 
-      service.processState(state);
+      service.addResolvesTo(state);
 
       expect(spy.called).to.equal(false);
       expect(state.$resolves).to.equal(null);
-
     });
+
 
     it('should add resolves to a state', function () {
 
@@ -112,7 +117,7 @@ describe('resolveService', function () {
 
       var spy = sinon.spy(service, 'instantiate');
 
-      service.processState(state);
+      service.addResolvesTo(state);
 
       expect(spy.calledTwice).to.equal(true);
       expect(state.$resolves.length).to.equal(2);
@@ -120,5 +125,117 @@ describe('resolveService', function () {
 
   });
 
+
+  describe('.createTask(resolve, params, cache', function () {
+
+    it('should create a task with filtered params', function () {
+
+      var state = new State({
+        name: 'foo',
+        resolve: {
+          fooResolve: function () {}
+        }
+      });
+
+      state.$paramKeys = ['bar', 'baz'];
+
+      var resolve = service.instantiate('fooResolve', state);
+      var params = { bar: 1, baz: 2, qux: 3 };
+      var cache = service.getCache();
+      var task = service.createTask(resolve, params, cache);
+
+      expect(task instanceof ResolveTask).to.equal(true);
+      expect(task.params).to.deep.equal({ bar: 1, baz: 2 });
+    });
+
+  });
+
+
+  describe('.createJob(tasks, resolveCache, transition)', function () {
+
+    it('should combine resolveTasks into a job', function () {
+
+      sinon.stub(service, 'prepareTasks');
+
+      var tasks = [{}, {}, {}];
+      var transition = {};
+      var job = service.createJob(tasks, transition);
+
+      expect(job instanceof ResolveJob).to.equal(true);
+    });
+
+  });
+
+
+  describe('.prepareTasks(tasks, resolveCache)', function () {
+
+    it('should pull missing dependencies from the resolveCache', function () {
+
+      var cache = service.getCache();
+      cache.set('bar', 42);
+
+      var mockTask = {
+        name: 'foo',
+        waitingFor: ['bar'],
+        dependencies: {},
+        isReady: function () { return false; },
+        setDependency: function (key, val) {
+          this.dependencies[key] = val;
+          this.waitingFor.splice(this.waitingFor.indexOf(key), 1);
+        }
+      };
+
+      sinon.spy(cache, 'get');
+
+      service.prepareTasks([mockTask], cache);
+
+      expect(cache.get).to.have.been.calledWithExactly('bar');
+      expect(mockTask.dependencies.bar).to.equal(42);
+    });
+
+
+    it('should NOT throw if the task dependencies are ACYCLIC', function () {
+
+      var cache = service.getCache();
+
+      var fooTask = {
+        name: 'foo',
+        waitingFor: [],
+        dependencies: {},
+        isReady: function () { return true; },
+      };
+      var barTask = {
+        name: 'bar',
+        waitingFor: ['foo'],
+        dependencies: {},
+        isReady: function () { return false; }
+      };
+
+      expect(service.prepareTasks([fooTask, barTask], cache)).to.be.ok;
+    });
+
+
+    it('should THROW if the task dependencies are CYCLIC', function () {
+
+      var cache = service.getCache();
+
+      var fooTask = {
+        name: 'foo',
+        waitingFor: ['bar'],
+        dependencies: {},
+        isReady: function () { return false; },
+      };
+      var barTask = {
+        name: 'bar',
+        waitingFor: ['foo'],
+        dependencies: {},
+        isReady: function () { return false; }
+      };
+
+      expect(service.prepareTasks.bind(service, [fooTask, barTask], cache))
+        .to.throw(Error, 'Cyclic resolve dependency: foo -> bar -> foo');
+    });
+
+  });
 
 });

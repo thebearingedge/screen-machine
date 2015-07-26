@@ -9,28 +9,28 @@ var expect = chai.expect;
 chai.use(sinonChai);
 
 var State = require('../modules/State');
-var viewBuilder = require('../modules/viewBuilder');
+var viewService = require('../modules/viewService');
 
-describe('viewBuilder', function () {
+describe('viewService', function () {
 
-  var View, builder;
+  var View, service;
 
   beforeEach(function () {
 
     View = sinon.spy();
-    builder = viewBuilder(View);
+    service = viewService(View);
   });
 
-  describe('.processState(Object state) -> this', function () {
+  describe('.buildViewsFor(Object state) -> this', function () {
 
     it('should noop on a state with no view keys', function () {
 
       var state = new State({ name: 'foo' });
 
-      builder.processState(state);
+      service.buildViewsFor(state);
 
       expect(View.called).to.equal(false);
-      expect(builder.viewLoaders.foo).to.equal(undefined);
+      expect(service.viewports.foo).to.equal(undefined);
     });
 
 
@@ -40,20 +40,20 @@ describe('viewBuilder', function () {
       var barState = new State({ name: 'foo.bar', component: 'bar-component' });
       var bazState = new State({ name: 'foo.baz', component: 'baz-component' });
 
-      builder.processState(fooState);
+      service.buildViewsFor(fooState);
 
-      expect(builder.viewLoaders.foo).to.equal(undefined);
-      expect(fooState.$viewLoaders).to.equal(null);
+      expect(service.viewports.foo).to.equal(undefined);
+      expect(fooState.$viewports).to.equal(null);
 
-      builder.processState(barState);
+      service.buildViewsFor(barState);
 
-      var fooLoader = fooState.$viewLoaders[0];
+      var fooLoader = fooState.$viewports[0];
 
-      builder.processState(bazState);
+      service.buildViewsFor(bazState);
 
-      expect(fooState.$viewLoaders[1]).to.equal(undefined);
-      expect(fooState.$viewLoaders[0]).to.equal(fooLoader);
-      expect(builder.viewLoaders.foo).to.equal(fooLoader);
+      expect(fooState.$viewports[1]).to.equal(undefined);
+      expect(fooState.$viewports[0]).to.equal(fooLoader);
+      expect(service.viewports.foo).to.equal(fooLoader);
     });
 
 
@@ -67,7 +67,7 @@ describe('viewBuilder', function () {
 
       expect(fooState.$views).to.equal(null);
 
-      builder.processState(fooState);
+      service.buildViewsFor(fooState);
 
       expect(View.calledTwice).to.equal(true);
       expect(fooState.$views.length).to.equal(2);

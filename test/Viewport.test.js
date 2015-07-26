@@ -10,17 +10,17 @@ var jsdom = require('jsdom').jsdom;
 chai.use(sinonChai);
 
 
-var ViewLoader = require('../modules/ViewLoader');
+var Viewport = require('../modules/Viewport');
 var domNode = jsdom('<div><sm-view id="app"></sm-view></div>');
 
 
-describe('ViewLoader', function () {
+describe('Viewport', function () {
 
   var loader, nextView, nextContent;
 
   beforeEach(function () {
 
-    loader = new ViewLoader('app');
+    loader = new Viewport('app');
   });
 
 
@@ -32,7 +32,7 @@ describe('ViewLoader', function () {
 
   it('should have a tag selector', function () {
 
-    expect(new ViewLoader().selector).to.equal('sm-view');
+    expect(new Viewport().selector).to.equal('sm-view');
   });
 
 

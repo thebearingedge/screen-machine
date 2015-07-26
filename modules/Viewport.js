@@ -1,10 +1,10 @@
 
 'use strict';
 
-module.exports = ViewLoader;
+module.exports = Viewport;
 
 
-function ViewLoader(stateName) {
+function Viewport(stateName) {
 
   this.selector = stateName
     ? '#' + stateName
@@ -12,15 +12,15 @@ function ViewLoader(stateName) {
 }
 
 
-ViewLoader.prototype.$element = null;
-ViewLoader.prototype.$content = null;
-ViewLoader.prototype.$nextContent = undefined;
-ViewLoader.prototype.$nextView = undefined;
-ViewLoader.prototype.$view = null;
-ViewLoader.prototype.$lastView = null;
+Viewport.prototype.$element = null;
+Viewport.prototype.$content = null;
+Viewport.prototype.$nextContent = undefined;
+Viewport.prototype.$nextView = undefined;
+Viewport.prototype.$view = null;
+Viewport.prototype.$lastView = null;
 
 
-ViewLoader.prototype.attachTo = function (element) {
+Viewport.prototype.attachTo = function (element) {
 
   this.$element = element;
 
@@ -28,7 +28,7 @@ ViewLoader.prototype.attachTo = function (element) {
 };
 
 
-ViewLoader.prototype.attachWithin = function (element) {
+Viewport.prototype.attachWithin = function (element) {
 
   this.$element = element.querySelector(this.selector);
 
@@ -36,7 +36,7 @@ ViewLoader.prototype.attachWithin = function (element) {
 };
 
 
-ViewLoader.prototype.detach = function () {
+Viewport.prototype.detach = function () {
 
   this.close();
 
@@ -46,7 +46,7 @@ ViewLoader.prototype.detach = function () {
 };
 
 
-ViewLoader.prototype.loadView = function (view) {
+Viewport.prototype.loadView = function (view) {
 
   if (this.isLoaded()) return this;
 
@@ -57,7 +57,7 @@ ViewLoader.prototype.loadView = function (view) {
 };
 
 
-ViewLoader.prototype.renderNextContent = function () {
+Viewport.prototype.renderNextContent = function () {
 
   this.$nextContent = this.$nextView && this.$nextView !== this.$view
     ? this.$nextView.render()
@@ -67,19 +67,19 @@ ViewLoader.prototype.renderNextContent = function () {
 };
 
 
-ViewLoader.prototype.isLoaded = function () {
+Viewport.prototype.isLoaded = function () {
 
   return (typeof this.$nextView !== 'undefined');
 };
 
 
-ViewLoader.prototype.isActive = function () {
+Viewport.prototype.isActive = function () {
 
   return !!(this.$view || this.$nextView);
 };
 
 
-ViewLoader.prototype.publish = function () {
+Viewport.prototype.publish = function () {
 
   if (!this.isActive()) return this;
 
@@ -107,13 +107,13 @@ ViewLoader.prototype.publish = function () {
 };
 
 
-ViewLoader.prototype.shouldRefresh = function () {
+Viewport.prototype.shouldRefresh = function () {
 
   return this.$view && this.$view === this.$nextView;
 };
 
 
-ViewLoader.prototype.refresh = function () {
+Viewport.prototype.refresh = function () {
 
   this.$view.update();
   this.$nextView = undefined;
@@ -122,13 +122,13 @@ ViewLoader.prototype.refresh = function () {
 };
 
 
-ViewLoader.prototype.shouldClose = function () {
+Viewport.prototype.shouldClose = function () {
 
   return this.$nextView === null;
 };
 
 
-ViewLoader.prototype.close = function () {
+Viewport.prototype.close = function () {
 
   if (this.$element && this.$content) {
 
@@ -147,7 +147,7 @@ ViewLoader.prototype.close = function () {
 };
 
 
-ViewLoader.prototype.cleanUp = function () {
+Viewport.prototype.cleanUp = function () {
 
   if (this.$lastView) {
 

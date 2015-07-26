@@ -10,6 +10,7 @@ var screenMachine = require('screen-machine');
 var riot = require('riot');
 var RiotComponent = require('screen-machine/riotView')(document, riot);
 var customersScreen = require('./screens/customers');
+
 var machine = screenMachine({
   promises: bluebird,
   events: {

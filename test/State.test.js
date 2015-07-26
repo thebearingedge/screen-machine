@@ -59,15 +59,15 @@ describe('State', function () {
   });
 
 
-  describe('.addViewLoader(Object viewLoader) => this', function () {
+  describe('.addViewport(Object viewLoader) => this', function () {
 
-    it('should store viewLoaders', function () {
+    it('should store viewports', function () {
 
-      expect(state.$viewLoaders).to.equal(null);
+      expect(state.$viewports).to.equal(null);
 
-      state.addViewLoader({});
+      state.addViewport({});
 
-      expect(state.$viewLoaders.length).to.equal(1);
+      expect(state.$viewports.length).to.equal(1);
     });
 
   });
@@ -75,13 +75,13 @@ describe('State', function () {
 
   describe('.getViewLoaders() => Array<ViewLoader>', function () {
 
-    it('should return its viewLoaders', function () {
+    it('should return its viewports', function () {
 
       expect(state.getViewLoaders()).to.deep.equal([]);
 
       var fakeLoader = {};
 
-      state.$viewLoaders = [fakeLoader];
+      state.$viewports = [fakeLoader];
 
       expect(state.getViewLoaders()[0]).to.equal(fakeLoader);
     });
@@ -241,12 +241,12 @@ describe('State', function () {
 
   describe('.sleep() => this', function () {
 
-    it('should reset viewLoaders, resolves and $paramCache', function () {
+    it('should reset viewports, resolves and $paramCache', function () {
 
       var viewLoader = { detach: sinon.spy() };
       var resolve = { clearCache: sinon.spy() };
 
-      state.$viewLoaders = [viewLoader];
+      state.$viewports = [viewLoader];
       state.$resolves = [resolve];
       state.$paramCache = {};
 

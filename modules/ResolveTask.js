@@ -66,7 +66,9 @@ ResolveTask.prototype.execute = function () {
 };
 
 
-ResolveTask.prototype.commit = function () {
+ResolveTask.prototype.stash = function (result) {
+
+  this.result = result;
 
   this.cache.set(this.id, this.result);
 

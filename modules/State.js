@@ -28,7 +28,7 @@ function State(definition) {
 
 State.prototype.$parent = null;
 State.prototype.$resolves = null;
-State.prototype.$viewLoaders = null;
+State.prototype.$viewports = null;
 State.prototype.$views = null;
 State.prototype.$paramKeys = null;
 State.prototype.$paramCache = null;
@@ -142,7 +142,7 @@ State.prototype.isStale = function (newParams) {
 
 State.prototype.sleep = function () {
 
-  this.$viewLoaders.forEach(function (viewLoader) {
+  this.$viewports.forEach(function (viewLoader) {
 
     viewLoader.detach();
   });
@@ -158,10 +158,10 @@ State.prototype.sleep = function () {
 };
 
 
-State.prototype.addViewLoader = function (viewLoader) {
+State.prototype.addViewport = function (viewLoader) {
 
-  this.$viewLoaders || (this.$viewLoaders = []);
-  this.$viewLoaders.push(viewLoader);
+  this.$viewports || (this.$viewports = []);
+  this.$viewports.push(viewLoader);
 
   return this;
 };
@@ -169,8 +169,8 @@ State.prototype.addViewLoader = function (viewLoader) {
 
 State.prototype.getViewLoaders = function () {
 
-  return this.$viewLoaders
-    ? this.$viewLoaders.slice()
+  return this.$viewports
+    ? this.$viewports.slice()
     : [];
 };
 

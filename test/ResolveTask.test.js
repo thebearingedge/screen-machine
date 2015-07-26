@@ -36,9 +36,9 @@ describe('ResolveTask', function () {
 
       it('should cache its result', function () {
 
-        task.result = 42;
+        var result = 42;
 
-        task.commit();
+        task.stash(result);
 
         expect(cache.$store['baz@qux']).to.equal(42);
       });

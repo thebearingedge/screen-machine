@@ -8,7 +8,7 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-var ViewLoader = require('../modules/ViewLoader');
+var Viewport = require('../modules/Viewport');
 var State = require('../modules/State');
 var riotView = require('../riotView');
 
@@ -48,10 +48,10 @@ describe('riotView', function () {
 
     sinon.stub(state, 'getResolveResults').returns({ place: 'Huntington' });
 
-    simpleLoader = new ViewLoader('simple');
-    parentLoader = new ViewLoader('parent');
-    nestedLoader = new ViewLoader('nested');
-    nestedNestedLoader = new ViewLoader('nested.nested');
+    simpleLoader = new Viewport('simple');
+    parentLoader = new Viewport('parent');
+    nestedLoader = new Viewport('nested');
+    nestedNestedLoader = new Viewport('nested.nested');
 
     viewLoaders = {
       simple: simpleLoader,

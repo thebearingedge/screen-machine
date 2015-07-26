@@ -54,7 +54,7 @@ ResolveJob.prototype.run = function (task) {
         return self.abort();
       }
 
-      task.result = result;
+      task.stash(result);
       self.completed.push(task);
 
       return --self.remaining

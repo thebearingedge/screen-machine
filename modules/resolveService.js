@@ -5,7 +5,6 @@ var resolveCache = require('./resolveCache');
 var SimpleResolve = require('./SimpleResolve');
 var DependentResolve = require('./DependentResolve');
 var ResolveTask = require('./ResolveTask');
-var ResolveGraph = require('./ResolveGraph');
 var ResolveJob = require('./ResolveJob');
 
 
@@ -34,7 +33,7 @@ function resolveService(Promise) {
     },
 
 
-    processState: function (state) {
+    addResolvesTo: function (state) {
 
       if (typeof state.resolve !== 'object') return this;
 
@@ -51,23 +50,88 @@ function resolveService(Promise) {
     },
 
 
-    createTask: function (resolve, params, resolveCache) {
+    createTask: function (resolve, transitionParams, resolveCache) {
 
-      var ownParams = resolve.state.filterParams(params);
+      var taskParams = resolve.state.filterParams(transitionParams);
 
-      return new ResolveTask(resolve, ownParams, resolveCache, Promise);
+      return new ResolveTask(resolve, taskParams, resolveCache, Promise);
     },
 
 
     createJob: function (tasks, resolveCache, transition) {
 
-      var graph = new ResolveGraph(tasks, resolveCache);
-      var jobTasks = graph
-        .ensureDependencies()
-        .throwIfCyclic()
-        .getTasks();
+      this.prepareTasks(tasks, resolveCache);
 
-      return new ResolveJob(jobTasks, transition);
+      return new ResolveJob(tasks, transition);
+    },
+
+
+    prepareTasks: function (tasks, resolveCache) {
+
+      var graph = tasks
+        .reduce(function (graph, task) {
+
+          graph[task.name] = task.waitingFor;
+
+          return graph;
+        }, {});
+
+      tasks
+        .filter(function (task) {
+
+          return !task.isReady();
+        })
+        .forEach(function (dependent) {
+
+          dependent
+            .waitingFor
+            .filter(function (dependency) {
+
+              return !(dependency in graph);
+            })
+            .forEach(function (absent) {
+
+              var cached = resolveCache.get(absent);
+
+              dependent.setDependency(absent, cached);
+            });
+        });
+
+
+      var VISITING = 1;
+      var OK = 2;
+      var visited = {};
+      var stack = [];
+      var taskName;
+
+      for (taskName in graph) {
+
+        visit(taskName);
+      }
+
+
+      function visit(taskName) {
+
+        if (visited[taskName] === OK) return;
+
+        stack.push(taskName);
+
+        if (visited[taskName] === VISITING) {
+
+          stack.splice(0, stack.indexOf(taskName));
+
+          throw new Error('Cyclic resolve dependency: ' + stack.join(' -> '));
+        }
+
+        visited[taskName] = VISITING;
+
+        graph[taskName].forEach(visit);
+
+        stack.pop();
+        visited[taskName] = OK;
+      }
+
+      return this;
     }
 
   };

@@ -25,7 +25,13 @@ describe('ResolveJob', function () {
       id: 'foo',
       execute: sinon.spy(function (params) {
         // 18
-        return Promise.resolve(3 * params.corge);
+        return new Promise(function (resolve) {
+
+          setTimeout(function () {
+
+            resolve(3 * params.corge);
+          }, 10);
+        });
       })
     };
     barResolve = {
@@ -107,6 +113,26 @@ describe('ResolveJob', function () {
         expect(barResolve.execute.called).to.equal(false);
         expect(bazResolve.execute.called).to.equal(false);
         expect(quxResolve.execute.called).to.equal(false);
+        return done();
+      });
+
+  });
+
+    it('should not run dependent tasks after an error', function (done) {
+
+    var resolveError = new Error('FAIL');
+    transition.isSuperceded = function () { return false; };
+    fooResolve.execute = sinon.spy(function () { throw resolveError; });
+
+    return job
+      .run()
+      .catch(function (err) {
+
+        expect(err.message).to.equal('FAIL');
+        expect(fooResolve.execute.called).to.equal(true);
+        expect(quxResolve.execute.called).to.equal(true);
+        expect(barResolve.execute.called).to.equal(false);
+        expect(bazResolve.execute.called).to.equal(false);
         return done();
       });
 

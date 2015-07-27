@@ -65,7 +65,8 @@ function resolveService(Promise) {
 
       this.prepareTasks(tasks, resolveCache);
 
-      return new ResolveJob(tasks, transition);
+
+      return new ResolveJob(tasks, transition, this.Promise);
     },
 
 

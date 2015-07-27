@@ -4,103 +4,37 @@
 module.exports = ResolveJob;
 
 
-function ResolveJob(tasks, transition) {
+function ResolveJob(tasks, transition, Promise) {
 
   this.tasks = tasks;
   this.transition = transition;
-  this.remaining = tasks.length;
-  this.completed = [];
+  this.Promise = Promise;
 }
 
 
-ResolveJob.prototype.aborted = false;
-ResolveJob.prototype.callback = null;
+ResolveJob.prototype.run = function run() {
 
+  var queue = this.tasks.slice();
+  var wait = queue.length;
+  var complete = [];
+  var transition = this.transition;
 
-ResolveJob.prototype.start = function start(callback) {
+  var Promise = this.Promise;
 
-  var self = this;
-
-  self.callback = callback;
-
-  self
-    .tasks
+  var next = queue
     .filter(function (task) {
 
       return task.isReady();
     })
-    .forEach(function (ready) {
+    .map(function (ready) {
 
-      self.run(ready);
+      return ready.execute(queue, wait, complete, transition);
     });
 
-  return self;
-};
+  return Promise
+    .all(next)
+    .then(function () {
 
-
-ResolveJob.prototype.run = function run(task) {
-
-  var self = this;
-
-  return self
-    .dequeue(task)
-    .execute()
-    .then(function (result) {
-
-      if (self.aborted) return;
-
-      if (self.transition.isSuperceded()) {
-
-        return self.abort();
-      }
-
-      task.result = result;
-      self.completed.push(task);
-
-      return --self.remaining
-        ? self.runDependentsOf(task)
-        : self.callback.call(null, null, self.completed);
-    })
-    .catch(function (err) {
-
-      if (!self.aborted) {
-
-        return self.abort(err);
-      }
-    });
-};
-
-
-ResolveJob.prototype.dequeue = function dequeue(task) {
-
-  return this.tasks.splice(this.tasks.indexOf(task), 1);
-};
-
-
-ResolveJob.prototype.abort = function abort(err) {
-
-  this.aborted = true;
-
-  if (err) this.callback.call(null, err);
-};
-
-
-ResolveJob.prototype.runDependentsOf = function runDependentsOf(task) {
-
-  var self = this;
-
-  return self
-    .tasks
-    .filter(function (waiting) {
-
-      return waiting.isWaitingFor(task.name);
-    })
-    .forEach(function (dependent) {
-
-      return dependent
-        .setDependency(task.name, task.result)
-        .isReady()
-          ? self.run(dependent)
-          : undefined;
+      return Promise.resolve(complete);
     });
 };

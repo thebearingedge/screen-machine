@@ -5,14 +5,12 @@ var resolveCache = require('./resolveCache');
 var SimpleResolve = require('./SimpleResolve');
 var DependentResolve = require('./DependentResolve');
 var ResolveTask = require('./ResolveTask');
-var ResolveJob = require('./ResolveJob');
 
 
 module.exports = resolveService;
 
 
 function resolveService(Promise) {
-
 
   return {
 
@@ -53,20 +51,37 @@ function resolveService(Promise) {
     },
 
 
-    createTask: function (resolve, transitionParams, resolveCache) {
+    createTask: function (resolve, params, resolveCache) {
 
-      var taskParams = resolve.state.filterParams(transitionParams);
+      var taskParams = resolve.state.filterParams(params);
 
-      return new ResolveTask(resolve, taskParams, resolveCache, this.Promise);
+      return new ResolveTask(resolve, taskParams, resolveCache, Promise);
     },
 
 
-    createJob: function (tasks, resolveCache, transition) {
+    runTasks: function (tasks, resolveCache, transition) {
 
       this.prepareTasks(tasks, resolveCache);
 
+      var queue = tasks.slice();
+      var wait = queue.length;
+      var complete = [];
 
-      return new ResolveJob(tasks, transition, this.Promise);
+      var runTasks = queue
+        .filter(function (task) {
+
+          return task.isReady();
+        })
+        .map(function (ready) {
+
+          return ready.execute(queue, wait, complete, transition);
+        });
+
+      return Promise.all(runTasks)
+        .then(function () {
+
+          return Promise.resolve(complete);
+        });
     },
 
 

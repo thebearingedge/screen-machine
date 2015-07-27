@@ -142,9 +142,9 @@ State.prototype.isStale = function (newParams) {
 
 State.prototype.sleep = function () {
 
-  this.$viewports.forEach(function (viewLoader) {
+  this.$viewports.forEach(function (viewport) {
 
-    viewLoader.detach();
+    viewport.detach();
   });
 
   this.$resolves.forEach(function (resolve) {
@@ -158,10 +158,10 @@ State.prototype.sleep = function () {
 };
 
 
-State.prototype.addViewport = function (viewLoader) {
+State.prototype.addViewport = function (viewport) {
 
   this.$viewports || (this.$viewports = []);
-  this.$viewports.push(viewLoader);
+  this.$viewports.push(viewport);
 
   return this;
 };

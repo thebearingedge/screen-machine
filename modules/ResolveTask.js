@@ -17,26 +17,26 @@ function ResolveTask(resolve, params, resolveCache, Promise) {
 }
 
 
-ResolveTask.prototype.$dependencies = undefined;
+ResolveTask.prototype.dependencies = undefined;
 
 
-ResolveTask.prototype.isWaitingFor = function isWaitingFor(dep) {
+ResolveTask.prototype.isWaitingFor = function (dep) {
 
   return this.waitingFor.indexOf(dep) > -1;
 };
 
 
-ResolveTask.prototype.setDependency = function setDependency(dep, result) {
+ResolveTask.prototype.setDependency = function (dep, result) {
 
-  this.$dependencies || (this.$dependencies = {});
-  this.$dependencies[dep] = result;
+  this.dependencies || (this.dependencies = {});
+  this.dependencies[dep] = result;
   this.waitingFor.splice(this.waitingFor.indexOf(dep), 1);
 
   return this;
 };
 
 
-ResolveTask.prototype.isReady = function isReady() {
+ResolveTask.prototype.isReady = function () {
 
   return !this.waitingFor.length;
 };
@@ -62,7 +62,7 @@ ResolveTask.prototype.execute = function (queue, wait, complete, transition) {
 
       resultOrPromise = self
         .resolve
-        .execute(self.params, self.$dependencies);
+        .execute(self.params, self.dependencies);
     }
     catch (e) {
 
@@ -82,31 +82,29 @@ ResolveTask.prototype.execute = function (queue, wait, complete, transition) {
     }
 
     var next = queue
-      .filter(function (task) {
+      .filter(function (queued) {
 
-        return task.isWaitingFor(self.id);
+        return queued.isWaitingFor(self.id);
       })
       .map(function (dependent) {
 
         return dependent.setDependency(self.id, self.result);
       })
-      .filter(function (queued) {
+      .filter(function (dependent) {
 
-        return queued.isReady();
+        return dependent.isReady();
       })
-      .map(function (task) {
+      .map(function (ready) {
 
-        return task.execute(queue, wait, complete, transition);
+        return ready.execute(queue, wait, complete, transition);
       });
 
-    return next.length
-      ? Promise.all(next)
-      : Promise.resolve();
+    return Promise.all(next);
   });
 };
 
 
-ResolveTask.prototype.commit = function commit() {
+ResolveTask.prototype.commit = function () {
 
   this.cache.set(this.id, this.result);
 

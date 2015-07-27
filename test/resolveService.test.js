@@ -13,12 +13,10 @@ var resolveService = require('../modules/resolveService');
 var SimpleResolve = require('../modules/SimpleResolve');
 var DependentResolve = require('../modules/DependentResolve');
 var ResolveTask = require('../modules/ResolveTask');
-var ResolveJob = require('../modules/ResolveJob');
 
 describe('resolveService', function () {
 
   var service;
-
 
   beforeEach(function () {
 
@@ -151,22 +149,6 @@ describe('resolveService', function () {
   });
 
 
-  describe('.createJob(tasks, resolveCache, transition)', function () {
-
-    it('should combine resolveTasks into a job', function () {
-
-      sinon.stub(service, 'prepareTasks');
-
-      var tasks = [{}, {}, {}];
-      var transition = {};
-      var job = service.createJob(tasks, transition);
-
-      expect(job instanceof ResolveJob).to.equal(true);
-    });
-
-  });
-
-
   describe('.prepareTasks(tasks, resolveCache)', function () {
 
     it('should pull missing dependencies from the resolveCache', function () {
@@ -234,6 +216,140 @@ describe('resolveService', function () {
 
       expect(service.prepareTasks.bind(service, [fooTask, barTask], cache))
         .to.throw(Error, 'Cyclic resolve dependency: foo -> bar -> foo');
+    });
+
+  });
+
+
+  describe('.runTasks(tasks, resolveCache, transition)', function () {
+
+    var fooResolve, barResolve, bazResolve, quxResolve;
+    var params, cache;
+    var fooTask, barTask, bazTask, quxTask;
+    var tasks, transition;
+
+    beforeEach(function () {
+
+      fooResolve = {
+        id: 'foo',
+        execute: sinon.spy(function (params) {
+          // 18
+          return Promise.resolve(3 * params.corge);
+        })
+      };
+
+      barResolve = {
+        id: 'bar',
+        injectables: ['foo'],
+        execute: sinon.spy(function (params, deps) {
+          // 16
+          return Promise.resolve((deps.foo / 2) + params.grault);
+        })
+      };
+
+      bazResolve = {
+        id: 'baz',
+        injectables: ['foo', 'bar'],
+        execute: sinon.spy(function (params, deps) {
+          // 40
+          return Promise.resolve(deps.foo + deps.bar + params.corge);
+        })
+      };
+
+      quxResolve = {
+        id: 'qux',
+        execute: sinon.spy(function (params) {
+          // 24
+          return 3 * params.garpley;
+        })
+      };
+
+      params = { corge: 6, grault: 7, garpley: 8 };
+
+      cache = {};
+
+      fooTask = new ResolveTask(fooResolve, params, cache, Promise);
+      barTask = new ResolveTask(barResolve, params, cache, Promise);
+      bazTask = new ResolveTask(bazResolve, params, cache, Promise);
+      quxTask = new ResolveTask(quxResolve, params, cache, Promise);
+
+      tasks = [fooTask, barTask, bazTask, quxTask];
+      transition = {};
+      sinon.stub(service, 'prepareTasks');
+    });
+
+
+    afterEach(function () {
+
+      service.prepareTasks.restore();
+    });
+
+
+    it('should run tasks in dependency order', function (done) {
+
+      transition.isSuperceded = function () { return false; };
+
+      return service
+        .runTasks(tasks, cache, transition)
+        .then(function (complete) {
+
+          var results = complete
+            .reduce(function (results, task) {
+
+              results[task.id] = task.result;
+
+              return results;
+            }, {});
+
+          expect(fooResolve.execute.calledOnce).to.equal(true);
+          expect(barResolve.execute.calledOnce).to.equal(true);
+          expect(bazResolve.execute.calledOnce).to.equal(true);
+          expect(quxResolve.execute.calledOnce).to.equal(true);
+          expect(results).to.deep.equal({ foo: 18, bar: 16, baz: 40, qux: 24 });
+
+          return done();
+        });
+
+    });
+
+
+    it('should not run tasks during a superceded transition', function (done) {
+
+      transition.isSuperceded = function () { return true; };
+
+      return service
+        .runTasks(tasks, cache, transition)
+        .then(function (complete) {
+
+          expect(complete.length).to.equal(0);
+          expect(fooResolve.execute.called).to.equal(false);
+          expect(barResolve.execute.called).to.equal(false);
+          expect(bazResolve.execute.called).to.equal(false);
+          expect(quxResolve.execute.called).to.equal(false);
+
+          return done();
+        });
+    });
+
+
+    it('should not run dependent tasks after an error', function (done) {
+
+      var resolveError = new Error('FAIL');
+      transition.isSuperceded = function () { return false; };
+      fooResolve.execute = sinon.spy(function () { throw resolveError; });
+
+      return service
+        .runTasks(tasks, cache, transition)
+        .catch(function (err) {
+
+          expect(err.message).to.equal('FAIL');
+          expect(fooResolve.execute.called).to.equal(true);
+          expect(quxResolve.execute.called).to.equal(true);
+          expect(barResolve.execute.called).to.equal(false);
+          expect(bazResolve.execute.called).to.equal(false);
+
+          return done();
+        });
     });
 
   });

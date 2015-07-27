@@ -96,6 +96,7 @@ describe('ResolveTask', function () {
         execute: sinon.spy(),
         injectables: ['a', 'b']
       };
+
       params = { foo: 'bar' };
       cache = resolveCache({ stateless: true });
       task = new ResolveTask(resolve, params, cache, Promise);

@@ -123,35 +123,35 @@ function resolveService(Promise) {
       var OK = 2;
       var visited = {};
       var stack = [];
-      var taskName;
+      var taskId;
 
-      for (taskName in graph) {
+      for (taskId in graph) {
 
-        visit(taskName);
+        visit(taskId);
       }
 
       return this;
 
 
-      function visit(taskName) {
+      function visit(taskId) {
 
-        if (visited[taskName] === OK) return;
+        if (visited[taskId] === OK) return;
 
-        stack.push(taskName);
+        stack.push(taskId);
 
-        if (visited[taskName] === VISITING) {
+        if (visited[taskId] === VISITING) {
 
-          stack.splice(0, stack.indexOf(taskName));
+          stack.splice(0, stack.indexOf(taskId));
 
           throw new Error('Cyclic resolve dependency: ' + stack.join(' -> '));
         }
 
-        visited[taskName] = VISITING;
+        visited[taskId] = VISITING;
 
-        graph[taskName].forEach(visit);
+        graph[taskId].forEach(visit);
 
         stack.pop();
-        visited[taskName] = OK;
+        visited[taskId] = OK;
       }
     }
 

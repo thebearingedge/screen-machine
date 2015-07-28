@@ -45,14 +45,15 @@ ResolveTask.prototype.isReady = function () {
 ResolveTask.prototype.run = function (transition, queue, complete, wait) {
 
   var Promise = this.Promise;
-  var self = this;
 
   if (transition.isSuperceded()) {
 
     return Promise.resolve();
   }
 
-  queue.splice(queue.indexOf(self), 1);
+  queue.splice(queue.indexOf(this), 1);
+
+  var self = this;
 
   return new Promise(function (resolve, reject) {
 
@@ -88,7 +89,6 @@ ResolveTask.prototype.run = function (transition, queue, complete, wait) {
 
 ResolveTask.prototype.runNext = function (transition, queue, complete, wait) {
 
-  var Promise = this.Promise;
   var self = this;
 
   var next = queue
@@ -109,7 +109,7 @@ ResolveTask.prototype.runNext = function (transition, queue, complete, wait) {
       return ready.run(transition, queue, complete, wait);
     });
 
-  return Promise.all(next);
+  return self.Promise.all(next);
 };
 
 

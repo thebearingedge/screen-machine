@@ -26,7 +26,6 @@
     "istanbul": "^0.3.15",
     "jsdom": "^5.6.1",
     "mocha": "^2.2.5",
-    "native-promise-only": "^0.8.0-a",
     "riot": "^2.2.2",
     "sinon": "^1.15.3",
     "sinon-chai": "^2.8.0"

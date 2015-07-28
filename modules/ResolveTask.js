@@ -20,17 +20,17 @@ function ResolveTask(resolve, params, resolveCache, Promise) {
 ResolveTask.prototype.dependencies = undefined;
 
 
-ResolveTask.prototype.isWaitingFor = function (dep) {
+ResolveTask.prototype.isWaitingFor = function (dependencyId) {
 
-  return this.waitingFor.indexOf(dep) > -1;
+  return this.waitingFor.indexOf(dependencyId) > -1;
 };
 
 
-ResolveTask.prototype.setDependency = function (dep, result) {
+ResolveTask.prototype.setDependency = function (dependencyId, result) {
 
   this.dependencies || (this.dependencies = {});
-  this.dependencies[dep] = result;
-  this.waitingFor.splice(this.waitingFor.indexOf(dep), 1);
+  this.dependencies[dependencyId] = result;
+  this.waitingFor.splice(this.waitingFor.indexOf(dependencyId), 1);
 
   return this;
 };

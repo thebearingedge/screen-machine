@@ -28,9 +28,9 @@ DependentResolve.prototype.execute = function (params, dependencies) {
 
   var args = this
     .injectables
-    .map(function (injectable) {
+    .map(function (injectableId) {
 
-      return dependencies[injectable];
+      return dependencies[injectableId];
     })
     .concat(params);
 

@@ -88,6 +88,7 @@ ResolveTask.prototype.run = function (transition, queue, complete, wait) {
 
 ResolveTask.prototype.runNext = function (transition, queue, complete, wait) {
 
+  var Promise = this.Promise;
   var self = this;
 
   var next = queue

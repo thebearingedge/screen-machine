@@ -56,12 +56,12 @@ describe('ResolveTask', function () {
     });
 
 
-    describe('.execute() -> Promise', function () {
+    describe('.run() -> Promise', function () {
 
       it('should return a promise for its resolve', function () {
 
         var transition = { isSuperceded: function () { return false; } };
-        var promise = task.execute([task], 1, [], transition);
+        var promise = task.run([task], 1, [], transition);
 
         expect(promise instanceof Promise).to.equal(true);
         expect(resolve.execute)
@@ -74,7 +74,7 @@ describe('ResolveTask', function () {
         resolve.execute = sinon.spy(function () { throw new Error(); });
 
         var transition = { isSuperceded: function () { return false; } };
-        var promise = task.execute([task], 1, [], transition);
+        var promise = task.run([task], 1, [], transition);
 
         expect(promise instanceof Promise).to.equal(true);
         expect(resolve.execute)
@@ -135,7 +135,7 @@ describe('ResolveTask', function () {
 
         task.setDependency('a', 42);
         task.setDependency('b', 'baz');
-        return task.execute([task], 1, [], transition)
+        return task.run([task], 1, [], transition)
           .then(function () {
 
             expect(resolve.execute).to.have.been
@@ -144,57 +144,113 @@ describe('ResolveTask', function () {
           });
       });
 
+    });
 
-      it('should execute its dependents', function (done) {
-
-        var fooResolve = {
-          id: 'foo',
-          execute: function (params) {
-            return Promise.resolve(3 * params.baz);
-          }
-        };
-        var barResolve = {
-          id: 'bar',
-          injectables: ['foo'],
-          execute: function (params, deps) {
-            return Promise.resolve((deps.foo / 2) + params.qux);
-          }
-        };
-        var graultResolve = {
-          id: 'grault',
-          injectables: ['foo', 'bar'],
-          execute: function (params, deps) {
-            return Promise.resolve(deps.foo + deps.bar + params.baz);
-          }
-        };
-
-        var transition = { isSuperceded: function () { return false; } };
-
-        var params = { baz: 4, qux: 5 };
-        var cache = {};
-
-        var fooTask = new ResolveTask(fooResolve, params, cache, Promise);
-        var barTask = new ResolveTask(barResolve, params, cache, Promise);
-        var graultTask = new ResolveTask(graultResolve, params, cache, Promise);
-
-        var queue = [fooTask, barTask, graultTask];
-        var waiting = 3;
-        var complete = [];
+  });
 
 
-        return fooTask.execute(queue, waiting, complete, transition)
-          .then(function () {
+  describe('Resolving Dependents', function () {
 
-            expect(fooTask.result).to.equal(12);
-            expect(barTask.result).to.equal(11);
-            expect(graultTask.result).to.equal(27);
-            expect(complete)
-              .to.deep.equal([fooTask, barTask, graultTask]);
-            return done();
-          });
+    var fooResolve, barResolve, graultResolve;
+    var params, cache;
+    var transition;
+    var fooTask, barTask, graultTask;
+    var queue, waiting, complete;
 
-      });
+    beforeEach(function () {
 
+      fooResolve = {
+        id: 'foo',
+        execute: sinon.spy(function (params) {
+          // 12
+          return Promise.resolve(3 * params.baz);
+        })
+      };
+      barResolve = {
+        id: 'bar',
+        injectables: ['foo'],
+        execute: sinon.spy(function (params, deps) {
+          // 11
+          return Promise.resolve((deps.foo / 2) + params.qux);
+        })
+      };
+      graultResolve = {
+        id: 'grault',
+        injectables: ['foo', 'bar'],
+        execute: sinon.spy(function (params, deps) {
+          // 27
+          return deps.foo + deps.bar + params.baz;
+        })
+      };
+
+      transition = {};
+
+      params = { baz: 4, qux: 5 };
+      cache = {};
+
+      fooTask = new ResolveTask(fooResolve, params, cache, Promise);
+      barTask = new ResolveTask(barResolve, params, cache, Promise);
+      graultTask = new ResolveTask(graultResolve, params, cache, Promise);
+
+      queue = [fooTask, barTask, graultTask];
+      waiting = 3;
+      complete = [];
+
+    });
+
+    it('should run its dependents', function (done) {
+
+      transition.isSuperceded = sinon.stub().returns(false);
+
+      return fooTask
+        .run(queue, waiting, complete, transition)
+        .then(function () {
+
+          expect(fooTask.result).to.equal(12);
+          expect(barTask.result).to.equal(11);
+          expect(graultTask.result).to.equal(27);
+          expect(complete).to.deep.equal([fooTask, barTask, graultTask]);
+
+          return done();
+        });
+    });
+
+
+    it('should not run dependent tasks after an error', function (done) {
+
+      var resolveError = new Error('FAIL');
+      transition.isSuperceded = function () { return false; };
+      fooResolve.execute = sinon.spy(function () { throw resolveError; });
+
+      return fooTask
+        .run(queue, waiting, complete, transition)
+        .catch(function (err) {
+
+          expect(err.message).to.equal('FAIL');
+          expect(fooResolve.execute.called).to.equal(true);
+          expect(barResolve.execute.called).to.equal(false);
+          expect(graultResolve.execute.called).to.equal(false);
+
+          return done();
+        });
+    });
+
+
+    it('should not run during a superceded transition', function (done) {
+
+      transition.isSuperceded = function () { return true; };
+
+      return fooTask
+        .run(queue, waiting, complete, transition)
+        .then(function () {
+
+          expect(complete.length).to.equal(0);
+          expect(fooResolve.execute.called).to.equal(false);
+          expect(barResolve.execute.called).to.equal(false);
+          expect(graultResolve.execute.called).to.equal(false);
+
+          return done();
+        });
     });
 
   });

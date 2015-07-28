@@ -74,7 +74,7 @@ function resolveService(Promise) {
         })
         .map(function (ready) {
 
-          return ready.execute(queue, wait, complete, transition);
+          return ready.run(queue, wait, complete, transition);
         });
 
       return Promise.all(runTasks)

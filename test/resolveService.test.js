@@ -309,47 +309,6 @@ describe('resolveService', function () {
 
           return done();
         });
-
-    });
-
-
-    it('should not run tasks during a superceded transition', function (done) {
-
-      transition.isSuperceded = function () { return true; };
-
-      return service
-        .runTasks(tasks, cache, transition)
-        .then(function (complete) {
-
-          expect(complete.length).to.equal(0);
-          expect(fooResolve.execute.called).to.equal(false);
-          expect(barResolve.execute.called).to.equal(false);
-          expect(bazResolve.execute.called).to.equal(false);
-          expect(quxResolve.execute.called).to.equal(false);
-
-          return done();
-        });
-    });
-
-
-    it('should not run dependent tasks after an error', function (done) {
-
-      var resolveError = new Error('FAIL');
-      transition.isSuperceded = function () { return false; };
-      fooResolve.execute = sinon.spy(function () { throw resolveError; });
-
-      return service
-        .runTasks(tasks, cache, transition)
-        .catch(function (err) {
-
-          expect(err.message).to.equal('FAIL');
-          expect(fooResolve.execute.called).to.equal(true);
-          expect(quxResolve.execute.called).to.equal(true);
-          expect(barResolve.execute.called).to.equal(false);
-          expect(bazResolve.execute.called).to.equal(false);
-
-          return done();
-        });
     });
 
   });

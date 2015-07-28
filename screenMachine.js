@@ -1,11 +1,11 @@
 
 'use strict';
 
-var eventBus = require('./modules/eventBus');
-var stateMachine = require('./modules/stateMachine');
+var viewService = require('./modules/viewService');
 var stateRegistry = require('./modules/stateRegistry');
 var resolveService = require('./modules/resolveService');
-var viewService = require('./modules/viewService');
+var eventBus = require('./modules/eventBus');
+var stateMachine = require('./modules/stateMachine');
 
 
 module.exports = ScreenMachine;
@@ -24,25 +24,25 @@ function ScreenMachine(options) {
   var resolves = resolveService(Promise);
   var registry = stateRegistry(views, resolves);
   var events = eventBus(options.events);
-  var machine = stateMachine(events, resolves);
+  var machine = stateMachine(events, registry, resolves);
 
   machine.init(registry.$root, {});
 
-  this.state = function state() {
+  this.state = function () {
 
     registry.add.apply(registry, arguments);
 
     return this;
   };
 
-  this.transitionTo = function transitionTo(stateName, params) {
+  this.transitionTo = function (stateName, params) {
 
     var state = registry.states[stateName];
 
     return machine.transitionTo(state, params);
   };
 
-  this.go = function go() {
+  this.go = function () {
 
     return this.transitionTo.apply(this, arguments);
   };

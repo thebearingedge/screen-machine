@@ -61,11 +61,16 @@ function resolveService(Promise) {
 
     runTasks: function (tasks, resolveCache, transition) {
 
+      if (!tasks.length) {
+
+        return Promise.all([]);
+      }
+
       this.prepareTasks(tasks, resolveCache);
 
       var queue = tasks.slice();
-      var wait = queue.length;
       var complete = [];
+      var wait = queue.length;
 
       var runTasks = queue
         .filter(function (task) {
@@ -74,7 +79,7 @@ function resolveService(Promise) {
         })
         .map(function (ready) {
 
-          return ready.run(queue, wait, complete, transition);
+          return ready.run(transition, queue, complete, wait);
         });
 
       return Promise.all(runTasks)
@@ -128,6 +133,8 @@ function resolveService(Promise) {
         visit(taskName);
       }
 
+      return this;
+
 
       function visit(taskName) {
 
@@ -149,8 +156,6 @@ function resolveService(Promise) {
         stack.pop();
         visited[taskName] = OK;
       }
-
-      return this;
     }
 
   };

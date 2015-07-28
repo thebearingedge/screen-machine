@@ -17,4 +17,3 @@ SimpleResolve.prototype.execute = function (params) {
 
   return this.invokable.call(null, params);
 };
-

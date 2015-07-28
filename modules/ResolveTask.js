@@ -42,7 +42,7 @@ ResolveTask.prototype.isReady = function () {
 };
 
 
-ResolveTask.prototype.run = function (queue, wait, complete, transition) {
+ResolveTask.prototype.run = function (transition, queue, complete, wait) {
 
   var Promise = this.Promise;
   var self = this;
@@ -81,19 +81,19 @@ ResolveTask.prototype.run = function (queue, wait, complete, transition) {
       return Promise.resolve();
     }
 
-    return self.runNext(queue, wait, complete, transition);
+    return self.runNext(transition, queue, complete, wait);
   });
 };
 
 
-ResolveTask.prototype.runNext = function (queue, wait, complete, transition) {
+ResolveTask.prototype.runNext = function (transition, queue, complete, wait) {
 
   var self = this;
 
   var next = queue
-    .filter(function (queued) {
+    .filter(function (waiting) {
 
-      return queued.isWaitingFor(self.id);
+      return waiting.isWaitingFor(self.id);
     })
     .map(function (dependent) {
 
@@ -105,7 +105,7 @@ ResolveTask.prototype.runNext = function (queue, wait, complete, transition) {
     })
     .map(function (ready) {
 
-      return ready.run(queue, wait, complete, transition);
+      return ready.run(transition, queue, complete, wait);
     });
 
   return Promise.all(next);

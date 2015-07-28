@@ -11,9 +11,11 @@ function eventBus(events) {
   var trigger = events.trigger;
 
   return {
+
     notify: function notify() {
 
       emitter[trigger].apply(null, arguments);
     }
+
   };
 }

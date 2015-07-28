@@ -61,7 +61,7 @@ describe('ResolveTask', function () {
       it('should return a promise for its resolve', function () {
 
         var transition = { isSuperceded: function () { return false; } };
-        var promise = task.run([task], 1, [], transition);
+        var promise = task.run(transition, [task], [], 1);
 
         expect(promise instanceof Promise).to.equal(true);
         expect(resolve.execute)
@@ -74,7 +74,7 @@ describe('ResolveTask', function () {
         resolve.execute = sinon.spy(function () { throw new Error(); });
 
         var transition = { isSuperceded: function () { return false; } };
-        var promise = task.run([task], 1, [], transition);
+        var promise = task.run(transition, [task], [], 1);
 
         expect(promise instanceof Promise).to.equal(true);
         expect(resolve.execute)
@@ -135,7 +135,7 @@ describe('ResolveTask', function () {
 
         task.setDependency('a', 42);
         task.setDependency('b', 'baz');
-        return task.run([task], 1, [], transition)
+        return task.run(transition, [task], [], 1)
           .then(function () {
 
             expect(resolve.execute).to.have.been
@@ -153,9 +153,8 @@ describe('ResolveTask', function () {
 
     var fooResolve, barResolve, graultResolve;
     var params, cache;
-    var transition;
     var fooTask, barTask, graultTask;
-    var queue, waiting, complete;
+    var transition, queue, wait, complete;
 
     beforeEach(function () {
 
@@ -183,8 +182,6 @@ describe('ResolveTask', function () {
         })
       };
 
-      transition = {};
-
       params = { baz: 4, qux: 5 };
       cache = {};
 
@@ -192,9 +189,10 @@ describe('ResolveTask', function () {
       barTask = new ResolveTask(barResolve, params, cache, Promise);
       graultTask = new ResolveTask(graultResolve, params, cache, Promise);
 
+      transition = {};
       queue = [fooTask, barTask, graultTask];
-      waiting = 3;
       complete = [];
+      wait = 3;
 
     });
 
@@ -203,7 +201,7 @@ describe('ResolveTask', function () {
       transition.isSuperceded = sinon.stub().returns(false);
 
       return fooTask
-        .run(queue, waiting, complete, transition)
+        .run(transition, queue, complete, wait)
         .then(function () {
 
           expect(fooTask.result).to.equal(12);
@@ -223,7 +221,7 @@ describe('ResolveTask', function () {
       fooResolve.execute = sinon.spy(function () { throw resolveError; });
 
       return fooTask
-        .run(queue, waiting, complete, transition)
+        .run(transition, queue, complete, wait)
         .catch(function (err) {
 
           expect(err.message).to.equal('FAIL');
@@ -241,7 +239,7 @@ describe('ResolveTask', function () {
       transition.isSuperceded = function () { return true; };
 
       return fooTask
-        .run(queue, waiting, complete, transition)
+        .run(transition, queue, complete, wait)
         .then(function () {
 
           expect(complete.length).to.equal(0);

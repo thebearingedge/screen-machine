@@ -193,3 +193,9 @@ The result at `/customers/42/edit`:
     </sm-view>
 </body>
 ```
+
+07-27-15 Async Transition Tasks
+---
+UI-Router has a very cool feature that allows the developer to define `resolves`. A resolve is basically a function or value that will be injected into a view's controller. It can also just be something you want done during a transition into a given state.
+
+The Ember router also supports asyncronous loading of Model data. This data is used to hydrate your templates and controllers.

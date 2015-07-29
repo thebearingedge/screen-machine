@@ -1,7 +1,6 @@
 
 'use strict';
 
-var viewService = require('./modules/viewService');
 var stateRegistry = require('./modules/stateRegistry');
 var resolveService = require('./modules/resolveService');
 var eventBus = require('./modules/eventBus');
@@ -20,9 +19,8 @@ function ScreenMachine(options) {
 
   var Promise = options.promises;
   var Component = options.components;
-  var views = viewService(Component);
   var resolves = resolveService(Promise);
-  var registry = stateRegistry(views, resolves);
+  var registry = stateRegistry(resolves);
   var events = eventBus(options.events);
   var machine = stateMachine(events, registry, resolves);
 

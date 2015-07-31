@@ -53,17 +53,15 @@ ResolveTask.prototype.run = function (transition, queue, complete, wait) {
 
   queue.splice(queue.indexOf(this), 1);
 
-  var self = this;
-
   return new Promise(function (resolve, reject) {
 
     var resultOrPromise;
 
     try {
 
-      resultOrPromise = self
+      resultOrPromise = this
         .resolve
-        .execute(self.params, self.dependencies);
+        .execute(this.params, this.dependencies);
     }
     catch (e) {
 
@@ -71,35 +69,33 @@ ResolveTask.prototype.run = function (transition, queue, complete, wait) {
     }
 
     resolve(resultOrPromise);
-  })
+  }.bind(this))
   .then(function (result) {
 
-    self.result = result;
-    complete.push(self);
+    this.result = result;
+    complete.push(this);
 
     if (complete.length === wait) {
 
       return Promise.resolve();
     }
 
-    return self.runNext(transition, queue, complete, wait);
-  });
+    return this.runNext(transition, queue, complete, wait);
+  }.bind(this));
 };
 
 
 ResolveTask.prototype.runNext = function (transition, queue, complete, wait) {
 
-  var self = this;
-
   var next = queue
     .filter(function (waiting) {
 
-      return waiting.isWaitingFor(self.id);
-    })
+      return waiting.isWaitingFor(this.id);
+    }, this)
     .map(function (dependent) {
 
-      return dependent.setDependency(self.id, self.result);
-    })
+      return dependent.setDependency(this.id, this.result);
+    }, this)
     .filter(function (dependent) {
 
       return dependent.isReady();
@@ -109,7 +105,7 @@ ResolveTask.prototype.runNext = function (transition, queue, complete, wait) {
       return ready.run(transition, queue, complete, wait);
     });
 
-  return self.Promise.all(next);
+  return this.Promise.all(next);
 };
 
 

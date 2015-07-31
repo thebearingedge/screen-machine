@@ -72,6 +72,7 @@ View.prototype.loadComponent = function (component) {
   if (this.isLoaded()) return this;
 
   this.nextComponent = component;
+  this.tree.loadedViews.push(this);
 
   return this;
 };
@@ -81,13 +82,25 @@ View.prototype.unload = function () {
 
   if (this.children) {
 
-    this.children.forEach(function (child) {
+    this
+      .children
+      .filter(function (child) {
 
-      child.unload();
-    });
+        return child.container === this.nextComponent;
+      }, this)
+      .forEach(function (child) {
+
+        child.unload();
+      });
   }
 
+  var loadedViews = this.tree.loadedViews;
+
+  loadedViews.splice(loadedViews.indexOf(this), 1);
+
   this.nextComponent = null;
+
+  return this;
 };
 
 

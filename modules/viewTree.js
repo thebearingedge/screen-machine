@@ -56,11 +56,11 @@ function viewTree(View, Component) {
         ? viewKey
         : viewKey + '@' + state.parent;
 
-      var view = this.views[viewKey] = new View(viewKey, tree);
-      var targetName = viewKey.slice(viewKey.indexOf('@') + 1);
-      var targetState = targetName === state.name
+      var targetStateName = viewKey.slice(viewKey.indexOf('@') + 1);
+      var targetState = targetStateName === state.name
         ? state
-        : state.getAncestor(targetName);
+        : state.getAncestor(targetStateName);
+      var view = this.views[viewKey] = new View(viewKey, tree);
 
       targetState.addView(view);
 

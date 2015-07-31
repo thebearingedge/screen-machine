@@ -14,22 +14,22 @@ var State = require('../modules/State');
 
 describe('stateRegistry', function () {
 
-  var registry, viewService, resolveService, rootState;
+  var registry, viewTree, resolveService, rootState;
 
   beforeEach(function () {
 
-    viewService = {
-      viewports: {
+    viewTree = {
+      views: {
         '': {}
       },
-      buildViewsFor: function () {}
+      processState: function () {}
     };
 
     resolveService = {
       addResolvesTo: function () {}
     };
 
-    registry = stateRegistry(viewService, resolveService);
+    registry = stateRegistry(viewTree, resolveService);
     rootState = registry.$root;
   });
 

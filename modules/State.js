@@ -10,12 +10,14 @@ module.exports = State;
 function State(definition) {
 
   this.$definition = definition;
+  this.$ancestors = {};
   this.$includes = {};
   this.$branch = [this];
 
   xtend(this, definition);
 
   this.$includes[this.name] = true;
+  this.$ancestors[this.name] = this;
 
   if (this.parent && typeof this.parent === 'string') return this;
 
@@ -26,11 +28,10 @@ function State(definition) {
     : null;
 }
 
-
 State.prototype.$parent = null;
 State.prototype.$resolves = null;
-State.prototype.$viewports = null;
 State.prototype.$views = null;
+State.prototype.$components = null;
 State.prototype.$paramKeys = null;
 State.prototype.$paramCache = null;
 
@@ -40,6 +41,7 @@ State.prototype.inheritFrom = function (parentNode) {
   this.data = xtend({}, parentNode.data, this.data || {});
 
   xtend(this.$includes, parentNode.$includes);
+  xtend(this.$ancestors, parentNode.$ancestors);
 
   this.addParamKeys(parentNode.$paramKeys);
   this.$branch = parentNode.$branch.concat(this.$branch);
@@ -64,6 +66,12 @@ State.prototype.getBranch = function () {
 State.prototype.getParent = function () {
 
   return this.$parent;
+};
+
+
+State.prototype.getAncestor = function (stateName) {
+
+  return this.$ancestors[stateName] || null;
 };
 
 
@@ -143,9 +151,9 @@ State.prototype.isStale = function (newParams) {
 
 State.prototype.sleep = function () {
 
-  this.$viewports.forEach(function (viewport) {
+  this.$views.forEach(function (view) {
 
-    viewport.detach();
+    view.detach();
   });
 
   this.$resolves.forEach(function (resolve) {
@@ -156,23 +164,6 @@ State.prototype.sleep = function () {
   this.$paramCache = null;
 
   return this;
-};
-
-
-State.prototype.addViewport = function (viewport) {
-
-  this.$viewports || (this.$viewports = []);
-  this.$viewports.push(viewport);
-
-  return this;
-};
-
-
-State.prototype.getViewports = function () {
-
-  return this.$viewports
-    ? this.$viewports.slice()
-    : [];
 };
 
 
@@ -189,5 +180,22 @@ State.prototype.getViews = function () {
 
   return this.$views
     ? this.$views.slice()
+    : [];
+};
+
+
+State.prototype.addComponent = function (component) {
+
+  this.$components || (this.$components = []);
+  this.$components.push(component);
+
+  return this;
+};
+
+
+State.prototype.getComponents = function () {
+
+  return this.$components
+    ? this.$components.slice()
     : [];
 };

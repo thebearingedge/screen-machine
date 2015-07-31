@@ -60,37 +60,7 @@ describe('State', function () {
   });
 
 
-  describe('.addViewport(Object viewLoader) => this', function () {
-
-    it('should store viewports', function () {
-
-      expect(state.$viewports).to.equal(null);
-
-      state.addViewport({});
-
-      expect(state.$viewports.length).to.equal(1);
-    });
-
-  });
-
-
-  describe('.getViewports() => Array<ViewLoader>', function () {
-
-    it('should return its viewports', function () {
-
-      expect(state.getViewports()).to.deep.equal([]);
-
-      var fakeLoader = {};
-
-      state.$viewports = [fakeLoader];
-
-      expect(state.getViewports()[0]).to.equal(fakeLoader);
-    });
-
-  });
-
-
-  describe('.addView(Object view) => this', function () {
+  describe('.addView(Object viewLoader) => this', function () {
 
     it('should store views', function () {
 
@@ -104,17 +74,47 @@ describe('State', function () {
   });
 
 
-  describe('.getViews() => Array<View>', function () {
+  describe('.getViews() => Array<ViewLoader>', function () {
 
     it('should return its views', function () {
 
       expect(state.getViews()).to.deep.equal([]);
 
+      var fakeLoader = {};
+
+      state.$views = [fakeLoader];
+
+      expect(state.getViews()[0]).to.equal(fakeLoader);
+    });
+
+  });
+
+
+  describe('.addComponent(Object view) => this', function () {
+
+    it('should store views', function () {
+
+      expect(state.$components).to.equal(null);
+
+      state.addComponent({});
+
+      expect(state.$components.length).to.equal(1);
+    });
+
+  });
+
+
+  describe('.getComponents() => Array<View>', function () {
+
+    it('should return its views', function () {
+
+      expect(state.getComponents()).to.deep.equal([]);
+
       var fakeView = {};
 
-      state.$views = [fakeView];
+      state.$components = [fakeView];
 
-      expect(state.getViews()[0]).to.equal(fakeView);
+      expect(state.getComponents()[0]).to.equal(fakeView);
     });
 
   });
@@ -248,12 +248,12 @@ describe('State', function () {
 
   describe('.sleep() => this', function () {
 
-    it('should reset viewports, resolves and $paramCache', function () {
+    it('should reset views, resolves and $paramCache', function () {
 
       var viewLoader = { detach: sinon.spy() };
       var resolve = { clearCache: sinon.spy() };
 
-      state.$viewports = [viewLoader];
+      state.$views = [viewLoader];
       state.$resolves = [resolve];
       state.$paramCache = {};
 

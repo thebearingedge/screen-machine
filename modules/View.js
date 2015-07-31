@@ -5,14 +5,22 @@
 module.exports = View;
 
 
-function View(id, viewTree) {
+function View(viewKey, tree) {
 
-  this.id = id;
+  var atIndex = viewKey.indexOf('@');
+
+  this.viewKey = viewKey;
+  this.selector = atIndex === 0
+    ? 'sm-view'
+    : 'sm-view[id="' + viewKey.slice(0, atIndex) + '"]';
+  this.tree = tree;
   this.components = {};
-  this.tree = viewTree;
 }
 
 
+View.prototype.parent = null;
+View.prototype.children = null;
+View.prototype.container = null;
 View.prototype.domNode = null;
 View.prototype.nextComponent = null;
 
@@ -27,16 +35,7 @@ View.prototype.detach = function () {
 
 View.prototype.addComponent = function (stateName, component) {
 
-  component.setView(this);
   this.components[stateName] = component;
-
-  return this;
-};
-
-
-View.prototype.setParent = function (view) {
-
-  this.parent = view;
 
   return this;
 };
@@ -44,10 +43,10 @@ View.prototype.setParent = function (view) {
 
 View.prototype.addChild = function (view) {
 
+  view.parent = this;
+
   this.children || (this.children = []);
   this.children.push(view);
-
-  view.setParent(this);
 
   return this;
 };
@@ -56,14 +55,25 @@ View.prototype.addChild = function (view) {
 View.prototype.setContainer = function (component) {
 
   this.container = component;
+  component.view.addChild(this);
 
   return this;
 };
 
 
-View.prototype.isShadowed = function () {
+View.prototype.isActive = function () {
 
-  return this.container !== this.parent.nextComponent;
+  return !!this.tree.activeViews[this.viewKey];
+};
+
+
+View.prototype.loadComponent = function (component) {
+
+  if (this.isLoaded()) return this;
+
+  this.nextComponent = component;
+
+  return this;
 };
 
 
@@ -77,18 +87,7 @@ View.prototype.unload = function () {
     });
   }
 
-  var loadedViews = this.tree.loadedViews;
-
-  loadedViews.splice(loadedViews.indexOf(this), 1);
   this.nextComponent = null;
-
-  return this;
-};
-
-
-View.prototype.isActive = function () {
-
-  return !!this.tree.activeViews[this.id];
 };
 
 
@@ -97,3 +96,8 @@ View.prototype.isLoaded = function () {
   return !!this.nextComponent;
 };
 
+
+View.prototype.isShadowed = function () {
+
+  return !this.container.willPublish();
+};

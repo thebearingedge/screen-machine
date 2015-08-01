@@ -134,6 +134,16 @@ describe('State', function () {
   });
 
 
+  describe('.getAncestor(stateName) => State', function () {
+
+    it('should return an ancestor state');
+
+
+    it('should return null');
+
+  });
+
+
   describe('.addResolve(Object resolve) => this', function () {
 
     it('should store resolves', function () {

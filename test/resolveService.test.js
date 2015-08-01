@@ -285,6 +285,14 @@ describe('resolveService', function () {
     });
 
 
+    it('should resolve an empty array if tasks is empty', function () {
+
+      var run = service.runTasks([]);
+
+      return expect(run).to.eventually.deep.equal([]);
+    });
+
+
     it('should run tasks in dependency order', function (done) {
 
       transition.isSuperceded = function () { return false; };

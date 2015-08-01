@@ -144,6 +144,12 @@ describe('viewTree', function () {
       }
     });
 
+    var userStatus = new State({
+      name: 'userStatus',
+      parent: 'user.editUser.userNotes.userLog',
+      component: 'user-status'
+    });
+
     var userProfile = new State({
       name: 'userProfile',
       parent: 'user',
@@ -173,6 +179,7 @@ describe('viewTree', function () {
     editUser.inheritFrom(user);
     userNotes.inheritFrom(editUser);
     userLog.inheritFrom(userNotes);
+    userStatus.inheritFrom(userLog);
     userProfile.inheritFrom(user);
     admin.inheritFrom(rootState);
 
@@ -180,6 +187,7 @@ describe('viewTree', function () {
     tree.processState(editUser);
     tree.processState(userNotes);
     tree.processState(userLog);
+    tree.processState(userStatus);
     tree.processState(userProfile);
     tree.processState(admin);
 
@@ -223,6 +231,7 @@ describe('viewTree', function () {
     var userNotesComponentLeft = userNotes.$components[0];
     var userNotesComponentRight = userNotes.$components[1];
     var userLogComponent = userLog.$components[0];
+    expect(userLogComponent.name).to.equal('left');
     var userProfileComponent = userProfile.$components[0];
     var userPhotosComponent = userProfile.$components[1];
     var adminComponent = admin.$components[0];

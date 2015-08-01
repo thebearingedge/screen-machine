@@ -74,14 +74,12 @@ function stateRegistry(viewTree, resolveService) {
 
   };
 
-
   var rootState = new State({ name: '' });
 
   rootState.addView(viewTree.views['@']);
 
   registry.$root = rootState;
   registry.states[''] = rootState;
-
 
   return registry;
 }

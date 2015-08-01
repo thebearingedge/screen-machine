@@ -16,3 +16,11 @@ Component.prototype.willPublish = function () {
 
   return this.view.nextComponet === this;
 };
+
+
+Component.prototype.load = function () {
+
+  this.view.loadComponent(this);
+
+  return this;
+};

@@ -81,6 +81,7 @@ function viewTree(View, Component) {
 
       var component = new Component(viewKey, state, view);
 
+      view.addComponent(state.name, component);
       state.addComponent(component);
 
       return component;

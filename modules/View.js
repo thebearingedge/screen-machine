@@ -7,13 +7,16 @@ module.exports = View;
 
 function View(viewKey, tree) {
 
-  var atIndex = viewKey.indexOf('@');
-
   this.viewKey = viewKey;
+  this.tree = tree;
+
+  var atIndex = viewKey.indexOf('@');
+  var viewName = viewKey.slice(0, atIndex);
+
+  this.name = viewName;
   this.selector = atIndex === 0
     ? 'sm-view'
-    : 'sm-view[id="' + viewKey.slice(0, atIndex) + '"]';
-  this.tree = tree;
+    : 'sm-view[id="' + viewName + '"]';
   this.components = {};
 }
 

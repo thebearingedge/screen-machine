@@ -1,98 +1,59 @@
+
 'use strict';
 
 var chai = require('chai');
 var sinon = require('sinon');
 var sinonChai = require('sinon-chai');
 var expect = chai.expect;
+
 chai.use(sinonChai);
 
-var DependentResolve = require('../DependentResolve');
-
+var DependentResolve = require('../modules/DependentResolve');
+var State = require('../modules/State');
 
 describe('DependentResolve', function () {
 
-  var resolveName, resolveFunc, stateParams, stateNode;
-  var resolve;
+  var resolve, state;
 
   beforeEach(function () {
 
-    resolveName = 'foo@bar';
-    resolveFunc = [
-      'baz@qux', sinon.spy(function () { return true; })
-    ];
-    stateParams = { foo: 'bar' };
-    stateNode = {
+    state = new State({
       name: 'bar',
       resolve: {
-        'foo@bar': resolveFunc
+        foo: ['baz@qux', sinon.spy(function () {})]
       }
-    };
-
-    resolve = new DependentResolve(resolveName, stateParams, stateNode);
-  });
-
-
-  it('should have instance properties', function () {
-
-    expect(resolve.name).to.equal('foo@bar');
-    expect(resolve.stateParams).to.equal(stateParams);
-    expect(resolve.stateNode).to.equal(stateNode);
-    expect(resolve._invokable).to.equal(resolveFunc[1]);
-  });
-
-
-  describe('.isReady()', function () {
-
-    it('should return whether dependencies are met', function () {
-
-      expect(resolve.isReady()).to.equal(false);
-
-      resolve._dependencies = {
-        'baz@qux': 42
-      };
-
-      expect(resolve.isReady()).to.equal(true);
     });
 
+    resolve = new DependentResolve('foo', state);
   });
 
 
-  describe('.execute()', function () {
+  it('should have an id', function () {
 
-    it('should call invokable with dependencies and params', function () {
-
-      resolve._dependencies = {
-        'baz@qux': 42
-      };
-
-      var result = resolve.execute();
-
-      expect(resolve._invokable)
-        .to.have.been.calledWithExactly(42, stateParams);
-      expect(result).to.equal(true);
-    });
-
+    expect(resolve.id).to.equal('foo@bar');
   });
 
 
-  describe('.isDependentOn(resolveName)', function () {
+  it('should ensure dependency ids', function () {
 
-    it('should return whether the resolveName is a dependency', function () {
+    state.resolve.foo[0] = 'baz';
 
-      expect(resolve.isDependentOn('baz@qux')).to.equal(true);
-    });
+    resolve = new DependentResolve('foo', state);
 
+    expect(resolve.injectables[0]).to.equal('baz@bar');
   });
 
 
-  describe('.setDependency(name, value)', function () {
+  describe('.execute(Object params, Object dependencies) => <Any>', function () {
 
-    it('should set the dependency and return the resolve', function () {
+    it('should call its invokable with dependencies and params', function () {
 
-      var chained = resolve.setDependency('baz@qux', 42);
+      var params = { foo: 'bar' };
+      var dependencies = { 'baz@qux': 42 };
 
-      expect(chained).to.equal(resolve);
-      expect(chained._dependencies['baz@qux']).to.equal(42);
+      resolve.execute(params, dependencies);
+
+      expect(state.resolve.foo[1]).to.have.been.calledWithExactly(42, params);
     });
 
   });

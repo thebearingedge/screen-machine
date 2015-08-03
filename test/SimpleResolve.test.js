@@ -1,62 +1,49 @@
+
 'use strict';
 
 var chai = require('chai');
 var sinon = require('sinon');
 var sinonChai = require('sinon-chai');
 var expect = chai.expect;
+
 chai.use(sinonChai);
 
-var SimpleResolve = require('../SimpleResolve');
 
+var SimpleResolve = require('../modules/SimpleResolve');
+var State = require('../modules/State');
 
 describe('SimpleResolve', function () {
 
-  var resolveName, resolveFunc, stateParams, stateNode;
-  var resolve;
+  var resolve, state;
 
   beforeEach(function () {
 
-    resolveName = 'foo@bar';
-    resolveFunc = sinon.spy();
-    stateParams = { foo: 'bar' };
-    stateNode = {
+    state = new State({
       name: 'bar',
       resolve: {
-        'foo@bar': resolveFunc
+        foo: sinon.spy()
       }
-    };
-
-    resolve = new SimpleResolve(resolveName, stateParams, stateNode);
-  });
-
-
-  it('should have instance properties', function () {
-
-    expect(resolve.name).to.equal('foo@bar');
-    expect(resolve.stateParams).to.equal(stateParams);
-    expect(resolve.stateNode).to.equal(stateNode);
-    expect(resolve._invokable).to.equal(resolveFunc);
-  });
-
-
-  describe('.isReady()', function () {
-
-    it('was born ready', function () {
-
-      expect(resolve.isReady()).to.equal(true);
     });
 
+    resolve = new SimpleResolve('foo', state);
   });
 
 
-  describe('.execute()', function () {
+  it('should have an id', function () {
 
-    it('should call invokable with params', function () {
+    expect(resolve.id).to.equal('foo@bar');
+  });
 
-      resolve.execute();
 
-      expect(resolve._invokable)
-        .to.have.been.calledWithExactly(stateParams);
+  describe('.execute(Object params) => <Any>', function () {
+
+    it('should call its state\'s resolve function with params', function () {
+
+      var params = { foo: 'bar' };
+
+      resolve.execute(params);
+
+      expect(state.resolve.foo).to.have.been.calledWithExactly(params);
     });
 
   });

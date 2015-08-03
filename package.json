@@ -1,9 +1,8 @@
 {
-  "name": "state-tree",
-  "version": "0.0.0",
-  "description": "change-me",
-  "main": "StateTree.js",
-  "private": true,
+  "name": "screen-machine",
+  "version": "0.0.1",
+  "description": "Screen Machine",
+  "main": "index.js",
   "scripts": {
     "test": "./node_modules/.bin/istanbul test ./node_modules/.bin/_mocha",
     "cover": "npm test --coverage && npm run coverage",
@@ -12,21 +11,22 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thebearingedge/state-tree.git"
+    "url": "git+https://github.com/thebearingedge/screen-machine.git"
   },
   "author": "Tim Davis",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/thebearingedge/state-tree/issues"
+    "url": "https://github.com/thebearingedge/screen-machine/issues"
   },
-  "homepage": "https://github.com/thebearingedge/state-tree#readme",
+  "homepage": "https://github.com/thebearingedge/screen-machine#readme",
   "devDependencies": {
     "chai": "^3.0.0",
     "chai-as-promised": "^5.1.0",
     "http-server": "^0.8.0",
-    "istanbul": "^0.3.15",
+    "istanbul": "^0.3.17",
+    "jsdom": "^5.6.1",
     "mocha": "^2.2.5",
-    "native-promise-only": "^0.8.0-a",
+    "riot": "^2.2.2",
     "sinon": "^1.15.3",
     "sinon-chai": "^2.8.0"
   },

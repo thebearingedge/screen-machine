@@ -44,11 +44,9 @@ ResolveTask.prototype.isReady = function () {
 
 ResolveTask.prototype.run = function (transition, queue, complete, wait) {
 
-  var Promise = this.Promise;
-
   if (transition.isSuperceded()) {
 
-    return Promise.resolve();
+    return this.Promise.resolve();
   }
 
   queue.splice(queue.indexOf(this), 1);
@@ -77,7 +75,7 @@ ResolveTask.prototype.run = function (transition, queue, complete, wait) {
 
     if (complete.length === wait) {
 
-      return Promise.resolve();
+      return this.Promise.resolve();
     }
 
     return this.runNext(transition, queue, complete, wait);

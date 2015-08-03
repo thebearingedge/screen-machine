@@ -5,6 +5,9 @@
 var xtend = require('xtend');
 
 
+module.exports = resolveCache;
+
+
 var cache = {
 
   $store: {},
@@ -34,7 +37,7 @@ var cache = {
 };
 
 
-module.exports = function resolveCache(options) {
+function resolveCache(options) {
 
   var instance;
 
@@ -49,4 +52,4 @@ module.exports = function resolveCache(options) {
   }
 
   return instance;
-};
+}

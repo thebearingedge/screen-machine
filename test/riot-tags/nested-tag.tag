@@ -2,5 +2,5 @@
 <nested-tag>
 
   <p>Here's Johnny!</p>
-  <sm-view id='nested.nested'></sm-view>
+  <sm-view name='nested.nested'></sm-view>
 </nested-tag>

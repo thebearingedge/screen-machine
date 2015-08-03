@@ -5,16 +5,33 @@
 module.exports = Component;
 
 
-function Component(viewKey, state, view) {
+function Component(componentName, viewKey, state) {
 
-  this.name = viewKey.slice(0, viewKey.indexOf('@'));
-  this.view = view;
+  this.name = componentName;
+  this.viewKey = viewKey;
+  this.state = state;
+  this.childViews = [];
 }
 
 
-Component.prototype.willPublish = function () {
+Component.prototype.setView = function (view) {
 
-  return this.view.nextComponet === this;
+  this.view = view;
+};
+
+
+Component.prototype.addChildView = function (view) {
+
+  this.childViews.push(view);
+
+  return this;
+};
+
+
+Component.prototype.shouldRender = function () {
+
+  return this.view.nextComponent === this &&
+    this.view.currentComponent !== this;
 };
 
 

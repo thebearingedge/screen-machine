@@ -135,18 +135,18 @@ describe('viewTree', function () {
       }
     });
 
-    var userLog = new State({
-      name: 'user.editUser.userNotes.userLog',
+    var bonus = new State({
+      name: 'user.editUser.userNotes.bonus',
       views: {
         'left@user.editUser': {
-          component: 'user-log'
+          component: 'bonus-component'
         }
       }
     });
 
     var userStatus = new State({
       name: 'userStatus',
-      parent: 'user.editUser.userNotes.userLog',
+      parent: 'user.editUser',
       component: 'user-status'
     });
 
@@ -159,7 +159,7 @@ describe('viewTree', function () {
         },
         '@userProfile': {
           component: 'user-photos'
-        }
+        },
       }
     });
 
@@ -178,21 +178,22 @@ describe('viewTree', function () {
     user.inheritFrom(rootState);
     editUser.inheritFrom(user);
     userNotes.inheritFrom(editUser);
-    userLog.inheritFrom(userNotes);
-    userStatus.inheritFrom(userLog);
+    bonus.inheritFrom(userNotes);
+    userStatus.inheritFrom(editUser);
     userProfile.inheritFrom(user);
     admin.inheritFrom(rootState);
 
     tree.processState(user);
     tree.processState(editUser);
     tree.processState(userNotes);
-    tree.processState(userLog);
+    tree.processState(bonus);
     tree.processState(userStatus);
     tree.processState(userProfile);
     tree.processState(admin);
 
     var rootView = tree.views['@'];
     var userView = tree.views['@user'];
+    var editUserView = tree.views['@user.editUser'];
     var editUserLeftView = tree.views['left@user.editUser'];
     var editUserRightView = tree.views['right@user.editUser'];
     var userProfileView = tree.views['@userProfile'];
@@ -201,6 +202,7 @@ describe('viewTree', function () {
     expect(tree.views).to.deep.equal({
       '@': rootView,
       '@user': userView,
+      '@user.editUser': editUserView,
       'left@user.editUser': editUserLeftView,
       'right@user.editUser': editUserRightView,
       '@userProfile': userProfileView,
@@ -210,9 +212,8 @@ describe('viewTree', function () {
 
     expect(rootState.$views.length).to.equal(1);
     expect(user.$views.length).to.equal(1);
-    expect(editUser.$views.length).to.equal(2);
+    expect(editUser.$views.length).to.equal(3);
     expect(userNotes.$views).to.equal(null);
-    expect(userLog.$views).to.equal(null);
     expect(userProfile.$views.length).to.equal(1);
     expect(admin.$views.length).to.equal(1);
 
@@ -221,7 +222,6 @@ describe('viewTree', function () {
     expect(user.$components.length).to.equal(1);
     expect(editUser.$components.length).to.equal(1);
     expect(userNotes.$components.length).to.equal(2);
-    expect(userLog.$components.length).to.equal(1);
     expect(userProfile.$components.length).to.equal(2);
     expect(admin.$components.length).to.equal(2);
 
@@ -230,8 +230,6 @@ describe('viewTree', function () {
     var editUserComponent = editUser.$components[0];
     var userNotesComponentLeft = userNotes.$components[0];
     var userNotesComponentRight = userNotes.$components[1];
-    var userLogComponent = userLog.$components[0];
-    expect(userLogComponent.name).to.equal('left');
     var userProfileComponent = userProfile.$components[0];
     var userPhotosComponent = userProfile.$components[1];
     var adminComponent = admin.$components[0];
@@ -258,7 +256,6 @@ describe('viewTree', function () {
     expect(editUserComponent.view).to.equal(userView);
     expect(userNotesComponentLeft.view).to.equal(editUserLeftView);
     expect(userNotesComponentRight.view).to.equal(editUserRightView);
-    expect(userLogComponent.view).to.equal(editUserLeftView);
     expect(userProfileComponent.view).to.equal(userView);
     expect(userPhotosComponent.view).to.equal(userProfileView);
     expect(adminComponent.view).to.equal(rootView);

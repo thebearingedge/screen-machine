@@ -10,13 +10,11 @@ function View(viewKey, tree) {
   this.viewKey = viewKey;
   this.tree = tree;
 
-  var atIndex = viewKey.indexOf('@');
-  var viewName = viewKey.slice(0, atIndex);
+  var viewName = viewKey.slice(0, viewKey.indexOf('@'));
 
-  this.name = viewName;
-  this.selector = atIndex === 0
-    ? 'sm-view'
-    : 'sm-view[id="' + viewName + '"]';
+  this.selector = viewName === ''
+    ? 'sm-view:not([name])'
+    : 'sm-view[name="' + viewName + '"]';
   this.components = {};
 }
 
@@ -24,13 +22,29 @@ function View(viewKey, tree) {
 View.prototype.parent = null;
 View.prototype.children = null;
 View.prototype.container = null;
-View.prototype.domNode = null;
+View.prototype.element = null;
+View.prototype.content = null;
 View.prototype.nextComponent = null;
+View.prototype.currentComponent = null;
+
+
+View.prototype.attachWithin = function (node) {
+
+  var element = node.querySelector(this.selector);
+
+  this.content = element
+    ? element.firstElementChild
+    : null;
+  this.element = element;
+
+  return this;
+};
 
 
 View.prototype.detach = function () {
 
-  this.domNode = null;
+  this.close();
+  this.element = null;
 
   return this;
 };
@@ -38,6 +52,7 @@ View.prototype.detach = function () {
 
 View.prototype.addComponent = function (stateName, component) {
 
+  component.setView(this);
   this.components[stateName] = component;
 
   return this;
@@ -57,8 +72,9 @@ View.prototype.addChild = function (view) {
 
 View.prototype.setContainer = function (component) {
 
-  this.container = component;
   component.view.addChild(this);
+  component.addChildView(this);
+  this.container = component;
 
   return this;
 };
@@ -89,7 +105,7 @@ View.prototype.unload = function () {
       .children
       .filter(function (child) {
 
-        return child.container === this.nextComponent;
+        return child.isLoaded();
       }, this)
       .forEach(function (child) {
 
@@ -115,5 +131,65 @@ View.prototype.isLoaded = function () {
 
 View.prototype.isShadowed = function () {
 
-  return !this.container.willPublish();
+  return !!this.container && !this.container.shouldRender();
+};
+
+
+View.prototype.publishChange = function () {
+
+  if (this.shouldUpdate()) {
+
+    this.currentComponent.update();
+
+    return this;
+  }
+
+  if (this.shouldClose()) {
+
+    return this.close();
+  }
+
+  if (this.content) {
+
+    this.element.replaceChild(this.nextComponent.node, this.content);
+  }
+  else {
+
+    this.element.appendChild(this.nextComponent.node);
+  }
+
+  this.content = this.nextComponent.node;
+
+  return this;
+};
+
+
+View.prototype.shouldUpdate = function () {
+
+  return !!this.currentComponent &&
+    (this.currentComponent === this.nextComponent);
+};
+
+
+View.prototype.shouldClose = function () {
+
+  return !this.isLoaded();
+};
+
+
+View.prototype.close = function () {
+
+  if (this.content) {
+
+    this.element.removeChild(this.content);
+  }
+
+  if (this.currentComponent) {
+
+    this.currentComponent.destroy();
+  }
+
+  this.content = this.currentComponent = null;
+
+  return this;
 };

@@ -19,23 +19,29 @@ function viewTree(View, Component) {
     },
 
 
+    components: {},
+
+
     processState: function (state) {
 
       var viewKey;
+      var componentName;
       var view;
 
       if (state.views) {
 
         for (viewKey in state.views) {
 
+          componentName = viewKey;
           view = this.ensureView(viewKey, state);
-          this.createComponent(viewKey, state, view);
+          this.createComponent(componentName, viewKey, state, view);
         }
       }
       else if (state.component) {
 
+        componentName = '';
         view = this.ensureView(null, state);
-        this.createComponent(view.viewKey, state, view);
+        this.createComponent(componentName, view.viewKey, state, view);
       }
 
       return this;
@@ -77,9 +83,9 @@ function viewTree(View, Component) {
     },
 
 
-    createComponent: function (viewKey, state, view) {
+    createComponent: function (componentName, viewKey, state, view) {
 
-      var component = new Component(viewKey, state, view);
+      var component = new Component(componentName, viewKey, state, view);
 
       view.addComponent(state.name, component);
       state.addComponent(component);

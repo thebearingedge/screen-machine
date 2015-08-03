@@ -71,7 +71,7 @@ State.prototype.getParent = function () {
 
 State.prototype.getAncestor = function (stateName) {
 
-  return this.$ancestors[stateName] || null;
+  return this.$ancestors[stateName];
 };
 
 

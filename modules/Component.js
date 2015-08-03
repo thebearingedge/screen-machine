@@ -7,16 +7,24 @@ module.exports = Component;
 
 function Component(componentName, viewKey, state) {
 
+  this.id = viewKey + ':' + state.name;
   this.name = componentName;
   this.viewKey = viewKey;
   this.state = state;
   this.childViews = [];
+  this.initialize(viewKey, state);
 }
+
+
+Component.prototype.node = null;
+Component.prototype.initialize = function () {};
 
 
 Component.prototype.setView = function (view) {
 
   this.view = view;
+
+  return this;
 };
 
 

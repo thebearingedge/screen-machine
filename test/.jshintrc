@@ -2,6 +2,7 @@
   "node": true,
   "expr": true,
   "globals": {
+    "document": true,
     "Promise": true,
     "describe": true,
     "it": true,

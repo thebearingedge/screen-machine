@@ -19,9 +19,6 @@ function viewTree(View, Component) {
     },
 
 
-    components: {},
-
-
     processState: function (state) {
 
       var viewKey;

@@ -8,7 +8,6 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-/* global -document */
 var document = require('jsdom').jsdom();
 
 var View = require('../modules/View');
@@ -27,6 +26,7 @@ describe('View', function () {
 
     view = new View('@', viewTree);
   });
+
 
   afterEach(function () {
 

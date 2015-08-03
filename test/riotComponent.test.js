@@ -11,11 +11,10 @@ chai.use(sinonChai);
 var State = require('../modules/State');
 var riotComponent = require('../riotComponent');
 var View = require('../modules/View');
-/* global -document */
 var document = require('jsdom').jsdom();
 var riot = require('riot');
 
-require('./riot-tags');
+require('./riot-tags/all');
 
 
 describe('riotComponent', function () {
@@ -140,7 +139,7 @@ describe('riotComponent', function () {
       expect(component.node.innerHTML).to.equal(
         '<span>Welcome to Santa Ana</span>'
       );
-      expect(component.tag.root).to.equal(component.node);
+      expect(component.tagInstance.root).to.equal(component.node);
     });
 
 
@@ -197,9 +196,9 @@ describe('riotComponent', function () {
 
       component.render();
 
-      sinon.spy(component.tag, 'unmount');
+      sinon.spy(component.tagInstance, 'unmount');
 
-      var tag = component.tag;
+      var tag = component.tagInstance;
 
       expect(component.node.innerHTML).to.equal(
         '<span>Welcome to </span>'
@@ -209,7 +208,7 @@ describe('riotComponent', function () {
 
       expect(tag.unmount.calledOnce).to.equal(true);
       expect(component.node).to.equal(null);
-      expect(component.tag).to.equal(null);
+      expect(component.tagInstance).to.equal(null);
     });
 
 

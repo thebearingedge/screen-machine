@@ -1,8 +1,7 @@
 
 'use strict';
 
-
-var xtend = require('xtend');
+var xtend = require('xtend/mutable');
 
 
 module.exports = resolveCache;
@@ -43,7 +42,7 @@ function resolveCache(options) {
 
   if (options && options.stateless) {
 
-    instance = xtend(cache);
+    instance = xtend({}, cache);
     instance.$store = {};
   }
   else {

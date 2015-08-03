@@ -1,6 +1,9 @@
 
 'use strict';
 
+var xtend = require('xtend/mutable');
+var BaseComponent = require('./modules/Component');
+
 
 module.exports = riotComponent;
 
@@ -8,95 +11,71 @@ module.exports = riotComponent;
 function riotComponent(riot, document) {
 
 
-  function Component(componentName, viewKey, state) {
+  function RiotComponent() {
 
-    this.id = viewKey + ':' + state.name;
-    this.name = componentName;
-    this.viewKey = viewKey;
-    this.state = state;
-    this.tagName = state.views
-      ? state.views[viewKey].component
-      : state.component;
-    this.childViews = [];
+    BaseComponent.apply(this, arguments);
   }
 
 
-  Component.prototype.node = null;
-  Component.prototype.tag = null;
+  xtend(RiotComponent.prototype, BaseComponent.prototype, {
+
+    constructor: RiotComponent,
 
 
-  Component.prototype.setView = function (view) {
-
-    this.view = view;
-
-    return this;
-  };
+    tagInstance: null,
 
 
-  Component.prototype.addChildView = function (view) {
+    initialize: function (viewKey, state) {
 
-    this.childViews.push(view);
-
-    return this;
-  };
-
-
-  Component.prototype.shouldRender = function () {
-
-    return this.view.nextComponent === this &&
-      this.view.currentComponent !== this;
-  };
+      this.tagName = state.views
+        ? state.views[viewKey].component
+        : state.component;
+    },
 
 
-  Component.prototype.load = function () {
+    render: function () {
 
-    this.view.loadComponent(this);
+      var opts = this.state.getResolveResults();
 
-    return this;
-  };
+      this.node = document.createElement(this.tagName);
+      this.tagInstance = riot.mount(this.node, this.tagName, opts)[0];
 
+      this
+        .childViews
+        .forEach(function (view) {
 
-  Component.prototype.render = function () {
+          view.attachWithin(this.node);
+        }, this);
 
-    var opts = this.state.getResolveResults();
-
-    this.node = document.createElement(this.tagName);
-    this.tag = riot.mount(this.node, this.tagName, opts)[0];
-
-    this
-      .childViews
-      .forEach(function (view) {
-
-        view.attachWithin(this.node);
-      }, this);
-
-    return this;
-  };
+      return this;
+    },
 
 
-  Component.prototype.update = function () {
+    update: function () {
 
-    this.tag.opts = this.state.getResolveResults();
-    this.tag.update();
+      this.tagInstance.opts = this.state.getResolveResults();
+      this.tagInstance.update();
 
-    return this;
-  };
+      return this;
+    },
 
 
-  Component.prototype.destroy = function () {
+    destroy: function () {
 
-    this.tag.unmount();
-    this.tag = this.node = null;
+      this.tagInstance.unmount();
+      this.tagInstance = this.node = null;
 
-    this
-      .childViews
-      .forEach(function (view) {
+      this
+        .childViews
+        .forEach(function (view) {
 
-        view.detach();
-      });
+          view.detach();
+        });
 
-    return this;
-  };
+      return this;
+    }
 
-  return Component;
+  });
+
+  return RiotComponent;
 }

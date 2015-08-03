@@ -7,18 +7,15 @@ module.exports = StateNode;
 
 function StateNode(stateDef) {
 
-  if (!(this instanceof StateNode)) {
-
-    return new StateNode(stateDef);
-  }
-
   this._parent = null;
   this._params = null;
 
   this._includes = {};
   this._branch = [this];
+  this._ancestors = {};
   this._paramKeys = [];
-  this._resolveables = [];
+  this._resolves = [];
+  this._resolutions = null;
 
   this.data = {};
   this.onEnter = function () {};
@@ -27,70 +24,43 @@ function StateNode(stateDef) {
   xtend(this, stateDef);
 
   this._includes[this.name] = true;
-  this._registerResolves();
+  this._ancestors[this.name] = this;
+
+  this.parent = this.getParentName();
 }
-
-
-StateNode.prototype._registerResolves = function () {
-
-  if (this.resolve) {
-
-    for (var key in this.resolve) {
-
-      this._resolveables.push(this.resolve[key]);
-    }
-  }
-
-  return this;
-};
 
 
 StateNode.prototype.getParentName = function () {
 
-  if (this.parent) return this.parent;
+  if (this.parent !== undefined) return this.parent;
 
   var splitNames = this.name.split('.');
 
-  if (splitNames.length === 1) return null;
+  if (splitNames.length === 1) {
 
-  splitNames.pop();
-  this.parent = splitNames.join('.');
+    return null;
+  }
+  else {
 
-  return this.parent;
+    splitNames.pop();
+
+    return splitNames.join('.');
+  }
 };
 
 
 StateNode.prototype.attachTo = function (parentNode) {
 
+  // inherit includes, data, branch, and ancestry
+  xtend(this._includes, parentNode._includes);
+
+  this.data = xtend({}, parentNode.data, this.data);
+
+  this._branch = parentNode._branch.concat(this._branch);
+
+  xtend(this._ancestors, parentNode._ancestors);
+
   this._parent = parentNode;
-
-  return this
-    ._inheritIncludes()
-    ._inheritData()
-    ._inheritBranch()
-    .initialize();
-};
-
-
-StateNode.prototype._inheritIncludes = function () {
-
-  xtend(this._includes, this._parent._includes);
-
-  return this;
-};
-
-
-StateNode.prototype._inheritData = function () {
-
-  this.data = xtend({}, this._parent.data, this.data);
-
-  return this;
-};
-
-
-StateNode.prototype._inheritBranch = function () {
-
-  this._branch = this._parent._branch.concat(this._branch);
 
   return this;
 };
@@ -114,75 +84,31 @@ StateNode.prototype.isStale = function (newParams) {
 
   if (!this._params) return true;
 
-  var isStale = false;
-  var keys = this._paramKeys;
-  var i = keys.length;
+  var self = this;
 
-  while (i--) {
-    // jshint eqeqeq: false
-    if (this._params[keys[i]] != newParams[keys[i]]) {
-      isStale = true;
-      break;
-    }
-  }
+  return self._paramKeys.some(function (key) {
 
-  return isStale;
+    return self._params[key] != newParams[key];
+  });
 };
 
 
-StateNode.prototype.isNew = function () {
+StateNode.prototype.addResolve = function (resolve) {
 
-  return this._params === null;
+  this._resolves.push(resolve);
+
+  return this;
 };
 
 
-StateNode.prototype._getOwnParams = function (allParams) {
+StateNode.prototype.filterParams = function (allParams) {
 
   return this
     ._paramKeys
     .reduce(function (ownParams, key) {
+
       ownParams[key] = allParams[key];
+
       return ownParams;
     }, {});
-};
-
-
-StateNode.prototype.load = function (allParams) {
-
-  var ownParams = this._getOwnParams(allParams);
-
-  var resolved;
-
-  if (this._resolveables.length !== 0) {
-
-    resolved = this._resolveables.map(function (resolveable) {
-
-      if (typeof resolveable !== 'function') return resolveable;
-
-      return resolveable(ownParams);
-    });
-  }
-
-  this.onEnter.apply(this, resolved);
-
-  this._params = ownParams;
-
-  this._onExit = function () {
-    this.onExit.apply(this, resolved);
-    this._onExit = undefined;
-  }.bind(this);
-
-};
-
-
-StateNode.prototype.unload = function () {
-
-  this._onExit();
-  this._params = null;
-};
-
-
-StateNode.prototype.initialize = function () {
-
-  return this;
 };

@@ -7,9 +7,7 @@ module.exports = Component;
 
 function Component(componentName, viewKey, state) {
 
-  this.id = viewKey + ':' + state.name;
   this.name = componentName;
-  this.viewKey = viewKey;
   this.state = state;
   this.childViews = [];
   this.initialize(viewKey, state);

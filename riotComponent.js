@@ -2,7 +2,7 @@
 'use strict';
 
 var xtend = require('xtend/mutable');
-var BaseComponent = require('./modules/Component');
+var BaseComponent = require('./modules/BaseComponent');
 
 
 module.exports = riotComponent;

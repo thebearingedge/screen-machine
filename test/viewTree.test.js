@@ -11,7 +11,7 @@ chai.use(sinonChai);
 var State = require('../modules/State');
 var viewTree = require('../modules/viewTree');
 var View = require('../modules/View');
-var Component = require('../modules/Component');
+var BaseComponent = require('../modules/BaseComponent');
 
 
 describe('viewTree', function () {
@@ -20,7 +20,7 @@ describe('viewTree', function () {
 
   beforeEach(function () {
 
-    tree = viewTree(View, Component);
+    tree = viewTree(View, BaseComponent);
     rootState = new State({ name: '' });
     rootState.addView(tree.views['@']);
   });
@@ -79,7 +79,7 @@ describe('viewTree', function () {
     tree.processState(user);
 
     var userComponent = user.$components[0];
-    expect(userComponent instanceof Component).to.equal(true);
+    expect(userComponent instanceof BaseComponent).to.equal(true);
   });
 
 

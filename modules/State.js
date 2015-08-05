@@ -12,23 +12,24 @@ function State(definition) {
   this.$definition = definition;
   this.$ancestors = {};
   this.$includes = {};
-  this.$branch = [this];
 
   xtend(this, definition);
 
   this.$includes[this.name] = true;
   this.$ancestors[this.name] = this;
 
-  if (this.parent && typeof this.parent === 'string') return this;
+  if (definition.parent && typeof definition.parent === 'string') return this;
 
-  var splitNames = this.name.split('.');
+  var splitNames = definition.name.split('.');
 
   this.parent = splitNames[1]
     ? splitNames.slice(0, splitNames.length - 1).join('.')
     : null;
 }
 
+
 State.prototype.$parent = null;
+State.prototype.$branch = null;
 State.prototype.$resolves = null;
 State.prototype.$views = null;
 State.prototype.$components = null;
@@ -43,8 +44,12 @@ State.prototype.inheritFrom = function (parentNode) {
   xtend(this.$includes, parentNode.$includes);
   xtend(this.$ancestors, parentNode.$ancestors);
 
-  this.addParamKeys(parentNode.$paramKeys);
-  this.$branch = parentNode.$branch.concat(this.$branch);
+  this.$paramKeys = parentNode.$paramKeys
+    ? parentNode.$paramKeys.slice()
+    : null;
+  this.$branch = parentNode
+    .getBranch()
+    .concat(this);
   this.$parent = parentNode;
 
   return this;
@@ -59,7 +64,9 @@ State.prototype.contains = function (state) {
 
 State.prototype.getBranch = function () {
 
-  return this.$branch.slice();
+  return this.$branch
+    ? this.$branch.slice()
+    : [this];
 };
 
 
@@ -109,7 +116,7 @@ State.prototype.addParamKeys = function (paramKeys) {
 
   this.$paramKeys = this.$paramKeys
     ? this.$paramKeys.concat(paramKeys)
-    : paramKeys;
+    : [].concat(paramKeys);
 
   return this;
 };

@@ -335,8 +335,6 @@ describe('State', function () {
         data: { isGood: true }
       });
 
-      bar.$paramKeys = ['qux'];
-
     });
 
     it('should extend parent state properties', function () {
@@ -345,7 +343,7 @@ describe('State', function () {
 
       expect(bar.data).to.deep.equal({ isCool: true, isGood: true });
       expect(bar.$includes.foo).to.equal(true);
-      expect(bar.$paramKeys.length).to.equal(2);
+      expect(bar.$paramKeys.length).to.equal(1);
       expect(bar.$paramKeys).to.include('baz', 'qux');
       expect(bar.$branch[0]).to.equal(foo);
       expect(bar.$parent).to.equal(foo);

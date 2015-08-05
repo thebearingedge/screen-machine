@@ -47,7 +47,7 @@ function stateRegistry(viewTree, resolveService) {
       viewTree.processState(state);
       resolveService.addResolvesTo(state);
 
-      return this.flushQueueOf(state);
+      return this.flushQueueFor(state);
     },
 
 
@@ -60,7 +60,7 @@ function stateRegistry(viewTree, resolveService) {
     },
 
 
-    flushQueueOf: function (state) {
+    flushQueueFor: function (state) {
 
       var queue = this.queues[state.name];
 
@@ -74,12 +74,9 @@ function stateRegistry(viewTree, resolveService) {
 
   };
 
-  var rootState = new State({ name: '' });
+  var rootState = registry.$root = new State({ name: '' });
 
   rootState.addView(viewTree.views['@']);
-
-  registry.$root = rootState;
-  registry.states[''] = rootState;
 
   return registry;
 }

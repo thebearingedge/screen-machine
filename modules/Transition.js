@@ -11,18 +11,18 @@ function Transition(machine) {
 }
 
 
-Transition.prototype.cancel = false;
+Transition.prototype.cancelled = false;
 
 
 Transition.prototype.isSuperceded = function isSuperceded() {
 
-  return this.cancel || (this.cancel = this !== this.machine.transition);
+  return this.cancelled || (this.cancelled = this !== this.machine.transition);
 };
 
 
 Transition.prototype.abort = function () {
 
-  this.cancel = true;
+  this.cancelled = true;
 
   return this;
 };

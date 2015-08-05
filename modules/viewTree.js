@@ -69,10 +69,7 @@ function viewTree(View, Component) {
 
       var container = targetState
         .getComponents()
-        .filter(function (component) {
-
-          return component.name === '';
-        })[0];
+        .sort()[0];
 
       view.setContainer(container);
 

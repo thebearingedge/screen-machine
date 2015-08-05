@@ -51,35 +51,20 @@ ResolveTask.prototype.run = function (transition, queue, complete, wait) {
 
   queue.splice(queue.indexOf(this), 1);
 
-  return new Promise(function (resolve, reject) {
+  return this
+    .exec()
+    .then(function (result) {
 
-    var resultOrPromise;
+      this.result = result;
+      complete.push(this);
 
-    try {
+      if (complete.length === wait) {
 
-      resultOrPromise = this
-        .resolve
-        .execute(this.params, this.dependencies);
-    }
-    catch (e) {
+        return this.Promise.resolve();
+      }
 
-      reject(e);
-    }
-
-    resolve(resultOrPromise);
-  }.bind(this))
-  .then(function (result) {
-
-    this.result = result;
-    complete.push(this);
-
-    if (complete.length === wait) {
-
-      return this.Promise.resolve();
-    }
-
-    return this.runNext(transition, queue, complete, wait);
-  }.bind(this));
+      return this.runNext(transition, queue, complete, wait);
+    }.bind(this));
 };
 
 
@@ -104,6 +89,29 @@ ResolveTask.prototype.runNext = function (transition, queue, complete, wait) {
     });
 
   return this.Promise.all(next);
+};
+
+
+ResolveTask.prototype.exec = function () {
+
+  return new this.Promise(function (resolve, reject) {
+
+    var resultOrPromise;
+
+    try {
+
+      resultOrPromise = this
+        .resolve
+        .execute(this.params, this.dependencies);
+    }
+
+    catch (e) {
+
+      reject(e);
+    }
+
+    resolve(resultOrPromise);
+  }.bind(this));
 };
 
 

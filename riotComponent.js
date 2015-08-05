@@ -11,9 +11,13 @@ module.exports = riotComponent;
 function riotComponent(riot, document) {
 
 
-  function RiotComponent() {
+  function RiotComponent(componentName, viewKey, state) {
 
     BaseComponent.apply(this, arguments);
+
+    this.tagName = state.views
+      ? state.views[viewKey].component
+      : state.component;
   }
 
 
@@ -23,14 +27,6 @@ function riotComponent(riot, document) {
 
 
     tagInstance: null,
-
-
-    initialize: function (viewKey, state) {
-
-      this.tagName = state.views
-        ? state.views[viewKey].component
-        : state.component;
-    },
 
 
     render: function () {

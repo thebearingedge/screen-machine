@@ -18,13 +18,62 @@ function State(definition) {
   this.$includes[this.name] = true;
   this.$ancestors[this.name] = this;
 
-  if (definition.parent && typeof definition.parent === 'string') return this;
+  // infer parent state name
 
-  var splitNames = definition.name.split('.');
+  if (!definition.parent) {
 
-  this.parent = splitNames[1]
-    ? splitNames.slice(0, splitNames.length - 1).join('.')
-    : null;
+    var splitNames = definition.name.split('.');
+
+    this.parent = splitNames[1]
+      ? splitNames.slice(0, splitNames.length - 1).join('.')
+      : null;
+  }
+
+  // gather path segments and query segment from definition
+
+  if (!definition.path) {
+
+    this.$pathSegments = [''];
+    this.$querySegment = '';
+    this.$paramKeys = [];
+
+  }
+  else {
+
+    var pathOnly;
+    var querySegment;
+    var queryAt = definition.path.indexOf('?');
+
+    if (queryAt > -1) {
+
+      pathOnly = definition.path.slice(0, queryAt);
+      querySegment = definition.path.slice(queryAt + 1);
+    }
+    else {
+
+      pathOnly = definition.path;
+      querySegment = '';
+    }
+
+    this.$querySegment = querySegment;
+
+    var splitPath = pathOnly.split('/');
+
+    this.$pathSegments = splitPath[0]
+      ? splitPath
+      : splitPath.slice(1);
+
+    this.$paramKeys = this
+      .$pathSegments
+      .filter(function (segment) {
+
+        return segment[0] === ':';
+      })
+      .map(function (dynamic) {
+
+        return dynamic.slice(1);
+      });
+  }
 }
 
 
@@ -35,6 +84,8 @@ State.prototype.$views = null;
 State.prototype.$components = null;
 State.prototype.$paramKeys = null;
 State.prototype.$paramCache = null;
+State.prototype.$querySegment = null;
+State.prototype.$pathSegments = null;
 
 
 State.prototype.inheritFrom = function (parentNode) {
@@ -44,12 +95,11 @@ State.prototype.inheritFrom = function (parentNode) {
   xtend(this.$includes, parentNode.$includes);
   xtend(this.$ancestors, parentNode.$ancestors);
 
-  this.$paramKeys = parentNode.$paramKeys
-    ? parentNode.$paramKeys.slice()
-    : null;
   this.$branch = parentNode
     .getBranch()
     .concat(this);
+  this.$pathSegments = parentNode.$pathSegments.concat(this.$pathSegments);
+  this.$paramKeys = parentNode.$paramKeys.concat(this.$paramKeys);
   this.$parent = parentNode;
 
   return this;
@@ -109,16 +159,6 @@ State.prototype.getResolveResults = function (resolveCache) {
 
       return results;
     }, {});
-};
-
-
-State.prototype.addParamKeys = function (paramKeys) {
-
-  this.$paramKeys = this.$paramKeys
-    ? this.$paramKeys.concat(paramKeys)
-    : [].concat(paramKeys);
-
-  return this;
 };
 
 

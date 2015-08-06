@@ -1,43 +1,46 @@
 
 'use strict';
 
+var xtend = require('xtend/mutable');
 var Route = require('./Route');
 
 
 module.exports = router;
 
 
-function router(machine, window, options) {
+function router(machine) {
 
-  options || (options = { html5: true });
+  return {
 
-  var routes = {};
-  var routesByLength = {};
-  var history = window.history;
-  var location = window.location;
-  var html5 = typeof history.pushState === 'function' &&
-    options.html5;
+    routes: {},
 
-  var controller = {
 
-    addRoute: function (name, pathSegments, queryKeys) {
+    routesByLength: {},
 
-      var route = routes[name] = new Route(name, pathSegments, queryKeys);
+
+    add: function (name, pathSegments, querySegment) {
+
+      var route = new Route(name, pathSegments, querySegment);
       var pathLength = pathSegments.length;
+      var routesByLength = this.routesByLength;
 
       routesByLength[pathLength] || (routesByLength[pathLength] = []);
       routesByLength[pathLength].push(route);
+
+      this.routes[name] = route;
+
+      return route;
     },
 
 
-    findRoute: function (url) {
+    find: function (url) {
 
-      if (url[0] !== '/') {
+      if (url[0] === '/') {
 
-        url = '/' + url;
+        url = url.slice(1);
       }
 
-      var queryStart = url.lastIndexOf('?');
+      var queryStart = url.indexOf('?');
       var path;
       var query;
 
@@ -52,109 +55,29 @@ function router(machine, window, options) {
       }
 
       var pathSegments = path.split('/');
-      var routes = this.routesByLength[pathSegments.length].slice();
+      var possibleRoutes = this.routesByLength[pathSegments.length] || [];
       var routeIndex = 0;
-      var routesLength = routes.length;
-      var route, match;
+      var routesLength = possibleRoutes.length;
+      var route, params;
 
-      for (; routeIndex < routesLength; routeIndex++) {
+      while (!params && routeIndex < routesLength) {
 
-        route = routes[routeIndex];
-        match = route.match(path);
+        route = possibleRoutes[routeIndex];
+        params = route.match('/' + path);
 
-        if (match) break;
+        routeIndex++;
       }
 
-    },
+      if (!params) return null;
 
+      if (query) {
 
-    listener: {
-      name: null,
-      handler: null
-    },
-
-
-    watchUrl: function () {
-
-      this.listener = html5
-        ? { name: 'popstate', handler: handlePop }
-        : { name: 'hashchange', handler: handleHash };
-
-      window.addEventListener(this.listener.name, this.listener.handler);
-    },
-
-
-    ignoreUrl: function () {
-
-      window.removeEventListener(this.listener.name, this.listener.handler);
-    },
-
-
-    setUrl: function (url, options) {
-
-      options || (options = { replace: false });
-
-      if (html5) {
-
-        return setState.call(this, url, options);
+        xtend(params, route.parseQuery(query));
       }
 
-      return setHash.call(this, url, options);
+      return machine.transitionTo(route.name, params);
     }
 
   };
-
-  return controller;
-
-
-  function handlePop() {
-
-    var fullPath = location.pathname +
-      location.search +
-      location.hash;
-  }
-
-
-  function handleHash() {
-
-    var hashPath = location.hash.slice(1);
-
-  }
-
-
-  function setState(url, options) {
-
-    // jshint validthis: true
-    if (options.replace) {
-
-      history.replaceState({}, null, url);
-    }
-    else {
-
-      history.pushState({}, null, url);
-    }
-
-    return this;
-  }
-
-
-  function setHash(url, options) {
-
-    // jshint validthis: true
-    this.ignoreUrl();
-
-    if (options.replace) {
-
-    }
-    else {
-
-      location.hash = url;
-    }
-
-    this.watchUrl();
-
-    return this;
-  }
-
 
 }

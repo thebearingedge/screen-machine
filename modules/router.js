@@ -8,7 +8,7 @@ var Route = require('./Route');
 module.exports = router;
 
 
-function router(machine) {
+function router() {
 
   return {
 
@@ -34,11 +34,6 @@ function router(machine) {
 
 
     find: function (url) {
-
-      if (url[0] !== '/') {
-
-        url = '/' + url;
-      }
 
       var queryStart = url.indexOf('?');
       var path;
@@ -75,7 +70,7 @@ function router(machine) {
         xtend(params, route.parseQuery(query));
       }
 
-      return machine.transitionTo(route.name, params);
+      return { route: route.name, params: params };
     },
 
 

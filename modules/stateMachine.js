@@ -7,7 +7,7 @@ var Transition = require('./Transition');
 module.exports = stateMachine;
 
 
-function stateMachine(events, resolveService) {
+function stateMachine(events) {
 
   var machine = {
 
@@ -29,14 +29,14 @@ function stateMachine(events, resolveService) {
     },
 
 
-    transitionTo: function transitionTo(to, params) {
+    transitionTo: function transitionTo(toState, toParams) {
 
       var transition = new Transition(this);
 
     },
 
 
-    changeState: function changeState(results, to, params) {
+    changeState: function changeState(results, toState, toParams) {
 
     }
 

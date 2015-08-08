@@ -34,8 +34,9 @@ function State(definition) {
   if (!definition.path) {
 
     this.$pathSegments = [''];
-    this.$querySegment = '';
+    this.$querySegments = [];
     this.$paramKeys = [];
+    this.$queryKeys = [];
 
   }
   else {
@@ -55,24 +56,28 @@ function State(definition) {
       querySegment = '';
     }
 
-    this.$querySegment = querySegment;
-
     var splitPath = pathOnly.split('/');
 
     this.$pathSegments = splitPath[0]
       ? splitPath
       : splitPath.slice(1);
 
+    this.$querySegments = [querySegment];
+
     this.$paramKeys = this
       .$pathSegments
-      .filter(function (segment) {
+      .filter(function (anySegment) {
 
-        return segment[0] === ':';
+        return anySegment[0] === ':';
       })
-      .map(function (dynamic) {
+      .map(function (dynamicSegment) {
 
-        return dynamic.slice(1);
+        return dynamicSegment.slice(1);
       });
+
+    this.$queryKeys = querySegment
+      ? querySegment.split('&')
+      : [];
   }
 }
 
@@ -82,9 +87,7 @@ State.prototype.$branch = null;
 State.prototype.$resolves = null;
 State.prototype.$views = null;
 State.prototype.$components = null;
-State.prototype.$paramKeys = null;
 State.prototype.$paramCache = null;
-State.prototype.$querySegment = null;
 State.prototype.$pathSegments = null;
 
 
@@ -99,6 +102,7 @@ State.prototype.inheritFrom = function (parentNode) {
     .getBranch()
     .concat(this);
   this.$pathSegments = parentNode.$pathSegments.concat(this.$pathSegments);
+  this.$querySegments = parentNode.$querySegments.concat(this.$querySegments);
   this.$paramKeys = parentNode.$paramKeys.concat(this.$paramKeys);
   this.$parent = parentNode;
 

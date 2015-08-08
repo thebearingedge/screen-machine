@@ -8,14 +8,20 @@ var reversePath = require('reverse-path');
 module.exports = Route;
 
 
-function Route(name, pathSegments, querySegment) {
+function Route(name, pathSegments, querySegments) {
 
   this.name = name;
   this.path = '/' + pathSegments.join('/');
   this.pattern = new UrlPattern(this.path);
-  this.queryKeys = querySegment
-    ? querySegment.split('&')
-    : [];
+  this.queryKeys = querySegments
+    .map(function (segment) {
+
+      return segment.split('&');
+    })
+    .reduce(function (keys, splitSegment) {
+
+      return keys.concat(splitSegment);
+    }, []);
 }
 
 

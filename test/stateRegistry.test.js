@@ -7,14 +7,13 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-
 var stateRegistry = require('../modules/stateRegistry');
 var State = require('../modules/State');
 
 
 describe('stateRegistry', function () {
 
-  var registry, viewTree, resolveService, rootState;
+  var registry, viewTree, resolveService, router, rootState;
 
   beforeEach(function () {
 
@@ -29,7 +28,11 @@ describe('stateRegistry', function () {
       addResolvesTo: function () {}
     };
 
-    registry = stateRegistry(viewTree, resolveService);
+    router = {
+      add: function () {}
+    };
+
+    registry = stateRegistry(viewTree, resolveService, router);
     rootState = registry.$root;
   });
 

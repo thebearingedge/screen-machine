@@ -37,20 +37,20 @@ describe('State', function () {
 
     state = new State({ name: 'foo', path: '/foo-path' });
     expect(state.$pathSegments).to.deep.equal(['foo-path']);
-    expect(state.$querySegment).to.equal('');
+    expect(state.$queryKeys).to.deep.equal([]);
 
     state = new State({ name: 'foo', path: 'foo-path' });
     expect(state.$pathSegments).to.deep.equal(['foo-path']);
-    expect(state.$querySegment).to.equal('');
+    expect(state.$queryKeys).to.deep.equal([]);
 
     state = new State({ name: 'bar', path: '/foo-path/:barParam' });
     expect(state.$pathSegments).to.deep.equal(['foo-path', ':barParam']);
     expect(state.$paramKeys).to.deep.equal(['barParam']);
-    expect(state.$querySegment).to.equal('');
+    expect(state.$queryKeys).to.deep.equal([]);
 
     state = new State({ name: 'baz', path: '/baz-path?qux&quux' });
     expect(state.$pathSegments).to.deep.equal(['baz-path']);
-    expect(state.$querySegment).to.equal('qux&quux');
+    expect(state.$queryKeys).to.deep.equal(['qux', 'quux']);
 
   });
 
@@ -159,10 +159,15 @@ describe('State', function () {
 
   describe('.getAncestor(stateName) => State', function () {
 
-    it('should return an ancestor state');
+    it('should return an ancestor state', function () {
 
+      var foo = new State({ name: 'foo' });
+      var bar = new State({ name: 'bar' });
 
-    it('should return null');
+      bar.inheritFrom(foo);
+
+      expect(bar.getAncestor('foo')).to.equal(foo);
+    });
 
   });
 

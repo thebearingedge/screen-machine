@@ -18,8 +18,6 @@ function State(definition) {
   this.$includes[this.name] = true;
   this.$ancestors[this.name] = this;
 
-  // infer parent state name
-
   if (!definition.parent) {
 
     var splitNames = definition.name.split('.');
@@ -29,26 +27,23 @@ function State(definition) {
       : null;
   }
 
-  // gather path segments and query segment from definition
-
   if (!definition.path) {
 
     this.$pathSegments = [''];
     this.$querySegments = [];
     this.$paramKeys = [];
     this.$queryKeys = [];
-
   }
   else {
 
     var pathOnly;
     var querySegment;
-    var queryAt = definition.path.indexOf('?');
+    var queryStart = definition.path.indexOf('?');
 
-    if (queryAt > -1) {
+    if (queryStart > -1) {
 
-      pathOnly = definition.path.slice(0, queryAt);
-      querySegment = definition.path.slice(queryAt + 1);
+      pathOnly = definition.path.slice(0, queryStart);
+      querySegment = definition.path.slice(queryStart + 1);
     }
     else {
 
@@ -184,16 +179,15 @@ State.prototype.cacheParams = function (allParams) {
 };
 
 
-State.prototype.isStale = function (newParams) {
+State.prototype.isStale = function (oldParams, newParams) {
 
-  if (!this.$resolves) return false;
+  return this
+    .$paramKeys
+    .concat(this.$queryKeys)
+    .some(function (key) {
 
-  if (!this.$paramCache) return true;
-
-  return this.$paramKeys.some(function (key) {
-
-    return this.$paramCache[key] !== newParams[key];
-  }, this);
+      return newParams[key] !== oldParams[key];
+    });
 };
 
 

@@ -286,39 +286,24 @@ describe('State', function () {
 
   describe('.isStale(Object params) => Boolean', function () {
 
-    it('should not be true without resolves to run', function () {
 
-      var params = {};
+    it('should be false if relevent params are equal', function () {
 
-      expect(state.isStale(params)).to.equal(false);
+      var oldParams = {};
+      var newParams = {};
+
+      expect(state.isStale(oldParams, newParams)).to.equal(false);
     });
 
 
-    it('should be true with resolves but no cached params', function () {
+    it('should be true if relevant params have changed', function () {
 
-      var resolve = {};
-      var params = {};
-
-      state.$resolves = [resolve];
-
-      expect(state.isStale(params)).to.equal(true);
-    });
-
-
-    it('should compare newParams to paramCache', function () {
-
-      var resolve = {};
+      var oldParams = { foo: 1 };
       var newParams = { foo: 2 };
 
-      state.$resolves = [resolve];
       state.$paramKeys = ['foo'];
-      state.$paramCache = { foo: 1 };
 
-      expect(state.isStale(newParams)).to.equal(true);
-
-      state.$paramCache = { foo: 2 };
-
-      expect(state.isStale(newParams)).to.equal(false);
+      expect(state.isStale(oldParams, newParams)).to.equal(true);
     });
 
   });

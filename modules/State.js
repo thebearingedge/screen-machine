@@ -61,9 +61,7 @@ function State(definition) {
     this.$pathSegments = splitPath[0]
       ? splitPath
       : splitPath.slice(1);
-
     this.$querySegments = [querySegment];
-
     this.$paramKeys = this
       .$pathSegments
       .filter(function (anySegment) {
@@ -74,7 +72,6 @@ function State(definition) {
 
         return dynamicSegment.slice(1);
       });
-
     this.$queryKeys = querySegment
       ? querySegment.split('&')
       : [];

@@ -21,18 +21,20 @@ function viewTree(View, Component) {
 
     processState: function (state) {
 
-      var viewKey;
       var componentName;
       var view;
 
-      if (state.views) {
+      if (state.views != null) {
 
-        for (viewKey in state.views) {
+        Object
+          .keys(state.views)
+          .sort()
+          .forEach(function (viewKey) {
 
-          componentName = viewKey;
-          view = this.ensureView(viewKey, state);
-          this.createComponent(componentName, viewKey, state, view);
-        }
+            componentName = viewKey;
+            view = this.ensureView(viewKey, state);
+            this.createComponent(componentName, viewKey, state, view);
+          }, this);
       }
       else if (state.component) {
 

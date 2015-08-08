@@ -8,9 +8,29 @@ var Route = require('./Route');
 module.exports = router;
 
 
-function router() {
+function router(window, options) {
+
+  options || (options = {});
+
+  var location = window.location;
+  var history = window.history;
+  var windowEvent = history.pushState && (options.html5 !== false)
+    ? 'popstate'
+    : 'hashchange';
 
   return {
+
+    onChange: null,
+
+
+    sendRouteChange: function () {
+
+      var url = this.getUrl();
+      var route = this.findRoute(url);
+
+      this.onChange(route);
+    },
+
 
     routes: {},
 
@@ -26,14 +46,13 @@ function router() {
 
       routesByLength[pathLength] || (routesByLength[pathLength] = []);
       routesByLength[pathLength].push(route);
-
       this.routes[name] = route;
 
       return route;
     },
 
 
-    find: function (url) {
+    findRoute: function (url) {
 
       var queryStart = url.indexOf('?');
       var path;
@@ -49,17 +68,15 @@ function router() {
         path = url;
       }
 
-      var pathSegments = path.split('/').slice(1);
-      var possibleRoutes = this.routesByLength[pathSegments.length] || [];
+      var pathLength = path.split('/').length - 1;
+      var possibleRoutes = this.routesByLength[pathLength] || [];
       var routeIndex = 0;
-      var routesLength = possibleRoutes.length;
       var route, params;
 
-      while (!params && routeIndex < routesLength) {
+      while (!params && routeIndex < possibleRoutes.length) {
 
         route = possibleRoutes[routeIndex];
         params = route.match(path);
-
         routeIndex++;
       }
 
@@ -76,9 +93,80 @@ function router() {
 
     href: function (name, params) {
 
-      return this.routes[name].reverse(params);
+      return this.routes[name].toRouteString(params);
+    },
+
+
+    start: function (onChange) {
+
+      this.onChange = onChange;
+      this.watchLocation();
+      this.sendRouteChange();
+    },
+
+
+    watchLocation: function () {
+
+      window.addEventListener(windowEvent, this.sendRouteChange);
+    },
+
+
+    ignoreLocation: function () {
+
+      window.removeEventListener(windowEvent, this.sendRouteChange);
+    },
+
+
+    getUrl: function () {
+
+      return windowEvent === 'popstate'
+        ? location.pathname + location.search + location.hash
+        : location.hash.slice(1) || '/';
+    },
+
+
+    setUrl: function (url, options) {
+
+      var defaults = { replace: false };
+
+      options || (options = {});
+      options = xtend(defaults, options);
+
+      if (windowEvent === 'popstate') {
+
+        if (options.replace) {
+
+          history.replaceState({}, null, url);
+        }
+        else {
+
+          history.pushState({}, null, url);
+        }
+      }
+      else {
+
+        if (options.replace) {
+
+          var href = location.protocol +
+            '//' +
+            location.host +
+            location.pathname +
+            location.search +
+            '#' +
+            url;
+
+          this.ignoreLocation();
+          location.replace(href);
+          this.watchLocation();
+        }
+        else {
+
+          this.ignoreLocation();
+          location.hash = url;
+          this.watchLocation();
+        }
+      }
     }
 
   };
-
 }

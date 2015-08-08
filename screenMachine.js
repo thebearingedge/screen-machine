@@ -13,21 +13,22 @@ var stateMachine = require('./modules/stateMachine');
 module.exports = ScreenMachine;
 
 
-function ScreenMachine(options) {
+function ScreenMachine(config) {
 
   if (!(this instanceof ScreenMachine)) {
 
-    return new ScreenMachine(options);
+    return new ScreenMachine(config);
   }
 
-  var Promise = options.promises;
-  var Component = options.components;
-  var events = eventBus(options.events);
-
+  var document = config.document;
+  var Promise = config.promises;
+  var Component = config.components(document);
+  var routing = config.routing;
+  var events = eventBus(config.events);
 
   var views = viewTree(View, Component);
   var resolves = resolveService(Promise);
-  var routes = router();
+  var routes = router(document.defaultView, routing);
   var registry = stateRegistry(views, resolves, routes);
   var machine = stateMachine(events);
 
@@ -48,6 +49,12 @@ function ScreenMachine(options) {
     var state = registry.states[stateName];
 
     return machine.transitionTo(state, params);
+  };
+
+
+  this.start = function () {
+
+    routes.start(this.transitionTo);
   };
 
 

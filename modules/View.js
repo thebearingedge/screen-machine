@@ -12,9 +12,9 @@ function View(viewKey, tree) {
 
   var viewName = viewKey.slice(0, viewKey.indexOf('@'));
 
-  this.selector = viewName === ''
-    ? 'sm-view:not([name])'
-    : 'sm-view[name="' + viewName + '"]';
+  this.selector = viewName
+    ? 'sm-view[name="' + viewName + '"]'
+    : 'sm-view:not([name])';
   this.components = {};
 }
 
@@ -32,10 +32,10 @@ View.prototype.attachWithin = function (node) {
 
   var element = node.querySelector(this.selector);
 
+  this.element = element;
   this.content = element
     ? element.firstElementChild
     : null;
-  this.element = element;
 
   return this;
 };

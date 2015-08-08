@@ -33,15 +33,15 @@ function resolveService(Promise) {
 
     addResolvesTo: function (state) {
 
-      if (typeof state.resolve !== 'object') return this;
+      if (state.resolve != null && typeof state.resolve === 'object') {
 
-      var resolveKey;
-      var resolve;
+        Object
+          .keys(state.resolve)
+          .forEach(function (resolveKey) {
 
-      for (resolveKey in state.resolve) {
-
-        resolve = this.instantiate(resolveKey, state);
-        state.addResolve(resolve);
+            var resolve = this.instantiate(resolveKey, state);
+            state.addResolve(resolve);
+          }, this);
       }
 
       return this;

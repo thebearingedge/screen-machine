@@ -20,14 +20,14 @@ require('./riot-tags/all');
 describe('riotComponent', function () {
 
   var view, views;
-  var Component, component;
+  var RiotComponent, component;
   var state;
 
   beforeEach(function () {
 
     global.document = document;
 
-    Component = riotComponent(riot, document);
+    RiotComponent = riotComponent(riot)(document);
 
     views = {
       loadedViews: [],
@@ -54,7 +54,7 @@ describe('riotComponent', function () {
         }
       }
     });
-    component = new Component('', '', state);
+    component = new RiotComponent('', '', state);
 
     expect(component.tagName).to.equal('parent-tag');
   });
@@ -66,7 +66,7 @@ describe('riotComponent', function () {
       name: 'app',
       component: 'simple-tag'
     });
-    component = new Component('', '', state);
+    component = new RiotComponent('', '', state);
   });
 
 
@@ -151,7 +151,7 @@ describe('riotComponent', function () {
       state.getResolveResults = function () { return {}; };
 
       view = new View('nested@', views);
-      component = new Component('', '', state);
+      component = new RiotComponent('', '', state);
       component.addChildView(view);
 
       component.render();
@@ -218,7 +218,7 @@ describe('riotComponent', function () {
       state.getResolveResults = function () { return {}; };
 
       view = new View('nested@', views);
-      component = new Component('', '', state);
+      component = new RiotComponent('', '', state);
       component.addChildView(view);
 
       component.render();

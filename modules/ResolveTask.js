@@ -71,25 +71,25 @@ ResolveTask.prototype.run = function (transition, queue, complete, wait) {
 
 ResolveTask.prototype.runNext = function (transition, queue, complete, wait) {
 
-  var next = queue
-    .filter(function (waiting) {
+  var nextTasks = queue
+    .filter(function (queued) {
 
-      return waiting.isWaitingFor(this.id);
+      return queued.isWaitingFor(this.id);
     }, this)
     .map(function (dependent) {
 
       return dependent.setDependency(this.id, this.result);
     }, this)
-    .filter(function (dependent) {
+    .filter(function (maybeReady) {
 
-      return dependent.isReady();
+      return maybeReady.isReady();
     })
     .map(function (ready) {
 
       return ready.run(transition, queue, complete, wait);
     });
 
-  return this.Promise.all(next);
+  return this.Promise.all(nextTasks);
 };
 
 

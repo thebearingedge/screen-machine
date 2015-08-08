@@ -14,13 +14,13 @@ var Route = require('../modules/Route');
 describe('Route', function () {
 
 
-  describe('.reverse(params)', function () {
+  describe('.toRouteString(params)', function () {
 
     it('should reverse a path with no params or query', function () {
 
       var route = new Route('foo', ['foo'], []);
 
-      expect(route.reverse({})).to.equal('/foo');
+      expect(route.toRouteString({})).to.equal('/foo');
     });
 
 
@@ -28,7 +28,7 @@ describe('Route', function () {
 
       var route = new Route('foo', ['foo', ':bar'], []);
 
-      expect(route.reverse({ bar: 1 })).to.equal('/foo/1');
+      expect(route.toRouteString({ bar: 1 })).to.equal('/foo/1');
     });
 
 
@@ -36,7 +36,8 @@ describe('Route', function () {
 
       var route = new Route('foo', ['foo', ':bar'], ['baz']);
 
-      expect(route.reverse({ bar: 1, baz: 'qux' })).to.equal('/foo/1?baz=qux');
+      expect(route.toRouteString({ bar: 1, baz: 'qux' }))
+        .to.equal('/foo/1?baz=qux');
     });
 
 
@@ -44,7 +45,7 @@ describe('Route', function () {
 
       var route = new Route('foo', ['foo', ':bar'], ['baz']);
 
-      expect(route.reverse({ bar: 1 })).to.equal('/foo/1');
+      expect(route.toRouteString({ bar: 1 })).to.equal('/foo/1');
     });
 
   });

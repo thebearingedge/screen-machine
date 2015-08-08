@@ -31,7 +31,7 @@ Route.prototype.match = function (path) {
 };
 
 
-Route.prototype.reverse = function (params) {
+Route.prototype.toRouteString = function (params) {
 
   var path = reversePath(this.path, params);
   var queryPairs = this

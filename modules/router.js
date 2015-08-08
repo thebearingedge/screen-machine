@@ -26,9 +26,9 @@ function router(window, options) {
     sendRouteChange: function () {
 
       var url = this.getUrl();
-      var route = this.findRoute(url);
+      var found = this.findRoute(url);
 
-      this.onChange(route);
+      this.onChange.apply(null, found);
     },
 
 
@@ -87,7 +87,7 @@ function router(window, options) {
         xtend(params, route.parseQuery(query));
       }
 
-      return { route: route.name, params: params };
+      return [route.name, params];
     },
 
 

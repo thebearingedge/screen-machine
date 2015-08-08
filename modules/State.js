@@ -162,20 +162,13 @@ State.prototype.filterParams = function (allParams) {
 
   return this
     .$paramKeys
+    .concat(this.$queryKeys)
     .reduce(function (ownParams, key) {
 
       ownParams[key] = allParams[key];
 
       return ownParams;
     }, {});
-};
-
-
-State.prototype.cacheParams = function (allParams) {
-
-  this.$paramCache = this.filterParams(allParams);
-
-  return this;
 };
 
 

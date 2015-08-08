@@ -247,22 +247,6 @@ describe('State', function () {
   });
 
 
-  describe('.cacheParams(Object params) => this', function () {
-
-    it('should cache params filtered by $paramKeys', function () {
-
-      state.$paramKeys = ['foo', 'bar'];
-
-      var allParams = { foo: 1, bar: 2, baz: 3 };
-
-      state.cacheParams(allParams);
-
-      expect(state.$paramCache).to.deep.equal({ foo: 1, bar: 2 });
-    });
-
-  });
-
-
   describe('.sleep() => this', function () {
 
     it('should reset views, resolves and $paramCache', function () {

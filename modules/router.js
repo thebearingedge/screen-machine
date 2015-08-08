@@ -35,9 +35,9 @@ function router(machine) {
 
     find: function (url) {
 
-      if (url[0] === '/') {
+      if (url[0] !== '/') {
 
-        url = url.slice(1);
+        url = '/' + url;
       }
 
       var queryStart = url.indexOf('?');
@@ -54,7 +54,7 @@ function router(machine) {
         path = url;
       }
 
-      var pathSegments = path.split('/');
+      var pathSegments = path.split('/').slice(1);
       var possibleRoutes = this.routesByLength[pathSegments.length] || [];
       var routeIndex = 0;
       var routesLength = possibleRoutes.length;
@@ -63,7 +63,7 @@ function router(machine) {
       while (!params && routeIndex < routesLength) {
 
         route = possibleRoutes[routeIndex];
-        params = route.match('/' + path);
+        params = route.match(path);
 
         routeIndex++;
       }
@@ -76,6 +76,12 @@ function router(machine) {
       }
 
       return machine.transitionTo(route.name, params);
+    },
+
+
+    href: function (name, params) {
+
+      return this.routes[name].reverse(params);
     }
 
   };

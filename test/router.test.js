@@ -15,30 +15,26 @@ var Route = require('../modules/Route');
 
 describe('routerFactory', function () {
 
-  var machine;
+  var machine, router;
 
 
   beforeEach(function () {
 
     machine = { transitionTo: sinon.spy() };
+    router = routerFactory(machine);
   });
 
 
   it('should register routes', function () {
 
-    var router = routerFactory(machine);
-
     var route = router.add('foo', ['foo'], '');
 
-    expect(route instanceof Route).to.equal(true);
-    expect(router.routes.foo).to.equal(route);
+    expect(router.routes.foo instanceof Route).to.equal(true);
     expect(router.routesByLength['1']).to.deep.equal([route]);
   });
 
 
   it('should find a route', function () {
-
-    var router = routerFactory(machine);
 
     router.add('foo', ['foo', ':bar'], '');
     router.find('/foo/1');
@@ -51,13 +47,21 @@ describe('routerFactory', function () {
 
   it('should merge query and route params', function () {
 
-    var router = routerFactory(machine);
-
     router.add('foo', ['foo', ':bar'], 'baz');
     router.find('/foo/1?baz=qux');
 
     expect(machine.transitionTo)
       .to.have.been.calledWithExactly('foo', { bar: '1', baz: 'qux' });
+  });
+
+
+  it('should create a route string from name and params', function () {
+
+    router.add('foo', ['foo', ':bar'], 'baz');
+
+    var href = router.href('foo', { bar: 1, baz: 'qux' });
+
+    expect(href).to.equal('/foo/1?baz=qux');
   });
 
 });

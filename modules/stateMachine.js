@@ -89,6 +89,7 @@ function stateMachine(eventBus, resolveService, viewTree) {
 
           this.currentState = toState;
           this.currentParams = toParams;
+          this.transition = null;
 
         }.bind(this));
     }

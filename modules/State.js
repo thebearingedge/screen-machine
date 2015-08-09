@@ -56,7 +56,9 @@ function State(definition) {
     this.$pathSegments = splitPath[0]
       ? splitPath
       : splitPath.slice(1);
-    this.$querySegments = [querySegment];
+    this.$querySegments = querySegment
+      ? [querySegment]
+      : [];
     this.$paramKeys = this
       .$pathSegments
       .filter(function (anySegment) {
@@ -233,4 +235,14 @@ State.prototype.getComponents = function () {
   return this.$components
     ? this.$components.slice()
     : [];
+};
+
+
+State.prototype.onEnter = function () {
+
+};
+
+
+State.prototype.onExit = function () {
+
 };

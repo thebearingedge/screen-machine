@@ -92,7 +92,7 @@ function resolveService(Promise) {
       var graph = tasks
         .reduce(function (graph, task) {
 
-          graph[task.name] = task.waitingFor;
+          graph[task.id] = task.waitingFor;
 
           return graph;
         }, {});

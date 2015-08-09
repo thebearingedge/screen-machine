@@ -20,7 +20,7 @@ describe('viewTree', function () {
 
   beforeEach(function () {
 
-    tree = viewTree(View, BaseComponent);
+    tree = viewTree(BaseComponent);
     rootState = new State({ name: '' });
     rootState.addView(tree.views['@']);
   });

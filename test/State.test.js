@@ -232,7 +232,6 @@ describe('State', function () {
   });
 
 
-
   describe('.filterParams(Object params) => Object', function () {
 
     it('should return params filtered by $paramKeys', function () {
@@ -269,7 +268,6 @@ describe('State', function () {
 
 
   describe('.isStale(Object params) => Boolean', function () {
-
 
     it('should be false if relevent params are equal', function () {
 

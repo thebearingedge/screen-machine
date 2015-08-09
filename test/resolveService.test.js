@@ -181,13 +181,13 @@ describe('resolveService', function () {
       var cache = service.getCache();
 
       var fooTask = {
-        name: 'foo',
+        id: 'foo',
         waitingFor: [],
         dependencies: {},
         isReady: function () { return true; },
       };
       var barTask = {
-        name: 'bar',
+        id: 'bar',
         waitingFor: ['foo'],
         dependencies: {},
         isReady: function () { return false; }
@@ -202,13 +202,13 @@ describe('resolveService', function () {
       var cache = service.getCache();
 
       var fooTask = {
-        name: 'foo',
+        id: 'foo',
         waitingFor: ['bar'],
         dependencies: {},
         isReady: function () { return false; },
       };
       var barTask = {
-        name: 'bar',
+        id: 'bar',
         waitingFor: ['foo'],
         dependencies: {},
         isReady: function () { return false; }

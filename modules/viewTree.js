@@ -1,21 +1,28 @@
 
 'use strict';
 
+var View = require('./View');
+
 
 module.exports = viewTree;
 
 
-function viewTree(View, Component) {
+function viewTree(Component) {
 
   var tree = {
     loadedViews: [],
     activeViews: []
   };
 
+  var rootView = new View('@', tree);
+
   return {
 
+    $root: rootView,
+
+
     views: {
-      '@': new View('@', tree)
+      '@': rootView
     },
 
 

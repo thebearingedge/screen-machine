@@ -16,7 +16,6 @@ var Route = require('../modules/Route');
 
 describe('router', function () {
 
-
   describe('.add(name, pathSegments, querySegment)', function () {
 
     var window = { history: {} };
@@ -40,11 +39,10 @@ describe('router', function () {
 
   describe('.findRoute(routeString)', function () {
 
-    var window = { history: {} };
-    var router;
+    var window, router;
 
     beforeEach(function () {
-
+      window = { history: {} };
       router = routerFactory(window);
     });
 

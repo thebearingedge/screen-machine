@@ -44,9 +44,10 @@ function stateRegistry(viewTree, resolveService, router) {
       }
 
       this.states[state.name] = state.inheritFrom(parentState || this.$root);
+
       viewTree.processState(state);
       resolveService.addResolvesTo(state);
-      router.add(state.name, state.$pathSegments, state.$querySegment);
+      router.add(state.name, state.$pathSegments, state.$queryKeys);
 
       return this.flushQueueFor(state);
     },

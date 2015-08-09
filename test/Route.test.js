@@ -1,6 +1,7 @@
 
 'use strict';
 
+
 var chai = require('chai');
 var sinonChai = require('sinon-chai');
 var expect = chai.expect;
@@ -12,7 +13,6 @@ var Route = require('../modules/Route');
 
 
 describe('Route', function () {
-
 
   describe('.toRouteString(params)', function () {
 

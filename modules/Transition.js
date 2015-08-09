@@ -16,7 +16,12 @@ Transition.prototype.cancelled = false;
 
 Transition.prototype.isSuperceded = function isSuperceded() {
 
-  return this.cancelled || (this.cancelled = this !== this.machine.transition);
+  if (this !== this.machine.transition) {
+
+    this.abort();
+  }
+
+  return this.cancelled;
 };
 
 

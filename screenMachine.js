@@ -5,7 +5,6 @@ var router = require('./modules/router');
 var stateRegistry = require('./modules/stateRegistry');
 var resolveService = require('./modules/resolveService');
 var viewTree = require('./modules/viewTree');
-var View = require('./modules/View');
 var eventBus = require('./modules/eventBus');
 var stateMachine = require('./modules/stateMachine');
 
@@ -26,11 +25,11 @@ function ScreenMachine(config) {
   var routing = config.routing;
   var events = eventBus(config.events);
 
-  var views = viewTree(View, Component);
+  var views = viewTree(Component);
   var resolves = resolveService(Promise);
   var routes = router(document.defaultView, routing);
   var registry = stateRegistry(views, resolves, routes);
-  var machine = stateMachine(events);
+  var machine = stateMachine(events, resolves);
 
 
   machine.init(registry.$root, {});
@@ -54,6 +53,7 @@ function ScreenMachine(config) {
 
   this.start = function () {
 
+    views.$root.attachWithin(document.body);
     routes.start(this.transitionTo);
   };
 

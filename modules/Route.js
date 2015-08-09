@@ -22,12 +22,13 @@ function Route(name, pathSegments, querySegments) {
 
       return keys.concat(splitSegment);
     }, []);
+
 }
 
 
 Route.prototype.match = function (path) {
 
-  return this.pattern.match(path);
+  return this.pattern.match.call(this.pattern, path);
 };
 
 

@@ -14,6 +14,9 @@ function resolveService(Promise) {
 
   return {
 
+    Promise: Promise,
+
+
     stateless: false,
 
 

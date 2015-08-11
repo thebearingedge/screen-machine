@@ -29,7 +29,7 @@ function ScreenMachine(config) {
   var resolves = resolveService(Promise);
   var routes = router(document.defaultView, routing);
   var registry = stateRegistry(views, resolves, routes);
-  var machine = stateMachine(events, resolves);
+  var machine = stateMachine(events, registry, resolves, views);
 
 
   machine.init(registry.$root, {});
@@ -43,24 +43,12 @@ function ScreenMachine(config) {
   };
 
 
-  this.transitionTo = function (stateName, params) {
-
-    var state = registry.states[stateName];
-
-    return machine.transitionTo(state, params);
-  };
-
-
   this.start = function () {
 
     views.$root.attachWithin(document.body);
-    routes.start(this.transitionTo);
-  };
+    routes.start(machine.transitionTo);
 
-
-  this.go = function () {
-
-    return this.transitionTo.apply(this, arguments);
+    return this;
   };
 
 }

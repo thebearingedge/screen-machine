@@ -7,7 +7,9 @@ var Transition = require('./Transition');
 module.exports = stateMachine;
 
 
-function stateMachine(eventBus, resolveService, viewTree) {
+function stateMachine(eventBus, registry, resolveService) {
+
+  var Promise = resolveService.Promise;
 
   var machine = {
 
@@ -29,12 +31,25 @@ function stateMachine(eventBus, resolveService, viewTree) {
     },
 
 
-    transitionTo: function transitionTo(toState, toParams) {
+    transitionTo: function transitionTo(stateName, toParams) {
 
+      var toState = typeof stateName === 'string'
+        ? registry.states[stateName]
+        : stateName;
       var fromState = this.currentState;
       var fromParams = this.currentParams;
-      var transition = this.transition = new Transition(this);
-      var resolveCache = resolveService.getCache();
+      var transition = this.transition = new Transition(
+        this, fromState, fromParams, toState, toParams
+      );
+
+      eventBus.notify('stateChangeStart', transition);
+
+      if (transition.isSuperceded()) {
+
+        eventBus.notify('stateChangeAborted', transition);
+
+        return Promise.resolve(transition);
+      }
 
       var exitingStates = fromState
         .getBranch()
@@ -67,9 +82,11 @@ function stateMachine(eventBus, resolveService, viewTree) {
           return resolveService.createTask(resolve, toParams, resolveCache);
         });
 
+      var resolveCache = resolveService.getCache();
+
       return resolveService
         .runTasks(resolveTasks, resolveCache, transition)
-        .then(function (complete) {
+        .then(function () {
 
           if (transition.isSuperceded()) return;
 
@@ -91,7 +108,21 @@ function stateMachine(eventBus, resolveService, viewTree) {
           this.currentParams = toParams;
           this.transition = null;
 
-        }.bind(this));
+          eventBus.notify('stateChangeSuccess', transition);
+
+        }.bind(this))
+        .catch(function (err) {
+
+          transition.setError(err);
+          eventBus.notify('stateChangeError', transition);
+
+          if (transition.isHandled()) {
+
+            return Promise.resolve(transition);
+          }
+
+          throw err;
+        });
     }
 
   };

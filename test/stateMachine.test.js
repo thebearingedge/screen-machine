@@ -30,13 +30,15 @@ describe('stateMachine', function () {
 
     window = { history: {}, location: {} };
     routerOptions = {};
+    events = {
+      notify: function () {}
+    };
 
     views = viewTree(BaseComponent);
     resolves = resolveService(Promise);
     routes = router(window, routerOptions);
     registry = stateRegistry(views, resolves, routes);
-
-    machine = stateMachine(events, resolves);
+    machine = stateMachine(events, registry, resolves);
   });
 
   afterEach(function () {

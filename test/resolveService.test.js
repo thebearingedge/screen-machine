@@ -295,7 +295,7 @@ describe('resolveService', function () {
 
     it('should run tasks in dependency order', function (done) {
 
-      transition.isSuperceded = function () { return false; };
+      transition.isCanceled = function () { return false; };
 
       return service
         .runTasks(tasks, cache, transition)

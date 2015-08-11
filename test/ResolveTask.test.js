@@ -60,7 +60,7 @@ describe('ResolveTask', function () {
 
       it('should return a promise for its resolve', function () {
 
-        var transition = { isSuperceded: function () { return false; } };
+        var transition = { isCanceled: function () { return false; } };
         var promise = task.run(transition, [task], [], 1);
 
         expect(promise instanceof Promise).to.equal(true);
@@ -73,7 +73,7 @@ describe('ResolveTask', function () {
 
         resolve.execute = sinon.spy(function () { throw new Error(); });
 
-        var transition = { isSuperceded: function () { return false; } };
+        var transition = { isCanceled: function () { return false; } };
         var promise = task.run(transition, [task], [], 1);
 
         expect(promise instanceof Promise).to.equal(true);
@@ -129,7 +129,7 @@ describe('ResolveTask', function () {
 
       it('should execute resolve with params and deps', function (done) {
 
-        var transition = { isSuperceded: function () { return false; } };
+        var transition = { isCanceled: function () { return false; } };
 
         resolve.execute = sinon.stub();
 
@@ -198,7 +198,7 @@ describe('ResolveTask', function () {
 
     it('should run its dependents', function (done) {
 
-      transition.isSuperceded = sinon.stub().returns(false);
+      transition.isCanceled = sinon.stub().returns(false);
 
       return fooTask
         .run(transition, queue, complete, wait)
@@ -217,7 +217,7 @@ describe('ResolveTask', function () {
     it('should not run dependent tasks after an error', function (done) {
 
       var resolveError = new Error('FAIL');
-      transition.isSuperceded = function () { return false; };
+      transition.isCanceled = function () { return false; };
       fooResolve.execute = sinon.spy(function () { throw resolveError; });
 
       return fooTask
@@ -236,7 +236,7 @@ describe('ResolveTask', function () {
 
     it('should not run during a superceded transition', function (done) {
 
-      transition.isSuperceded = function () { return true; };
+      transition.isCanceled = function () { return true; };
 
       return fooTask
         .run(transition, queue, complete, wait)

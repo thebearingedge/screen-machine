@@ -5,26 +5,25 @@
 module.exports = Transition;
 
 
-function Transition(machine, to, toParams, from, fromParams) {
+function Transition(machine, to, toParams) {
 
   this.machine = machine;
   this.to = to;
   this.toParams = toParams;
-  this.from = from;
-  this.fromParams = fromParams;
+  this.from = machine.currentState;
+  this.fromParams = machine.currentParams;
 }
 
 
 Transition.prototype.canceled = false;
-Transition.prototype.aborted = false;
 Transition.prototype.succeeded = false;
+Transition.prototype.error = null;
 Transition.prototype.handled = null;
 
 
 Transition.prototype.setError = function (err) {
 
   this.canceled = true;
-  this.aborted = true;
   this.handled = false;
   this.error = err;
 };
@@ -42,7 +41,7 @@ Transition.prototype.isHandled = function () {
 };
 
 
-Transition.prototype.isSuperceded = function isSuperceded() {
+Transition.prototype.isCanceled = function isCanceled() {
 
   if (this.succeeded) return false;
 
@@ -55,10 +54,9 @@ Transition.prototype.isSuperceded = function isSuperceded() {
 };
 
 
-Transition.prototype.abort = function () {
+Transition.prototype.cancel = function () {
 
   this.canceled = true;
-  this.aborted = true;
 
   return this;
 };
@@ -67,6 +65,7 @@ Transition.prototype.abort = function () {
 Transition.prototype.finish = function () {
 
   this.succeeded = true;
+  this.machine.init(this.to, this.toParams);
 };
 
 

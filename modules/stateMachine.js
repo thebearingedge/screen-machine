@@ -22,11 +22,11 @@ function stateMachine(events, registry, resolves, router, views) {
     transition: null,
 
 
-    init: function init(startState, startParams) {
+    init: function init(state, params) {
 
-      this.currentState = startState;
-      this.currentParams = startParams;
-
+      this.currentState = state;
+      this.currentParams = params;
+      this.transition = null;
 
       return this;
     },
@@ -62,14 +62,14 @@ function stateMachine(events, registry, resolves, router, views) {
       var fromState = this.currentState;
       var fromParams = this.currentParams;
       var transition = this.transition = new Transition(
-        this, fromState, fromParams, toState, toParams
+        this, toState, toParams
       );
 
       events.notify('stateChangeStart', transition);
 
-      if (transition.isSuperceded()) {
+      if (transition.isCanceled()) {
 
-        events.notify('stateChangeAborted', transition);
+        events.notify('stateChangeCanceled', transition);
 
         return Promise.resolve(transition);
       }
@@ -111,7 +111,7 @@ function stateMachine(events, registry, resolves, router, views) {
         .runTasks(resolveTasks, resolveCache, transition)
         .then(function () {
 
-          if (transition.isSuperceded()) return;
+          if (transition.isCanceled()) return;
 
           enteringStates
             .forEach(function (state) {
@@ -127,15 +127,12 @@ function stateMachine(events, registry, resolves, router, views) {
 
           views.compose(toState, toParams);
 
-          this.currentState = toState;
-          this.currentParams = toParams;
-          this.transition = null;
-
           if (!options.routeChange) {
 
             router.update(toState.name, toParams, { replace: false });
           }
 
+          transition.finish();
           events.notify('stateChangeSuccess', transition);
 
         }.bind(this))

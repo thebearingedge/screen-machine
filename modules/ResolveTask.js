@@ -45,7 +45,7 @@ ResolveTask.prototype.isReady = function () {
 
 ResolveTask.prototype.run = function (transition, queue, complete, wait) {
 
-  if (transition.isSuperceded()) {
+  if (transition.isCanceled()) {
 
     return this.Promise.resolve();
   }

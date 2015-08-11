@@ -1,54 +1,29 @@
 
 'use strict';
 
+var eventBus = require('./modules/eventBus');
+var viewTree = require('./modules/viewTree');
+var resolveService = require('./modules/resolveService');
 var router = require('./modules/router');
 var stateRegistry = require('./modules/stateRegistry');
-var resolveService = require('./modules/resolveService');
-var viewTree = require('./modules/viewTree');
-var eventBus = require('./modules/eventBus');
 var stateMachine = require('./modules/stateMachine');
 
 
-module.exports = ScreenMachine;
+module.exports = screenMachine;
 
 
-function ScreenMachine(config) {
-
-  if (!(this instanceof ScreenMachine)) {
-
-    return new ScreenMachine(config);
-  }
+function screenMachine(config) {
 
   var document = config.document;
   var Promise = config.promises;
   var Component = config.components(document);
-  var routing = config.routing;
-  var events = eventBus(config.events);
-
-  var views = viewTree(Component);
+  var views = viewTree(document, Component);
   var resolves = resolveService(Promise);
-  var routes = router(document.defaultView, routing);
-  var registry = stateRegistry(views, resolves, routes);
-  var machine = stateMachine(events, registry, resolves, views);
+  var routes = router(document.defaultView, { html5: config.html5 });
+  var states = stateRegistry(views, resolves, routes);
+  var events = eventBus(config.events);
+  var machine = stateMachine(events, states, resolves, routes, views);
 
-
-  machine.init(registry.$root, {});
-
-
-  this.state = function () {
-
-    registry.add.apply(registry, arguments);
-
-    return this;
-  };
-
-
-  this.start = function () {
-
-    views.$root.attachWithin(document.body);
-    routes.start(machine.transitionTo);
-
-    return this;
-  };
-
+  return machine.init(states.$root, {});
 }
+

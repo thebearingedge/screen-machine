@@ -7,9 +7,9 @@ var Transition = require('./Transition');
 module.exports = stateMachine;
 
 
-function stateMachine(eventBus, registry, resolveService) {
+function stateMachine(events, registry, resolves, router, views) {
 
-  var Promise = resolveService.Promise;
+  var Promise = resolves.Promise;
 
   var machine = {
 
@@ -27,11 +27,34 @@ function stateMachine(eventBus, registry, resolveService) {
       this.currentState = startState;
       this.currentParams = startParams;
 
+
       return this;
     },
 
 
-    transitionTo: function transitionTo(stateName, toParams) {
+    state: function () {
+
+      registry.add.apply(registry, arguments);
+
+      return this;
+    },
+
+
+    start: function () {
+
+      views.mountRoot();
+      router.listen(function onRouteChange(name, params) {
+
+        return this.transitionTo(name, params, { routeChange: true });
+      }.bind(this));
+
+      return this;
+    },
+
+
+    transitionTo: function (stateName, toParams, options) {
+
+      options || (options = {});
 
       var toState = typeof stateName === 'string'
         ? registry.states[stateName]
@@ -42,11 +65,11 @@ function stateMachine(eventBus, registry, resolveService) {
         this, fromState, fromParams, toState, toParams
       );
 
-      eventBus.notify('stateChangeStart', transition);
+      events.notify('stateChangeStart', transition);
 
       if (transition.isSuperceded()) {
 
-        eventBus.notify('stateChangeAborted', transition);
+        events.notify('stateChangeAborted', transition);
 
         return Promise.resolve(transition);
       }
@@ -79,12 +102,12 @@ function stateMachine(eventBus, registry, resolveService) {
         }, [])
         .map(function (resolve) {
 
-          return resolveService.createTask(resolve, toParams, resolveCache);
+          return resolves.createTask(resolve, toParams, resolveCache);
         });
 
-      var resolveCache = resolveService.getCache();
+      var resolveCache = resolves.getCache();
 
-      return resolveService
+      return resolves
         .runTasks(resolveTasks, resolveCache, transition)
         .then(function () {
 
@@ -102,19 +125,24 @@ function stateMachine(eventBus, registry, resolveService) {
               state.onExit();
             });
 
-          // viewTree.compose(toState, toParams);
+          views.compose(toState, toParams);
 
           this.currentState = toState;
           this.currentParams = toParams;
           this.transition = null;
 
-          eventBus.notify('stateChangeSuccess', transition);
+          if (!options.routeChange) {
+
+            router.update(toState.name, toParams, { replace: false });
+          }
+
+          events.notify('stateChangeSuccess', transition);
 
         }.bind(this))
         .catch(function (err) {
 
           transition.setError(err);
-          eventBus.notify('stateChangeError', transition);
+          events.notify('stateChangeError', transition);
 
           if (transition.isHandled()) {
 

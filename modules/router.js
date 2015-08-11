@@ -97,7 +97,7 @@ function router(window, options) {
     },
 
 
-    start: function (onChange) {
+    listen: function (onChange) {
 
       this.onChange = onChange;
       this.watchLocation();
@@ -114,6 +114,14 @@ function router(window, options) {
     ignoreLocation: function () {
 
       window.removeEventListener(windowEvent, this.sendRouteChange);
+    },
+
+
+    update: function (stateName, params, options) {
+
+      var url = this.href(stateName, params);
+
+      this.setUrl(url, options);
     },
 
 

@@ -258,7 +258,7 @@ describe('router', function () {
   });
 
 
-  describe('.start(onChange)', function () {
+  describe('.listen(onChange)', function () {
 
     var location, history, window;
 
@@ -290,7 +290,7 @@ describe('router', function () {
 
       var onChange = sinon.spy();
 
-      router.start(onChange);
+      router.listen(onChange);
 
       expect(onChange)
         .to.have.been
@@ -310,7 +310,7 @@ describe('router', function () {
 
       var onChange = sinon.spy();
 
-      router.start(onChange);
+      router.listen(onChange);
 
       expect(onChange)
         .to.have.been

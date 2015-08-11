@@ -31,7 +31,7 @@ describe('riotComponent', function () {
 
     views = {
       loadedViews: [],
-      activeViews: []
+      activeViews: {}
     };
 
     view = new View('@', views);

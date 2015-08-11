@@ -7,11 +7,11 @@ var View = require('./View');
 module.exports = viewTree;
 
 
-function viewTree(Component) {
+function viewTree(document, Component) {
 
   var tree = {
     loadedViews: [],
-    activeViews: []
+    activeViews: {}
   };
 
   var rootView = new View('@', tree);
@@ -23,6 +23,13 @@ function viewTree(Component) {
 
     views: {
       '@': rootView
+    },
+
+
+    mountRoot: function () {
+
+      rootView.attachWithin(document.body);
+      this.activeViews['@'] = rootView;
     },
 
 
@@ -94,6 +101,12 @@ function viewTree(Component) {
       state.addComponent(component);
 
       return component;
+    },
+
+
+    compose: function (state, params) {
+
+
     }
 
   };

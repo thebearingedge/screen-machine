@@ -9,8 +9,6 @@ var expect = chai.expect;
 chai.use(sinonChai);
 
 
-var resolveCache = require('../modules/resolveCache');
-var ResolveTask = require('../modules/ResolveTask');
 var BaseComponent = require('../modules/BaseComponent');
 var viewTree = require('../modules/viewTree');
 var resolveService = require('../modules/resolveService');
@@ -23,27 +21,34 @@ var stateMachine = require('../modules/stateMachine');
 
 describe('stateMachine', function () {
 
-  var window, routerOptions, views, resolves, routes, registry, events, machine;
+  var window, document;
+  var routerOptions, views, resolves, routes, registry, events, machine;
 
 
   beforeEach(function () {
 
-    window = { history: {}, location: {} };
+    window = {
+      history: {
+        replaceState: function () {},
+        pushState: function () {}
+      },
+      location: {
+        replace: function () {}
+      },
+      addEventListener: function () {},
+      removeEventListener: function () {}
+    };
+    document = {};
     routerOptions = {};
     events = {
       notify: function () {}
     };
 
-    views = viewTree(BaseComponent);
+    views = viewTree(document, BaseComponent);
     resolves = resolveService(Promise);
     routes = router(window, routerOptions);
     registry = stateRegistry(views, resolves, routes);
-    machine = stateMachine(events, registry, resolves);
-  });
-
-  afterEach(function () {
-
-    expect(global.params).to.equal(undefined);
+    machine = stateMachine(events, registry, resolves, routes, views);
   });
 
 

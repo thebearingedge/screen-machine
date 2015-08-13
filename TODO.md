@@ -1,5 +1,4 @@
 
 - Start thinking about URL stuff
-- Write some tests for the love of god
 - make up your mind about private data member keys
-- figure out the shouldRefresh shouldClose problem
+- increase test coverage of state transitions

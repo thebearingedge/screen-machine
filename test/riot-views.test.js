@@ -81,6 +81,13 @@ describe('Riot Component Composition', function () {
             component: 'modal'
           }
         }
+      })
+      .add('home.about.contact', {
+        views: {
+          '@': {
+            component: 'contact'
+          }
+        }
       });
   });
 
@@ -332,6 +339,40 @@ describe('Riot Component Composition', function () {
             '</modal>' +
           '</sm-view>' +
         '</home>'
+      );
+  });
+
+
+  it('should not render into shadowed views', function () {
+
+    var components = registry.states['home.about'].getAllComponents();
+    var resolved = {
+      'user@home': {
+        name: 'Spongebob'
+      }
+    };
+    var params = { userId: 1 };
+
+    views.compose(components, resolved, params);
+
+    components = registry.states['home.about.contact'].getAllComponents();
+    resolved = {
+      'user@home': {
+        name: 'Squidward'
+      }
+    };
+    params = { userId: 2 };
+
+    views.compose(components, resolved, params);
+
+    expect(appRoot.innerHTML)
+      .to.equal(
+        '<contact riot-tag="contact">' +
+          '<form> ' +
+            '<label for="contactEmail">Enter your email</label> ' +
+            '<input id="contactEmail" type="email"> ' +
+          '</form>' +
+        '</contact>'
       );
   });
 

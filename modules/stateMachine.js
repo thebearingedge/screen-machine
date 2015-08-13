@@ -13,20 +13,18 @@ function stateMachine(events, registry, resolves, router, views) {
 
   return {
 
-    currentState: null,
-
-
-    currentParams: null,
-
-
-    transition: null,
+    $state: {
+      current: null,
+      params: null,
+      transition: null
+    },
 
 
     init: function init(state, params) {
 
-      this.currentState = state;
-      this.currentParams = params;
-      this.transition = null;
+      this.$state.current = state;
+      this.$state.params = params;
+      this.$state.transition = null;
 
       return this;
     },
@@ -59,11 +57,12 @@ function stateMachine(events, registry, resolves, router, views) {
       var toState = typeof stateName === 'string'
         ? registry.states[stateName]
         : stateName;
-      var toBranch = toState.getBranch();
-      var fromParams = this.currentParams;
+      var fromParams = this.$state.params;
+      var resolveCache = resolves.getCache();
       var transition = new Transition(this, toState, toParams);
 
-      this.transition = transition;
+      this.$state.transition = transition;
+
       events.notify('stateChangeStart', transition);
 
       if (transition.isCanceled()) {
@@ -73,8 +72,8 @@ function stateMachine(events, registry, resolves, router, views) {
         return Promise.resolve(transition);
       }
 
-      var resolveCache = resolves.getCache();
-      var tasks = toBranch
+      var tasks = toState
+        .getBranch()
         .filter(function (state) {
 
           return state.isStale(fromParams, toParams);

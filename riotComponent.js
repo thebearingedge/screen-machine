@@ -32,9 +32,6 @@ function riotComponent(riot) {
 
       render: function (resolved, params) {
 
-        resolved || (resolved = {});
-        params || (params = {});
-
         var opts = this.getOpts(resolved, params);
 
         this.node = document.createElement(this.tagName);
@@ -77,9 +74,6 @@ function riotComponent(riot) {
 
 
       getOpts: function (resolved, params) {
-
-        resolved || (resolved = {});
-        params || (params = {});
 
         var opts = {
           params: params

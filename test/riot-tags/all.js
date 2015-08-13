@@ -6,6 +6,9 @@ riot.tag('albums', '<h5>You have { totalAlbums } albums.</h5> <ul> <li each="{ a
     this.totalAlbums = opts.albums.length;
   
 });
+riot.tag('contact', '<form> <label for="contactEmail">Enter your email</label> <input id="contactEmail" type="email"> </form>', function(opts) {
+
+});
 riot.tag('home', '<h1>Welcome, { opts.user.name }!</h1> <p>Your are user #{ opts.params.userId }</p> <sm-view></sm-view> <sm-view name="modal"></sm-view>', function(opts) {
 
 });

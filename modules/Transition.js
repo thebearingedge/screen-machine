@@ -45,7 +45,7 @@ Transition.prototype.isCanceled = function isCanceled() {
 
   if (this.succeeded) return false;
 
-  if (!this.canceled && this !== this.machine.transition) {
+  if (!this.canceled && this !== this.machine.$state.transition) {
 
     this.canceled = true;
   }

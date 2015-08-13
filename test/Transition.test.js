@@ -19,19 +19,22 @@ describe('Transition', function () {
   beforeEach(function () {
 
     machine = {
+      $state: {
+        current: {
+          getBranch: function () { return []; }
+        },
+        params: {},
+        transition: null
+      },
       transitionTo: sinon.spy(),
       init: sinon.spy(),
-      currentState: {
-        getBranch: function () { return []; }
-      },
-      currentParams: {}
     };
     to = {
       getBranch: function () { return []; }
     };
     toParams = {};
     transition = new Transition(machine, to, toParams);
-    machine.transition = transition;
+    machine.$state.transition = transition;
   });
 
 
@@ -45,7 +48,7 @@ describe('Transition', function () {
 
     it('should be canceled if it is superceded', function () {
 
-      machine.transition = {};
+      machine.$state.transition = {};
 
       expect(transition.isCanceled()).to.equal(true);
     });

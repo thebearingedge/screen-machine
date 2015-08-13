@@ -100,8 +100,6 @@ View.prototype.loadComponent = function (component) {
 
 View.prototype.unload = function () {
 
-  if (!this.isLoaded()) return this;
-
   if (this.children) {
 
     this

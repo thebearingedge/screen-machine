@@ -213,7 +213,7 @@ describe('riotComponent', function () {
       component = new RiotComponent('', '', state);
       component.addChildView(view);
 
-      component.render();
+      component.render({ '@app': null });
 
       sinon.spy(view, 'detach');
 

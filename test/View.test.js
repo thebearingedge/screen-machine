@@ -100,23 +100,6 @@ describe('View', function () {
   });
 
 
-
-  describe('.isActive()', function () {
-
-    it('should know whether it is currently active', function () {
-
-      viewTree.activeViews = [view];
-
-      expect(view.isActive()).to.equal(true);
-
-      viewTree.activeViews = [];
-
-      expect(view.isActive()).to.equal(false);
-    });
-
-  });
-
-
   describe('.isLoaded()', function () {
 
     it('should know whether it is loaded', function () {
@@ -299,17 +282,6 @@ describe('View', function () {
         .to.equal('<div><sm-view><br></sm-view></div>');
       expect(view.currentComponent).to.equal(component);
       expect(view.content).to.equal(content);
-    });
-
-
-    it('should know to close', function () {
-
-      view.publish();
-
-      expect(document.body.innerHTML)
-        .to.equal('<div><sm-view></sm-view></div>');
-      expect(view.currentComponent).to.equal(null);
-      expect(view.content).to.equal(null);
     });
 
 

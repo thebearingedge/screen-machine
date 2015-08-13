@@ -9,7 +9,6 @@ var document = require('jsdom').jsdom();
 
 chai.use(sinonChai);
 
-
 var riot = require('riot');
 var riotComponent = require('../riotComponent');
 var viewTree = require('../modules/viewTree');
@@ -77,7 +76,7 @@ describe('Riot Component Composition', function () {
           '': {
             component: 'about'
           },
-          'modal@home': {
+          'modal': {
             component: 'modal'
           }
         }

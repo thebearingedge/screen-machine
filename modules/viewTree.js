@@ -135,7 +135,7 @@ function viewTree(document, Component) {
         .activeViews
         .filter(function (active) {
 
-          return !active.isLoaded();
+          return active.shouldClose();
         });
 
       tree.activeViews = tree.loadedViews.slice();
@@ -146,7 +146,7 @@ function viewTree(document, Component) {
 
           return view.publish(resolved, params);
         })
-        .map(function (view) {
+        .forEach(function (view) {
 
           return view.cleanUp();
         });

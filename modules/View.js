@@ -31,11 +31,9 @@ View.prototype.lastComponent = null;
 
 View.prototype.attachWithin = function (node) {
 
-  var element = node.querySelector(this.selector);
-
-  this.element = element;
-  this.content = element
-    ? element.firstElementChild
+  this.element = node.querySelector(this.selector);
+  this.content = this.element
+    ? this.element.firstElementChild
     : null;
 
   return this;
@@ -78,12 +76,6 @@ View.prototype.setContainer = function (component) {
   this.container = component;
 
   return this;
-};
-
-
-View.prototype.isActive = function () {
-
-  return this.tree.activeViews.indexOf(this) > -1;
 };
 
 
@@ -144,11 +136,6 @@ View.prototype.publish = function (resolved, params) {
     this.currentComponent.update(resolved, params);
 
     return this;
-  }
-
-  if (this.shouldClose()) {
-
-    return this.close();
   }
 
   if (this.content) {

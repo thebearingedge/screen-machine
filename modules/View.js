@@ -26,6 +26,7 @@ View.prototype.element = null;
 View.prototype.content = null;
 View.prototype.nextComponent = null;
 View.prototype.currentComponent = null;
+View.prototype.lastComponent = null;
 
 
 View.prototype.attachWithin = function (node) {
@@ -82,7 +83,7 @@ View.prototype.setContainer = function (component) {
 
 View.prototype.isActive = function () {
 
-  return !!this.tree.activeViews[this.viewKey];
+  return this.tree.activeViews.indexOf(this) > -1;
 };
 
 
@@ -98,6 +99,8 @@ View.prototype.loadComponent = function (component) {
 
 
 View.prototype.unload = function () {
+
+  if (!this.isLoaded()) return this;
 
   if (this.children) {
 
@@ -125,21 +128,22 @@ View.prototype.unload = function () {
 
 View.prototype.isLoaded = function () {
 
-  return !!this.nextComponent;
+  return this.tree.loadedViews.indexOf(this) > -1;
 };
 
 
 View.prototype.isShadowed = function () {
 
-  return !!this.container && !this.container.shouldRender();
+  return !!this.container &&
+    this.container.view.nextComponent !== this.container;
 };
 
 
-View.prototype.publishChange = function () {
+View.prototype.publish = function (resolved, params) {
 
   if (this.shouldUpdate()) {
 
-    this.currentComponent.update();
+    this.currentComponent.update(resolved, params);
 
     return this;
   }
@@ -159,6 +163,9 @@ View.prototype.publishChange = function () {
   }
 
   this.content = this.nextComponent.node;
+  this.lastComponent = this.currentComponent;
+  this.currentComponent = this.nextComponent;
+  this.nextComponent = null;
 
   return this;
 };
@@ -190,6 +197,17 @@ View.prototype.close = function () {
   }
 
   this.content = this.currentComponent = null;
+
+  return this;
+};
+
+
+View.prototype.cleanUp = function () {
+
+  if (this.lastComponent) {
+
+    this.lastComponent.destroy();
+  }
 
   return this;
 };

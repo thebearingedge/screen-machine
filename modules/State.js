@@ -233,16 +233,18 @@ State.prototype.addComponent = function (component) {
 State.prototype.getComponents = function () {
 
   return this.$components
-    ? this.$components.slice()
+    ? this.$components.slice().reverse()
     : [];
 };
 
 
-State.prototype.onEnter = function () {
+State.prototype.getAllComponents = function () {
 
-};
+  return this
+    .getBranch()
+    .reverse()
+    .reduce(function (components, state) {
 
-
-State.prototype.onExit = function () {
-
+      return components.concat(state.getComponents());
+    }, []);
 };

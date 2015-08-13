@@ -11,7 +11,7 @@ function stateMachine(events, registry, resolves, router, views) {
 
   var Promise = resolves.Promise;
 
-  var machine = {
+  return {
 
     currentState: null,
 
@@ -59,12 +59,11 @@ function stateMachine(events, registry, resolves, router, views) {
       var toState = typeof stateName === 'string'
         ? registry.states[stateName]
         : stateName;
-      var fromState = this.currentState;
+      var toBranch = toState.getBranch();
       var fromParams = this.currentParams;
-      var transition = this.transition = new Transition(
-        this, toState, toParams
-      );
+      var transition = new Transition(this, toState, toParams);
 
+      this.transition = transition;
       events.notify('stateChangeStart', transition);
 
       if (transition.isCanceled()) {
@@ -74,24 +73,8 @@ function stateMachine(events, registry, resolves, router, views) {
         return Promise.resolve(transition);
       }
 
-      var exitingStates = fromState
-        .getBranch()
-        .filter(function (state) {
-
-          return !toState.contains(state);
-        });
-
-      var pivotState = exitingStates[0]
-        ? exitingStates[0].$parent
-        : null;
-
-      var toBranch = toState.getBranch();
-
-      var enteringStates = pivotState
-        ? toBranch.slice(toBranch.indexOf(pivotState + 1))
-        : toBranch.slice(1);
-
-      var resolveTasks = toBranch
+      var resolveCache = resolves.getCache();
+      var tasks = toBranch
         .filter(function (state) {
 
           return state.isStale(fromParams, toParams);
@@ -105,34 +88,28 @@ function stateMachine(events, registry, resolves, router, views) {
           return resolves.createTask(resolve, toParams, resolveCache);
         });
 
-      var resolveCache = resolves.getCache();
-
       return resolves
-        .runTasks(resolveTasks, resolveCache, transition)
+        .runTasks(tasks, resolveCache, transition)
         .then(function () {
 
-          if (transition.isCanceled()) return;
+          if (transition.isCanceled()) {
 
-          enteringStates
-            .forEach(function (state) {
+            events.notify('stateChangeCanceled', transition);
 
-              state.onEnter();
-            });
+            return Promise.resolve(transition);
+          }
 
-          exitingStates
-            .forEach(function (state) {
+          transition.finish();
 
-              state.onExit();
-            });
+          var components = toState.getAllComponents();
 
-          views.compose(toState, toParams);
+          views.compose(components, toParams);
 
           if (!options.routeChange) {
 
             router.update(toState.name, toParams, { replace: false });
           }
 
-          transition.finish();
           events.notify('stateChangeSuccess', transition);
 
         }.bind(this))
@@ -151,6 +128,4 @@ function stateMachine(events, registry, resolves, router, views) {
     }
 
   };
-
-  return machine;
 }

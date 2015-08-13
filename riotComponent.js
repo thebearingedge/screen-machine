@@ -30,9 +30,12 @@ function riotComponent(riot) {
       tagInstance: null,
 
 
-      render: function () {
+      render: function (resolved, params) {
 
-        var opts = this.state.getResolveResults();
+        resolved || (resolved = {});
+        params || (params = {});
+
+        var opts = this.getOpts(resolved, params);
 
         this.node = document.createElement(this.tagName);
         this.tagInstance = riot.mount(this.node, this.tagName, opts)[0];
@@ -48,9 +51,9 @@ function riotComponent(riot) {
       },
 
 
-      update: function () {
+      update: function (resolved, params) {
 
-        this.tagInstance.opts = this.state.getResolveResults();
+        this.tagInstance.opts = this.getOpts(resolved, params);
         this.tagInstance.update();
 
         return this;
@@ -70,6 +73,27 @@ function riotComponent(riot) {
           });
 
         return this;
+      },
+
+
+      getOpts: function (resolved, params) {
+
+        resolved || (resolved = {});
+        params || (params = {});
+
+        var opts = {
+          params: params
+        };
+
+        return this
+          .state
+          .getResolves()
+          .reduce(function (opts, resolve) {
+
+            opts[resolve.key] = resolved[resolve.id];
+
+            return opts;
+          }, opts);
       }
 
     });

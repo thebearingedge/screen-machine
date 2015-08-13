@@ -20,7 +20,7 @@ describe('View', function () {
   beforeEach(function () {
 
     viewTree = {
-      activeViews: {},
+      activeViews: [],
       loadedViews: []
     };
 
@@ -105,11 +105,11 @@ describe('View', function () {
 
     it('should know whether it is currently active', function () {
 
-      viewTree.activeViews['@'] = view;
+      viewTree.activeViews = [view];
 
       expect(view.isActive()).to.equal(true);
 
-      viewTree.activeViews = {};
+      viewTree.activeViews = [];
 
       expect(view.isActive()).to.equal(false);
     });
@@ -123,7 +123,7 @@ describe('View', function () {
 
       expect(view.isLoaded()).to.equal(false);
 
-      view.nextComponent = {};
+      viewTree.loadedViews = [view];
 
       expect(view.isLoaded()).to.equal(true);
     });
@@ -137,11 +137,12 @@ describe('View', function () {
 
       expect(view.isShadowed()).to.equal(false);
 
-      view.container = { shouldRender: function () { return true; } };
+      view.container = { view: {} };
+      view.container.view.nextComponent = view.container;
 
       expect(view.isShadowed()).to.equal(false);
 
-      view.container = { shouldRender: function () { return false; } };
+      view.container.view.nextComponent = null;
 
       expect(view.isShadowed()).to.equal(true);
     });
@@ -164,7 +165,7 @@ describe('View', function () {
       var firstComponent = {};
       var secondComponent = {};
 
-      view.nextComponent = firstComponent;
+      view.loadComponent(firstComponent);
       view.loadComponent(secondComponent);
 
       expect(view.nextComponent).to.equal(firstComponent);
@@ -216,7 +217,7 @@ describe('View', function () {
 
       expect(view.shouldClose()).to.equal(true);
 
-      view.nextComponent = {};
+      view.loadComponent({});
 
       expect(view.shouldClose()).to.equal(false);
     });
@@ -276,7 +277,7 @@ describe('View', function () {
   });
 
 
-  describe('.publishChange()', function () {
+  describe('.publish()', function () {
 
     beforeEach(function () {
 
@@ -288,11 +289,11 @@ describe('View', function () {
     it('should know to update', function () {
 
       var content = view.content;
-      var component = { update: sinon.stub() };
+      var component = { update: sinon.stub(), render: sinon.stub() };
       view.currentComponent = component;
       view.nextComponent = component;
 
-      view.publishChange();
+      view.publish();
 
       expect(document.body.innerHTML)
         .to.equal('<div><sm-view><br></sm-view></div>');
@@ -303,7 +304,7 @@ describe('View', function () {
 
     it('should know to close', function () {
 
-      view.publishChange();
+      view.publish();
 
       expect(document.body.innerHTML)
         .to.equal('<div><sm-view></sm-view></div>');
@@ -315,11 +316,15 @@ describe('View', function () {
     it('should replace its content', function () {
 
       var content = view.content;
-      var component = { node: document.createElement('p') };
+      var component = {
+        render: function () {
+          this.node = document.createElement('p');
+        }
+      };
 
-      view.nextComponent = component;
-
-      view.publishChange();
+      view.loadComponent(component);
+      component.render();
+      view.publish();
 
       expect(document.body.innerHTML)
         .to.equal('<div><sm-view><p></p></sm-view></div>');
@@ -332,13 +337,18 @@ describe('View', function () {
       document.body.innerHTML = '<div><sm-view></sm-view></div>';
       view.attachWithin(document.body);
 
-      var component = { node: document.createElement('p') };
+      var component = {
+        render: function () {
+          this.node = document.createElement('p');
+        }
+      };
 
-      view.nextComponent = component;
+      view.loadComponent(component);
+      component.render();
 
       expect(view.content).to.equal(null);
 
-      view.publishChange();
+      view.publish();
 
       expect(document.body.innerHTML)
         .to.equal('<div><sm-view><p></p></sm-view></div>');

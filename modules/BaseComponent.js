@@ -34,7 +34,8 @@ BaseComponent.prototype.addChildView = function (view) {
 
 BaseComponent.prototype.shouldRender = function () {
 
-  return this.view.nextComponent === this &&
+  return !this.view.isShadowed() &&
+    this.view.nextComponent === this &&
     this.view.currentComponent !== this;
 };
 

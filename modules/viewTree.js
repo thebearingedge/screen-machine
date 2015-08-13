@@ -11,7 +11,7 @@ function viewTree(document, Component) {
 
   var tree = {
     loadedViews: [],
-    activeViews: {}
+    activeViews: []
   };
 
   var rootView = new View('@', tree);
@@ -29,7 +29,7 @@ function viewTree(document, Component) {
     mountRoot: function () {
 
       rootView.attachWithin(document.body);
-      this.activeViews['@'] = rootView;
+      tree.activeViews.push(rootView);
     },
 
 
@@ -104,9 +104,66 @@ function viewTree(document, Component) {
     },
 
 
-    compose: function (state, params) {
+    compose: function (components, resolved, params) {
 
+      components
+        .map(function (component) {
 
+          return component.load();
+        })
+        .filter(function (component) {
+
+          return component.shouldRender();
+        })
+        .forEach(function (component) {
+
+          component.render(resolved, params);
+        });
+
+      tree
+        .loadedViews
+        .filter(function (loaded) {
+
+          return loaded.isShadowed();
+        })
+        .forEach(function (shadowed) {
+
+          shadowed.unload();
+        });
+
+      var toClose = tree
+        .activeViews
+        .filter(function (active) {
+
+          return !active.isLoaded();
+        });
+
+      tree.activeViews = tree.loadedViews.slice();
+
+      tree
+        .loadedViews
+        .map(function (view) {
+
+          return view.publish(resolved, params);
+        })
+        .map(function (view) {
+
+          return view.cleanUp();
+        });
+
+      toClose
+        .forEach(function (view) {
+
+          view.close();
+        });
+
+      tree
+        .loadedViews
+        .slice()
+        .forEach(function (view) {
+
+          view.unload();
+        });
     }
 
   };

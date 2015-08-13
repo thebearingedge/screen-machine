@@ -5,6 +5,7 @@ var chai = require('chai');
 var sinon = require('sinon');
 var sinonChai = require('sinon-chai');
 var expect = chai.expect;
+var document = require('jsdom').jsdom();
 
 chai.use(sinonChai);
 
@@ -19,11 +20,10 @@ describe('viewTree', function () {
 
   describe('.processState(state)', function () {
 
-    var tree, rootState, document;
+    var tree, rootState;
 
     beforeEach(function () {
 
-      document = {};
       tree = viewTree(document, BaseComponent);
       rootState = new State({ name: '' });
       rootState.addView(tree.views['@']);
@@ -265,7 +265,7 @@ describe('viewTree', function () {
       expect(adminComponent.view).to.equal(rootView);
       expect(adminConsoleComponent.view).to.equal(adminView);
     });
-  });
 
+  });
 
 });

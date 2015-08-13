@@ -119,10 +119,6 @@ describe('riotComponent', function () {
       component.load();
 
       expect(component.shouldRender()).to.equal(true);
-
-      view.currentComponent = component;
-
-      expect(component.shouldRender()).to.equal(false);
     });
 
   });
@@ -132,14 +128,13 @@ describe('riotComponent', function () {
 
     it('should render a riot tag', function () {
 
-      state.getResolveResults = function () { return { place: 'Santa Ana' }; };
+      state.$resolves = [{ id: 'place@app', key: 'place' }];
 
-      component.render();
+      component.render({ 'place@app': 'Santa Ana' });
 
       expect(component.node.innerHTML).to.equal(
         '<span>Welcome to Santa Ana</span>'
       );
-      expect(component.tagInstance.root).to.equal(component.node);
     });
 
 
@@ -148,7 +143,6 @@ describe('riotComponent', function () {
       var dump = document.createElement('div');
 
       state.component = 'parent-tag';
-      state.getResolveResults = function () { return {}; };
 
       view = new View('nested@', views);
       component = new RiotComponent('', '', state);
@@ -164,21 +158,21 @@ describe('riotComponent', function () {
   });
 
 
-  describe('.update()', function () {
+  describe('.update(resolved)', function () {
 
     it('should update its node\'s content', function () {
 
-      state.getResolveResults = function () { return { place: '' }; };
+      state.$resolves = [{ id: 'place@app', key: 'place' }];
 
-      component.render();
+      component.render({ 'place@app': '' });
 
       expect(component.node.innerHTML).to.equal(
         '<span>Welcome to </span>'
       );
 
-      state.getResolveResults = function () { return { place: 'Santa Ana' }; };
+      state.$resolves = [{ id: 'place@app', key: 'place' }];
 
-      component.update();
+      component.update({ 'place@app': 'Santa Ana' });
 
       expect(component.node.innerHTML).to.equal(
         '<span>Welcome to Santa Ana</span>'
@@ -191,8 +185,6 @@ describe('riotComponent', function () {
   describe('.destroy()', function () {
 
     it('should unmount its tag and release its dom node', function () {
-
-      state.getResolveResults = function () { return { place: '' }; };
 
       component.render();
 
@@ -215,7 +207,7 @@ describe('riotComponent', function () {
     it('should detach its child views', function () {
 
       state.component = 'parent-tag';
-      state.getResolveResults = function () { return {}; };
+      state.$resolves = [{ id: '@app', key: '' }];
 
       view = new View('nested@', views);
       component = new RiotComponent('', '', state);

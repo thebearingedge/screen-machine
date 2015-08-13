@@ -14,19 +14,23 @@ var Transition = require('../modules/Transition');
 
 describe('Transition', function () {
 
-  var transition, machine, to, toParams, from, fromParams;
+  var transition, machine, to, toParams;
 
   beforeEach(function () {
 
     machine = {
       transitionTo: sinon.spy(),
-      init: sinon.spy()
+      init: sinon.spy(),
+      currentState: {
+        getBranch: function () { return []; }
+      },
+      currentParams: {}
     };
-    to = {};
+    to = {
+      getBranch: function () { return []; }
+    };
     toParams = {};
-    from = {};
-    fromParams = {};
-    transition = new Transition(machine, to, toParams, from, fromParams);
+    transition = new Transition(machine, to, toParams);
     machine.transition = transition;
   });
 

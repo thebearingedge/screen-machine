@@ -57,6 +57,7 @@ function stateMachine(events, registry, resolves, router, views) {
       var toState = typeof stateName === 'string'
         ? registry.states[stateName]
         : stateName;
+      var fromState = this.$state.current;
       var fromParams = this.$state.params;
       var resolveCache = resolves.getCache();
       var transition = new Transition(this, toState, toParams);
@@ -116,6 +117,17 @@ function stateMachine(events, registry, resolves, router, views) {
 
             router.update(toState.name, toParams, { replace: false });
           }
+
+          fromState
+            .getBranch()
+            .filter(function (state) {
+
+              return !toState.contains(state);
+            })
+            .forEach(function (exiting) {
+
+              exiting.sleep();
+            });
 
           events.notify('stateChangeSuccess', transition);
 

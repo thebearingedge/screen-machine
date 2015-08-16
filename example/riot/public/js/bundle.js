@@ -2006,7 +2006,7 @@ BaseComponent.prototype.load = function () {
 module.exports = DependentResolve;
 
 
-function DependentResolve(resolveKey, state) {
+function DependentResolve(resolveKey, state, cache) {
 
   var resolveDef = state.resolve[resolveKey];
   var invokableIndex = resolveDef.length - 1;
@@ -2014,6 +2014,7 @@ function DependentResolve(resolveKey, state) {
   this.key = resolveKey;
   this.id = resolveKey + '@' + state.name;
   this.state = state;
+  this.cache = cache;
   this.invokable = resolveDef[invokableIndex];
   this.injectables = resolveDef
     .slice(0, invokableIndex)
@@ -2040,6 +2041,12 @@ DependentResolve.prototype.execute = function (params, dependencies) {
     .concat(params);
 
   return this.invokable.apply(null, args);
+};
+
+
+DependentResolve.prototype.clearCache = function () {
+
+  this.cache.unset(this.id);
 };
 
 },{}],12:[function(require,module,exports){
@@ -2253,11 +2260,12 @@ Route.prototype.parseQuery = function (queryString) {
 module.exports = SimpleResolve;
 
 
-function SimpleResolve(resolveKey, state) {
+function SimpleResolve(resolveKey, state, cache) {
 
   this.key = resolveKey;
   this.id = resolveKey + '@' + state.name;
   this.state = state;
+  this.cache = cache;
   this.invokable = state.resolve[resolveKey];
   this.cacheable = state.cacheable === false
     ? false
@@ -2268,6 +2276,12 @@ function SimpleResolve(resolveKey, state) {
 SimpleResolve.prototype.execute = function (params) {
 
   return this.invokable.call(null, params);
+};
+
+
+SimpleResolve.prototype.clearCache = function () {
+
+  this.cache.unset(this.id);
 };
 
 },{}],15:[function(require,module,exports){
@@ -2465,17 +2479,22 @@ State.prototype.isStale = function (oldParams, newParams) {
 
 State.prototype.sleep = function () {
 
-  this.$views.forEach(function (view) {
+  if (this.$views) {
 
-    view.detach();
-  });
+    this.$views.forEach(function (view) {
 
-  this.$resolves.forEach(function (resolve) {
+      view.detach();
+    });
+  }
 
-    resolve.clearCache();
-  });
 
-  this.$paramCache = null;
+  if (this.$resolves) {
+
+    this.$resolves.forEach(function (resolve) {
+
+      resolve.clearCache();
+    });
+  }
 
   return this;
 };
@@ -2933,9 +2952,11 @@ function resolveService(Promise) {
 
     instantiate: function (resolveKey, state) {
 
+      var cache = resolveCache({ stateless: this.stateless });
+
       return Array.isArray(state.resolve[resolveKey])
-        ? new DependentResolve(resolveKey, state)
-        : new SimpleResolve(resolveKey, state);
+        ? new DependentResolve(resolveKey, state, cache)
+        : new SimpleResolve(resolveKey, state, cache);
     },
 
 
@@ -3308,6 +3329,7 @@ function stateMachine(events, registry, resolves, router, views) {
       var toState = typeof stateName === 'string'
         ? registry.states[stateName]
         : stateName;
+      var fromState = this.$state.current;
       var fromParams = this.$state.params;
       var resolveCache = resolves.getCache();
       var transition = new Transition(this, toState, toParams);
@@ -3367,6 +3389,17 @@ function stateMachine(events, registry, resolves, router, views) {
 
             router.update(toState.name, toParams, { replace: false });
           }
+
+          fromState
+            .getBranch()
+            .filter(function (state) {
+
+              return !toState.contains(state);
+            })
+            .forEach(function (exiting) {
+
+              exiting.sleep();
+            });
 
           events.notify('stateChangeSuccess', transition);
 

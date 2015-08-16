@@ -28,9 +28,11 @@ function resolveService(Promise) {
 
     instantiate: function (resolveKey, state) {
 
+      var cache = resolveCache({ stateless: this.stateless });
+
       return Array.isArray(state.resolve[resolveKey])
-        ? new DependentResolve(resolveKey, state)
-        : new SimpleResolve(resolveKey, state);
+        ? new DependentResolve(resolveKey, state, cache)
+        : new SimpleResolve(resolveKey, state, cache);
     },
 
 

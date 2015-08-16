@@ -265,7 +265,6 @@ describe('State', function () {
 
       expect(viewLoader.detach.calledOnce).to.equal(true);
       expect(resolve.clearCache.calledOnce).to.equal(true);
-      expect(state.$paramCache).to.equal(null);
     });
 
   });

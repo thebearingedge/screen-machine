@@ -57,7 +57,7 @@ describe('View', function () {
     });
 
 
-    it('should not attach to named <sm-view> tags', function () {
+    it('should attach to named <sm-view> tags', function () {
 
       view = new View('sidebar@', viewTree);
 

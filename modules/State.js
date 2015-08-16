@@ -192,17 +192,22 @@ State.prototype.isStale = function (oldParams, newParams) {
 
 State.prototype.sleep = function () {
 
-  this.$views.forEach(function (view) {
+  if (this.$views) {
 
-    view.detach();
-  });
+    this.$views.forEach(function (view) {
 
-  this.$resolves.forEach(function (resolve) {
+      view.detach();
+    });
+  }
 
-    resolve.clearCache();
-  });
 
-  this.$paramCache = null;
+  if (this.$resolves) {
+
+    this.$resolves.forEach(function (resolve) {
+
+      resolve.clearCache();
+    });
+  }
 
   return this;
 };

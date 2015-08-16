@@ -6,7 +6,6 @@ var app = express();
 
 var publicDir = __dirname + '/public';
 
-// app.use(express.static(publicDir));
 
 app.get('/*.js', function (req, res) {
 

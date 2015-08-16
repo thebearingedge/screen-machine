@@ -2,25 +2,20 @@
 'use strict';
 
 /* global -document */
+/* global -Promise */
 var document = require('global/document');
-var console = require('console-browserify');
 var riot = global.riot = require('riot');
 var screenMachine = require('../../../ScreenMachine');
 var riotComponent = require('../../../riotComponent');
 var EventEmitter = require('events').EventEmitter;
-var Bluebird = require('bluebird');
+var Promise = require('native-promise-only');
 var emitter = new EventEmitter();
 
-
-emitter.on('stateChangeStart', function (transition) {
-
-  console.log(transition.to.name);
-});
 
 var config = {
   components: riotComponent(riot),
   document: document,
-  promises: Bluebird,
+  promises: Promise,
   events: {
     emitter: emitter,
     trigger: 'emit'

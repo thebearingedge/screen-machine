@@ -194,5 +194,7 @@ View.prototype.cleanUp = function () {
     this.lastComponent.destroy();
   }
 
+  this.lastComponent = null;
+
   return this;
 };

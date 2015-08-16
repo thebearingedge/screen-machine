@@ -79,6 +79,7 @@ function stateRegistry(viewTree, resolveService, router) {
   var rootState = registry.$root = new State({ name: '' });
 
   rootState.addView(viewTree.views['@']);
+  rootState.$pathSegments = [];
 
   return registry;
 }

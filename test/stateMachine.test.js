@@ -90,7 +90,7 @@ describe('stateMachine', function () {
 
   describe('.transitionTo(toState, toParams)', function () {
 
-    var rootState, appState, fooState, barState, bazState;
+    var rootState, appState, fooState, barState, bazState, quxState, quuxState;
     var initialParams;
 
     beforeEach(function () {
@@ -122,12 +122,24 @@ describe('stateMachine', function () {
           resolve: {
             bazResolve: ['barResolve@app.foo.bar', sinon.spy()]
           }
+        })
+        .state('qux', {
+          path: '/qux'
+        })
+        .state('quux', {
+          parent: 'qux',
+          path: '/:quuxParam',
+          resolve: {
+            quuxResolve: sinon.spy()
+          }
         });
 
       appState = registry.states.app;
       fooState = registry.states['app.foo'];
       barState = registry.states['app.foo.bar'];
       bazState = registry.states['app.foo.bar.baz'];
+      quxState = registry.states.qux;
+      quuxState = registry.states.quux;
     });
 
 
@@ -289,6 +301,26 @@ describe('stateMachine', function () {
     });
 
 
+    it('should transition from "baz" to "quux"', function (done) {
+
+      machine.init(bazState, { fooParam: '42', bazParam: '24' });
+
+      var toParams = { quuxParam: 'fin' };
+
+      return machine
+        .transitionTo(quuxState, toParams)
+        .then(function () {
+
+          expect(fooState.resolve.fooResolve.called).to.equal(false);
+          expect(quuxState.resolve.quuxResolve)
+            .to.have.been.calledWithExactly({ quuxParam: 'fin' });
+          expect(machine.$state.current).to.equal(quuxState);
+          expect(machine.$state.params).to.equal(toParams);
+          return done();
+        });
+    });
+
+
     it('should not run resolves if immediately canceled', function (done) {
 
       sinon.spy(resolves, 'runTasks');
@@ -305,6 +337,8 @@ describe('stateMachine', function () {
         .then(function () {
 
           expect(resolves.runTasks.called).to.equal(false);
+          expect(machine.$state.current).to.equal(rootState);
+          expect(machine.$state.params).to.deep.equal({});
           return done();
         });
     });
@@ -325,12 +359,12 @@ describe('stateMachine', function () {
         .then(function () {
 
           expect(views.compose.called).to.equal(false);
+          expect(machine.$state.current).to.equal(rootState);
+          expect(machine.$state.params).to.deep.equal({});
           return done();
         });
     });
 
-
   });
-
 
 });

@@ -108,12 +108,12 @@ describe('router', function () {
       router.watchLocation();
 
       expect(window.addEventListener)
-        .to.have.been.calledWithExactly('hashchange', router.sendRouteChange);
+        .to.have.been.calledWith('hashchange');
 
       router.ignoreLocation();
 
       expect(window.removeEventListener)
-        .to.have.been.calledWithExactly('hashchange', router.sendRouteChange);
+        .to.have.been.calledWith('hashchange');
     });
 
 
@@ -131,12 +131,12 @@ describe('router', function () {
       router.watchLocation();
 
       expect(window.addEventListener)
-        .to.have.been.calledWithExactly('popstate', router.sendRouteChange);
+        .to.have.been.calledWith('popstate');
 
       router.ignoreLocation();
 
       expect(window.removeEventListener)
-        .to.have.been.calledWithExactly('popstate', router.sendRouteChange);
+        .to.have.been.calledWith('popstate');
     });
 
   });
@@ -296,7 +296,7 @@ describe('router', function () {
         .to.have.been
         .calledWithExactly('foo', { bar: '42', baz: 'qux' });
       expect(window.addEventListener)
-        .to.have.been.calledWithExactly('popstate', router.sendRouteChange);
+        .to.have.been.calledWith('popstate');
     });
 
 
@@ -316,7 +316,7 @@ describe('router', function () {
         .to.have.been
         .calledWithExactly('foo', { bar: '42', baz: 'qux' });
       expect(window.addEventListener)
-        .to.have.been.calledWithExactly('hashchange', router.sendRouteChange);
+        .to.have.been.calledWith('hashchange');
     });
 
   });

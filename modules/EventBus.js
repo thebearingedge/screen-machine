@@ -14,7 +14,7 @@ function eventBus(events) {
 
     notify: function notify() {
 
-      emitter[trigger].apply(null, arguments);
+      emitter[trigger].apply(emitter, arguments);
     }
 
   };

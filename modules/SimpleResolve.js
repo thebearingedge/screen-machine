@@ -10,6 +10,9 @@ function SimpleResolve(resolveKey, state) {
   this.id = resolveKey + '@' + state.name;
   this.state = state;
   this.invokable = state.resolve[resolveKey];
+  this.cacheable = state.cacheable === false
+    ? false
+    : true;
 }
 
 

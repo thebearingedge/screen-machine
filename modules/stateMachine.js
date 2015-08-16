@@ -76,7 +76,8 @@ function stateMachine(events, registry, resolves, router, views) {
         .getBranch()
         .filter(function (state) {
 
-          return state.isStale(fromParams, toParams);
+          return state.isStale(fromParams, toParams) ||
+            state.shouldResolve(resolveCache.$store);
         })
         .reduce(function (resolves, state) {
 
@@ -89,7 +90,7 @@ function stateMachine(events, registry, resolves, router, views) {
 
       return resolves
         .runTasks(tasks, resolveCache, transition)
-        .then(function () {
+        .then(function (completed) {
 
           if (transition.isCanceled()) {
 
@@ -98,11 +99,18 @@ function stateMachine(events, registry, resolves, router, views) {
             return Promise.resolve(transition);
           }
 
+          completed
+            .forEach(function (task) {
+
+              task.commit();
+            });
+
           transition.finish();
 
           var components = toState.getAllComponents();
+          var resolved = resolveCache.$store;
 
-          views.compose(components, toParams);
+          views.compose(components, resolved, toParams);
 
           if (!options.routeChange) {
 

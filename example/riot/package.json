@@ -1,0 +1,20 @@
+{
+  "name": "riot-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^2.9.34",
+    "domready": "^1.0.8",
+    "global": "^4.3.0",
+    "riot": "^2.2.4"
+  },
+  "devDependencies": {
+    "console-browserify": "^1.1.0"
+  }
+}

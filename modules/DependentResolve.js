@@ -21,6 +21,9 @@ function DependentResolve(resolveKey, state) {
         ? injectable
         : injectable + '@' + state.name;
     });
+  this.cacheable = state.cacheable === false
+    ? false
+    : true;
 }
 
 

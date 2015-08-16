@@ -9,6 +9,10 @@ module.exports = State;
 
 function State(definition) {
 
+  definition.cacheable = definition.cacheable === false
+    ? false
+    : true;
+
   this.$definition = definition;
   this.$ancestors = {};
   this.$includes = {};
@@ -53,7 +57,7 @@ function State(definition) {
 
     var splitPath = pathOnly.split('/');
 
-    this.$pathSegments = splitPath[0]
+    this.$pathSegments = !!splitPath[0]
       ? splitPath
       : splitPath.slice(1);
     this.$querySegments = querySegment
@@ -247,4 +251,16 @@ State.prototype.getAllComponents = function () {
 
       return components.concat(state.getComponents());
     }, []);
+};
+
+
+State.prototype.shouldResolve = function (resolved) {
+
+  if (!this.cacheable) return true;
+
+  return this.$resolves && this.$resolves.length &&
+    this.$resolves.some(function (resolve) {
+
+      return !(resolve.id in resolved);
+    });
 };

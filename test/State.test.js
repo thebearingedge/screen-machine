@@ -52,6 +52,10 @@ describe('State', function () {
     expect(state.$pathSegments).to.deep.equal(['baz-path']);
     expect(state.$queryKeys).to.deep.equal(['qux', 'quux']);
 
+
+    state = new State({ name: 'qux', path: '/' });
+    expect(state.$pathSegments).to.deep.equal(['']);
+    expect(state.$queryKeys).to.deep.equal([]);
   });
 
 

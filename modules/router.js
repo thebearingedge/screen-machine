@@ -107,13 +107,13 @@ function router(window, options) {
 
     watchLocation: function () {
 
-      window.addEventListener(windowEvent, this.sendRouteChange);
+      window.addEventListener(windowEvent, this.sendRouteChange.bind(this));
     },
 
 
     ignoreLocation: function () {
 
-      window.removeEventListener(windowEvent, this.sendRouteChange);
+      window.removeEventListener(windowEvent, this.sendRouteChange.bind(this));
     },
 
 

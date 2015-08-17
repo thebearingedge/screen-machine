@@ -23,7 +23,7 @@ riot.tag('libraries', '<h2>This is the view libraries page</h2> <input type="tex
 
 
 });
-riot.tag('library-description', '<h3>Have you hear of { opts.params.libName }?</h3> <p>{ opts.content }</p>', function(opts) {
+riot.tag('library-description', '<h3>Have you heard of { opts.params.libName }?</h3> <p>{ opts.content }</p>', function(opts) {
 
 
 });

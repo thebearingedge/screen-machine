@@ -16,7 +16,7 @@ module.exports = function (machine) {
       }
     })
     .state('viewLibs.library', {
-      path: '/:libName',
+      path: ':libName',
       component: 'library-description', // <- render into 'libraries' component
       resolve: {
         content: function (params) {

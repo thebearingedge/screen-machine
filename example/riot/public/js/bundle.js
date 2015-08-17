@@ -1868,7 +1868,7 @@ module.exports = function (machine) {
       }
     })
     .state('viewLibs.library', {
-      path: '/:libName',
+      path: ':libName',
       component: 'library-description', // <- render into 'libraries' component
       resolve: {
         content: function (params) {
@@ -1904,7 +1904,7 @@ riot.tag('libraries', '<h2>This is the view libraries page</h2> <input type="tex
 
 
 });
-riot.tag('library-description', '<h3>Have you hear of { opts.params.libName }?</h3> <p>{ opts.content }</p>', function(opts) {
+riot.tag('library-description', '<h3>Have you heard of { opts.params.libName }?</h3> <p>{ opts.content }</p>', function(opts) {
 
 
 });
@@ -3191,6 +3191,7 @@ function router(window, options) {
     listen: function (onChange) {
 
       this.onChange = onChange;
+      this.sendRouteChange = this.sendRouteChange.bind(this);
       this.watchLocation();
       this.sendRouteChange();
     },
@@ -3198,13 +3199,13 @@ function router(window, options) {
 
     watchLocation: function () {
 
-      window.addEventListener(windowEvent, this.sendRouteChange.bind(this));
+      window.addEventListener(windowEvent, this.sendRouteChange);
     },
 
 
     ignoreLocation: function () {
 
-      window.removeEventListener(windowEvent, this.sendRouteChange.bind(this));
+      window.removeEventListener(windowEvent, this.sendRouteChange);
     },
 
 

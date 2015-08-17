@@ -100,6 +100,7 @@ function router(window, options) {
     listen: function (onChange) {
 
       this.onChange = onChange;
+      this.sendRouteChange = this.sendRouteChange.bind(this);
       this.watchLocation();
       this.sendRouteChange();
     },
@@ -107,13 +108,13 @@ function router(window, options) {
 
     watchLocation: function () {
 
-      window.addEventListener(windowEvent, this.sendRouteChange.bind(this));
+      window.addEventListener(windowEvent, this.sendRouteChange);
     },
 
 
     ignoreLocation: function () {
 
-      window.removeEventListener(windowEvent, this.sendRouteChange.bind(this));
+      window.removeEventListener(windowEvent, this.sendRouteChange);
     },
 
 

@@ -17,10 +17,10 @@ function screenMachine(config) {
   var document = config.document;
   var window = document.defaultView;
   var Promise = config.promises;
-  var Component = config.components(document);
+  var routes = router(window, { html5: config.html5 });
+  var Component = config.components(document, routes);
   var views = viewTree(document, Component);
   var resolves = resolveService(Promise);
-  var routes = router(window, { html5: config.html5 });
   var states = stateRegistry(views, resolves, routes);
   var events = eventBus(config.events);
 

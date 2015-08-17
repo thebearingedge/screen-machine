@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "domready": "^1.0.8",
+    "express": "^4.13.3",
     "global": "^4.3.0",
     "native-promise-only": "^0.8.1",
     "riot": "^2.2.4"

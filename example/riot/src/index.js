@@ -28,10 +28,10 @@ require('./tags');
 
 var domready = require('domready');
 var homeScreen = require('./screens/home');
-var viewsScreen = require('./screens/views');
+var viewLibs = require('./screens/viewLibs');
 
 homeScreen(machine);
-viewsScreen(machine);
+viewLibs(machine);
 
 domready(function () {
 

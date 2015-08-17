@@ -15,15 +15,15 @@ riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The curren
 
   
 });
-riot.tag('view-description', '<h3>Riot JS</h3> <p>{ opts.content }</p>', function(opts) {
+riot.tag('libraries-landing', '<p>This is the "Libraries" landing page.</p>', function(opts) {
 
 
 });
-riot.tag('views-landing', '<p>This is the "Views" landing page.</p>', function(opts) {
+riot.tag('libraries', '<h2>This is the view libraries page</h2> <input type="text"> <sm-view></sm-view>', function(opts) {
 
 
 });
-riot.tag('views', '<h2>This is the views page</h2> <input type="text"> <sm-view></sm-view>', function(opts) {
+riot.tag('library-description', '<h3>Have you hear of { opts.params.libName }?</h3> <p>{ opts.content }</p>', function(opts) {
 
 
 });

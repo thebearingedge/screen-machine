@@ -18,10 +18,10 @@ function screenMachine(config) {
   var document = config.document;
   var window = document.defaultView;
   var Promise = config.promises;
-  var Component = config.components(document);
+  var routes = router(window, { html5: config.html5 });
+  var Component = config.components(document, routes);
   var views = viewTree(document, Component);
   var resolves = resolveService(Promise);
-  var routes = router(window, { html5: config.html5 });
   var states = stateRegistry(views, resolves, routes);
   var events = eventBus(config.events);
 
@@ -1856,27 +1856,28 @@ module.exports = function (machine) {
 module.exports = function (machine) {
 
   machine
-    .state('views', {
-      path: 'views',
+    .state('viewLibs', {
+      path: 'view-libraries',
       views: {
-        '': {
-          component: 'views'
+        '@': { // <- render into root View
+          component: 'libraries'
         },
-        '@views': {
-          component: 'views-landing'
+        '@viewLibs': { // <- render into 'libraries' component
+          component: 'libraries-landing'
         }
       }
     })
-    .state('views.riot', {
-      path: 'riot',
-      component: 'view-description',
+    .state('viewLibs.library', {
+      path: '/:libName',
+      component: 'library-description', // <- render into 'libraries' component
       resolve: {
-        content: function () {
-          return 'Riot is super-cool';
+        content: function (params) {
+          return params.libName + ' is super-cool';
         }
       }
     });
 };
+
 },{}],8:[function(require,module,exports){
 riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The current date is { today }</p>', function(opts) {
     
@@ -1895,15 +1896,15 @@ riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The curren
 
   
 });
-riot.tag('view-description', '<h3>Riot JS</h3> <p>{ opts.content }</p>', function(opts) {
+riot.tag('libraries-landing', '<p>This is the "Libraries" landing page.</p>', function(opts) {
 
 
 });
-riot.tag('views-landing', '<p>This is the "Views" landing page.</p>', function(opts) {
+riot.tag('libraries', '<h2>This is the view libraries page</h2> <input type="text"> <sm-view></sm-view>', function(opts) {
 
 
 });
-riot.tag('views', '<h2>This is the views page</h2> <input type="text"> <sm-view></sm-view>', function(opts) {
+riot.tag('library-description', '<h3>Have you hear of { opts.params.libName }?</h3> <p>{ opts.content }</p>', function(opts) {
 
 
 });
@@ -1939,10 +1940,10 @@ require('./tags');
 
 var domready = require('domready');
 var homeScreen = require('./screens/home');
-var viewsScreen = require('./screens/views');
+var viewLibs = require('./screens/viewLibs');
 
 homeScreen(machine);
-viewsScreen(machine);
+viewLibs(machine);
 
 domready(function () {
 
@@ -1950,7 +1951,7 @@ domready(function () {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../../../ScreenMachine":1,"../../../riotComponent":28,"./screens/home":6,"./screens/views":7,"./tags":8,"domready":2,"events":30,"global/document":3,"native-promise-only":4,"riot":5}],10:[function(require,module,exports){
+},{"../../../ScreenMachine":1,"../../../riotComponent":28,"./screens/home":6,"./screens/viewLibs":7,"./tags":8,"domready":2,"events":30,"global/document":3,"native-promise-only":4,"riot":5}],10:[function(require,module,exports){
 
 'use strict';
 

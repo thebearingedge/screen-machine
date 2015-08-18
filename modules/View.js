@@ -129,11 +129,11 @@ View.prototype.isShadowed = function () {
 };
 
 
-View.prototype.publish = function (resolved, params) {
+View.prototype.publish = function (resolved, params, query) {
 
   if (this.shouldUpdate()) {
 
-    this.currentComponent.update(resolved, params);
+    this.currentComponent.update(resolved, params, query);
 
     return this;
   }

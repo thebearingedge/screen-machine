@@ -259,7 +259,6 @@ describe('State', function () {
 
       state.$views = [viewLoader];
       state.$resolves = [resolve];
-      state.$paramCache = {};
 
       state.sleep();
 
@@ -270,14 +269,17 @@ describe('State', function () {
   });
 
 
-  describe('.isStale(Object params) => Boolean', function () {
+  describe('.isStale(oldParams, newParams, oldQuery, newQuery)', function () {
 
     it('should be false if relevent params are equal', function () {
 
       var oldParams = {};
       var newParams = {};
+      var oldQuery = {};
+      var newQuery = {};
 
-      expect(state.isStale(oldParams, newParams)).to.equal(false);
+      expect(state.isStale(oldParams, newParams, oldQuery, newQuery))
+        .to.equal(false);
     });
 
 
@@ -285,10 +287,27 @@ describe('State', function () {
 
       var oldParams = { foo: 1 };
       var newParams = { foo: 2 };
+      var oldQuery = { bar: 1 };
+      var newQuery = { bar: 1 };
 
       state.$paramKeys = ['foo'];
+      state.$queryKeys = [];
 
-      expect(state.isStale(oldParams, newParams)).to.equal(true);
+      expect(state.isStale(oldParams, newParams, oldQuery, newQuery))
+        .to.equal(true);
+
+      oldParams = { foo: 1 };
+      newParams = { foo: 1 };
+      oldQuery = { bar: 1 };
+      newQuery = { bar: 2 };
+
+      state.$paramKeys = [];
+      state.$queryKeys = ['bar'];
+
+      expect(state.isStale(oldParams, newParams, oldQuery, newQuery))
+        .to.equal(true);
+
+
     });
 
   });

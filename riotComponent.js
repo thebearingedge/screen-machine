@@ -30,9 +30,9 @@ function riotComponent(riot) {
       tagInstance: null,
 
 
-      render: function (resolved, params) {
+      render: function (resolved, params, query) {
 
-        var opts = this.getOpts(resolved, params);
+        var opts = this.getOpts(resolved, params, query);
 
         this.node = document.createElement(this.tagName);
         this.tagInstance = riot.mount(this.node, this.tagName, opts)[0];
@@ -48,9 +48,9 @@ function riotComponent(riot) {
       },
 
 
-      update: function (resolved, params) {
+      update: function (resolved, params, query) {
 
-        this.tagInstance.opts = this.getOpts(resolved, params);
+        this.tagInstance.opts = this.getOpts(resolved, params, query);
         this.tagInstance.update();
 
         return this;
@@ -73,10 +73,11 @@ function riotComponent(riot) {
       },
 
 
-      getOpts: function (resolved, params) {
+      getOpts: function (resolved, params, query) {
 
         var opts = {
-          params: params
+          params: params,
+          query: query
         };
 
         return this

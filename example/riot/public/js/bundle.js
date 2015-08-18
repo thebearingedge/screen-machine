@@ -2566,13 +2566,15 @@ State.prototype.shouldResolve = function (resolved) {
 module.exports = Transition;
 
 
-function Transition(machine, to, toParams) {
+function Transition(machine, toState, toParams, toQuery) {
 
   this.machine = machine;
-  this.to = to;
+  this.toState = toState;
   this.toParams = toParams;
-  this.from = machine.currentState;
-  this.fromParams = machine.currentParams;
+  this.toQuery = toQuery;
+  this.fromState = machine.$state.current;
+  this.fromParams = machine.$state.params;
+  this.fromQuery = machine.$state.query;
 }
 
 
@@ -2626,7 +2628,7 @@ Transition.prototype.cancel = function () {
 Transition.prototype.finish = function () {
 
   this.succeeded = true;
-  this.machine.init(this.to, this.toParams);
+  this.machine.init(this.toState, this.toParams);
 };
 
 
@@ -2638,7 +2640,7 @@ Transition.prototype.redirect = function () {
 
 Transition.prototype.retry = function () {
 
-  return this.redirect(this.to, this.toParams);
+  return this.redirect(this.toState, this.toParams);
 };
 
 },{}],17:[function(require,module,exports){
@@ -3147,12 +3149,12 @@ function router(window, options) {
 
       var queryStart = url.indexOf('?');
       var path;
-      var query;
+      var queryString;
 
       if (queryStart > -1) {
 
         path = url.slice(0, queryStart);
-        query = url.slice(queryStart + 1);
+        queryString = url.slice(queryStart + 1);
       }
       else {
 
@@ -3162,23 +3164,22 @@ function router(window, options) {
       var pathLength = path.split('/').length - 1;
       var possibleRoutes = this.routesByLength[pathLength] || [];
       var routeIndex = 0;
-      var route, params;
+      var route, pathParams, queryParams;
 
-      while (!params && routeIndex < possibleRoutes.length) {
+      while (!pathParams && routeIndex < possibleRoutes.length) {
 
         route = possibleRoutes[routeIndex];
-        params = route.match(path);
+        pathParams = route.match(path);
         routeIndex++;
       }
 
-      if (!params) return null;
+      if (!pathParams) return null;
 
-      if (query) {
+      queryParams = queryString
+        ? route.parseQuery(queryString)
+        : {};
 
-        xtend(params, route.parseQuery(query));
-      }
-
-      return [route.name, params];
+      return [route.name, pathParams, queryParams];
     },
 
 
@@ -3290,14 +3291,16 @@ function stateMachine(events, registry, resolves, router, views) {
     $state: {
       current: null,
       params: null,
+      query: null,
       transition: null
     },
 
 
-    init: function init(state, params) {
+    init: function init(state, params, query) {
 
       this.$state.current = state;
       this.$state.params = params;
+      this.$state.query = query;
       this.$state.transition = null;
 
       return this;
@@ -3315,16 +3318,16 @@ function stateMachine(events, registry, resolves, router, views) {
     start: function () {
 
       views.mountRoot();
-      router.listen(function onRouteChange(name, params) {
+      router.listen(function onRouteChange(name, params, query) {
 
-        return this.transitionTo(name, params, { routeChange: true });
+        return this.transitionTo(name, params, query, { routeChange: true });
       }.bind(this));
 
       return this;
     },
 
 
-    transitionTo: function (stateName, toParams, options) {
+    transitionTo: function (stateName, toParams, toQuery, options) {
 
       options || (options = {});
 
@@ -3333,8 +3336,9 @@ function stateMachine(events, registry, resolves, router, views) {
         : stateName;
       var fromState = this.$state.current;
       var fromParams = this.$state.params;
+      var fromQuery = this.$state.query;
       var resolveCache = resolves.getCache();
-      var transition = new Transition(this, toState, toParams);
+      var transition = new Transition(this, toState, toParams, toQuery);
 
       this.$state.transition = transition;
 
@@ -3351,7 +3355,7 @@ function stateMachine(events, registry, resolves, router, views) {
         .getBranch()
         .filter(function (state) {
 
-          return state.isStale(fromParams, toParams) ||
+          return state.isStale(fromParams, toParams, toQuery) ||
             state.shouldResolve(resolveCache.$store);
         })
         .reduce(function (resolves, state) {

@@ -53,11 +53,11 @@ function resolveService(Promise) {
     },
 
 
-    createTask: function (resolve, params, resolveCache) {
+    createTask: function (resolve, params, query, resolveCache) {
 
       var taskParams = resolve.state.filterParams(params);
 
-      return new ResolveTask(resolve, taskParams, resolveCache, Promise);
+      return new ResolveTask(resolve, taskParams, query, resolveCache, Promise);
     },
 
 

@@ -5,11 +5,12 @@
 module.exports = ResolveTask;
 
 
-function ResolveTask(resolve, params, resolveCache, Promise) {
+function ResolveTask(resolve, params, query, resolveCache, Promise) {
 
   this.resolve = resolve;
   this.id = resolve.id;
   this.params = params;
+  this.query = query;
   this.cache = resolveCache;
   this.Promise = Promise;
   this.waitingFor = resolve.injectables
@@ -103,7 +104,7 @@ ResolveTask.prototype.exec = function () {
 
       resultOrPromise = this
         .resolve
-        .execute(this.params, this.dependencies);
+        .execute(this.params, this.query, this.dependencies);
     }
 
     catch (e) {

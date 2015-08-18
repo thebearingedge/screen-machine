@@ -44,16 +44,18 @@ describe('DependentResolve', function () {
   });
 
 
-  describe('.execute(Object params, Object dependencies) => <Any>', function () {
+  describe('.execute(params, query, dependencies)', function () {
 
     it('should call its invokable with dependencies and params', function () {
 
       var params = { foo: 'bar' };
+      var query = { grault: 'garpley' };
       var dependencies = { 'baz@qux': 42 };
 
-      resolve.execute(params, dependencies);
+      resolve.execute(params, query, dependencies);
 
-      expect(state.resolve.foo[1]).to.have.been.calledWithExactly(42, params);
+      expect(state.resolve.foo[1])
+        .to.have.been.calledWithExactly(42, params, query);
     });
 
   });

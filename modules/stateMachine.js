@@ -16,14 +16,16 @@ function stateMachine(events, registry, resolves, router, views) {
     $state: {
       current: null,
       params: null,
+      query: null,
       transition: null
     },
 
 
-    init: function init(state, params) {
+    init: function init(state, params, query) {
 
       this.$state.current = state;
       this.$state.params = params;
+      this.$state.query = query;
       this.$state.transition = null;
 
       return this;
@@ -41,26 +43,27 @@ function stateMachine(events, registry, resolves, router, views) {
     start: function () {
 
       views.mountRoot();
-      router.listen(function onRouteChange(name, params) {
+      router.listen(function onRouteChange(name, params, query) {
 
-        return this.transitionTo(name, params, { routeChange: true });
+        return this.transitionTo(name, params, query, { routeChange: true });
       }.bind(this));
 
       return this;
     },
 
 
-    transitionTo: function (stateName, toParams, options) {
+    transitionTo: function (stateOrName, toParams, toQuery, options) {
 
       options || (options = {});
 
-      var toState = typeof stateName === 'string'
-        ? registry.states[stateName]
-        : stateName;
+      var toState = typeof stateOrName === 'string'
+        ? registry.states[stateOrName]
+        : stateOrName;
       var fromState = this.$state.current;
       var fromParams = this.$state.params;
+      var fromQuery = this.$state.query;
       var resolveCache = resolves.getCache();
-      var transition = new Transition(this, toState, toParams);
+      var transition = new Transition(this, toState, toParams, toQuery);
 
       this.$state.transition = transition;
 
@@ -77,8 +80,8 @@ function stateMachine(events, registry, resolves, router, views) {
         .getBranch()
         .filter(function (state) {
 
-          return state.isStale(fromParams, toParams) ||
-            state.shouldResolve(resolveCache.$store);
+          return state.isStale(fromParams, toParams, fromQuery, toQuery) ||
+                 state.shouldResolve(resolveCache.$store);
         })
         .reduce(function (resolves, state) {
 
@@ -86,7 +89,7 @@ function stateMachine(events, registry, resolves, router, views) {
         }, [])
         .map(function (resolve) {
 
-          return resolves.createTask(resolve, toParams, resolveCache);
+          return resolves.createTask(resolve, toParams, toQuery, resolveCache);
         });
 
       return resolves
@@ -115,7 +118,7 @@ function stateMachine(events, registry, resolves, router, views) {
 
           if (!options.routeChange) {
 
-            router.update(toState.name, toParams, { replace: false });
+            router.update(toState.name, toParams, toQuery, { replace: false });
           }
 
           fromState

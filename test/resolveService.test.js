@@ -224,7 +224,7 @@ describe('resolveService', function () {
   describe('.runTasks(tasks, resolveCache, transition)', function () {
 
     var fooResolve, barResolve, bazResolve, quxResolve;
-    var params, cache;
+    var params, query, cache;
     var fooTask, barTask, bazTask, quxTask;
     var tasks, transition;
 
@@ -241,7 +241,7 @@ describe('resolveService', function () {
       barResolve = {
         id: 'bar',
         injectables: ['foo'],
-        execute: sinon.spy(function (params, deps) {
+        execute: sinon.spy(function (params, query, deps) {
           // 16
           return Promise.resolve((deps.foo / 2) + params.grault);
         })
@@ -250,7 +250,7 @@ describe('resolveService', function () {
       bazResolve = {
         id: 'baz',
         injectables: ['foo', 'bar'],
-        execute: sinon.spy(function (params, deps) {
+        execute: sinon.spy(function (params, query, deps) {
           // 40
           return Promise.resolve(deps.foo + deps.bar + params.corge);
         })
@@ -265,13 +265,13 @@ describe('resolveService', function () {
       };
 
       params = { corge: 6, grault: 7, garpley: 8 };
-
+      query = {};
       cache = {};
 
-      fooTask = new ResolveTask(fooResolve, params, cache, Promise);
-      barTask = new ResolveTask(barResolve, params, cache, Promise);
-      bazTask = new ResolveTask(bazResolve, params, cache, Promise);
-      quxTask = new ResolveTask(quxResolve, params, cache, Promise);
+      fooTask = new ResolveTask(fooResolve, params, query, cache, Promise);
+      barTask = new ResolveTask(barResolve, params, query, cache, Promise);
+      bazTask = new ResolveTask(bazResolve, params, query, cache, Promise);
+      quxTask = new ResolveTask(quxResolve, params, query, cache, Promise);
 
       tasks = [fooTask, barTask, bazTask, quxTask];
       transition = {};

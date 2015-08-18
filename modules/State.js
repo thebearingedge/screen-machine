@@ -164,29 +164,35 @@ State.prototype.getResolveResults = function (resolveCache) {
 };
 
 
-State.prototype.filterParams = function (allParams) {
+State.prototype.filterParams = function (params) {
 
   return this
     .$paramKeys
-    .concat(this.$queryKeys)
     .reduce(function (ownParams, key) {
 
-      ownParams[key] = allParams[key];
+      ownParams[key] = params[key];
 
       return ownParams;
     }, {});
 };
 
 
-State.prototype.isStale = function (oldParams, newParams) {
+State.prototype.isStale = function (oldParams, newParams, oldQuery, newQuery) {
 
-  return this
+  var staleParams = this
     .$paramKeys
-    .concat(this.$queryKeys)
     .some(function (key) {
 
       return newParams[key] !== oldParams[key];
     });
+  var staleQuery = this
+    .$queryKeys
+    .some(function (key) {
+
+      return newQuery[key] !== oldParams[key];
+    });
+
+  return staleParams || staleQuery;
 };
 
 

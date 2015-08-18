@@ -14,7 +14,7 @@ var Transition = require('../modules/Transition');
 
 describe('Transition', function () {
 
-  var transition, machine, to, toParams;
+  var transition, machine, to, toParams, toQuery;
 
   beforeEach(function () {
 
@@ -24,6 +24,7 @@ describe('Transition', function () {
           getBranch: function () { return []; }
         },
         params: {},
+        query: {},
         transition: null
       },
       transitionTo: sinon.spy(),
@@ -33,7 +34,8 @@ describe('Transition', function () {
       getBranch: function () { return []; }
     };
     toParams = {};
-    transition = new Transition(machine, to, toParams);
+    toQuery = {};
+    transition = new Transition(machine, to, toParams, toQuery);
     machine.$state.transition = transition;
   });
 
@@ -71,20 +73,21 @@ describe('Transition', function () {
       transition.finish();
 
       expect(transition.succeeded).to.equal(true);
-      expect(machine.init).to.have.been.calledWithExactly(to, toParams);
+      expect(machine.init)
+        .to.have.been.calledWithExactly(to, toParams, toQuery);
     });
 
   });
 
 
-  describe('.redirect(state, params)', function () {
+  describe('.redirect(state, params, query)', function () {
 
     it('should start a new machine transition with args', function () {
 
-      transition.redirect('foo', { bar: 'baz' });
+      transition.redirect('foo', { bar: 'baz' }, { qux: 'quux' });
 
       expect(machine.transitionTo)
-        .to.have.been.calledWithExactly('foo', { bar: 'baz' });
+        .to.have.been.calledWithExactly('foo', { bar: 'baz' }, { qux: 'quux' });
     });
 
   });
@@ -97,7 +100,7 @@ describe('Transition', function () {
       transition.retry();
 
       expect(machine.transitionTo)
-        .to.have.been.calledWithExactly(to, toParams);
+        .to.have.been.calledWithExactly(to, toParams, toQuery);
     });
 
   });

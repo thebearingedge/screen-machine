@@ -28,7 +28,7 @@ function DependentResolve(resolveKey, state, cache) {
 }
 
 
-DependentResolve.prototype.execute = function (params, dependencies) {
+DependentResolve.prototype.execute = function (params, query, dependencies) {
 
   var args = this
     .injectables
@@ -36,7 +36,7 @@ DependentResolve.prototype.execute = function (params, dependencies) {
 
       return dependencies[injectableId];
     })
-    .concat(params);
+    .concat(params, query);
 
   return this.invokable.apply(null, args);
 };

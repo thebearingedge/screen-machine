@@ -35,15 +35,16 @@ describe('SimpleResolve', function () {
   });
 
 
-  describe('.execute(Object params) => <Any>', function () {
+  describe('.execute(params, query)', function () {
 
     it('should call its state\'s resolve function with params', function () {
 
       var params = { foo: 'bar' };
+      var query = { baz: 'qux' };
 
-      resolve.execute(params);
+      resolve.execute(params, query);
 
-      expect(state.resolve.foo).to.have.been.calledWithExactly(params);
+      expect(state.resolve.foo).to.have.been.calledWithExactly(params, query);
     });
 
   });

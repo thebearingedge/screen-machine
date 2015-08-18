@@ -16,7 +16,7 @@ var resolveCache = require('../modules/resolveCache');
 
 describe('ResolveTask', function () {
 
-  var resolve, params, cache, task;
+  var resolve, params, query, cache, task;
 
   describe('SimpleResolve', function () {
 
@@ -27,8 +27,9 @@ describe('ResolveTask', function () {
         execute: sinon.spy()
       };
       params = { foo: 'bar' };
+      query = { grault: 'garpley' };
       cache = resolveCache({ stateless: true });
-      task = new ResolveTask(resolve, params, cache, Promise);
+      task = new ResolveTask(resolve, params, query, cache, Promise);
     });
 
 
@@ -65,7 +66,8 @@ describe('ResolveTask', function () {
 
         expect(promise instanceof Promise).to.equal(true);
         expect(resolve.execute)
-          .to.have.been.calledWithExactly({ foo: 'bar' }, undefined);
+          .to.have.been
+          .calledWithExactly({ foo: 'bar' }, { grault: 'garpley' }, undefined);
       });
 
 
@@ -78,7 +80,8 @@ describe('ResolveTask', function () {
 
         expect(promise instanceof Promise).to.equal(true);
         expect(resolve.execute)
-          .to.have.been.calledWithExactly({ foo: 'bar' }, undefined);
+          .to.have.been
+          .calledWithExactly({ foo: 'bar' }, { grault: 'garpley' }, undefined);
         expect(promise).to.eventually.be.rejected;
       });
 
@@ -98,8 +101,9 @@ describe('ResolveTask', function () {
       };
 
       params = { foo: 'bar' };
+      query = {};
       cache = resolveCache({ stateless: true });
-      task = new ResolveTask(resolve, params, cache, Promise);
+      task = new ResolveTask(resolve, params, query, cache, Promise);
     });
 
 
@@ -139,7 +143,7 @@ describe('ResolveTask', function () {
           .then(function () {
 
             expect(resolve.execute).to.have.been
-              .calledWithExactly({ foo: 'bar' }, { a: 42, b: 'baz' });
+              .calledWithExactly({ foo: 'bar' }, {}, { a: 42, b: 'baz' });
             return done();
           });
       });
@@ -152,7 +156,7 @@ describe('ResolveTask', function () {
   describe('Resolving Dependents', function () {
 
     var fooResolve, barResolve, graultResolve;
-    var params, cache;
+    var params, query, cache;
     var fooTask, barTask, graultTask;
     var transition, queue, wait, complete;
 
@@ -168,7 +172,7 @@ describe('ResolveTask', function () {
       barResolve = {
         id: 'bar',
         injectables: ['foo'],
-        execute: sinon.spy(function (params, deps) {
+        execute: sinon.spy(function (params, query, deps) {
           // 11
           return Promise.resolve((deps.foo / 2) + params.qux);
         })
@@ -176,18 +180,21 @@ describe('ResolveTask', function () {
       graultResolve = {
         id: 'grault',
         injectables: ['foo', 'bar'],
-        execute: sinon.spy(function (params, deps) {
+        execute: sinon.spy(function (params, query, deps) {
           // 27
           return deps.foo + deps.bar + params.baz;
         })
       };
 
       params = { baz: 4, qux: 5 };
+      query = {};
       cache = {};
 
-      fooTask = new ResolveTask(fooResolve, params, cache, Promise);
-      barTask = new ResolveTask(barResolve, params, cache, Promise);
-      graultTask = new ResolveTask(graultResolve, params, cache, Promise);
+      fooTask = new ResolveTask(fooResolve, params, query, cache, Promise);
+      barTask = new ResolveTask(barResolve, params, query, cache, Promise);
+      graultTask = new ResolveTask(
+        graultResolve, params, query, cache, Promise
+      );
 
       transition = {};
       queue = [fooTask, barTask, graultTask];

@@ -56,12 +56,12 @@ function router(window, options) {
 
       var queryStart = url.indexOf('?');
       var path;
-      var query;
+      var queryString;
 
       if (queryStart > -1) {
 
         path = url.slice(0, queryStart);
-        query = url.slice(queryStart + 1);
+        queryString = url.slice(queryStart + 1);
       }
       else {
 
@@ -71,23 +71,22 @@ function router(window, options) {
       var pathLength = path.split('/').length - 1;
       var possibleRoutes = this.routesByLength[pathLength] || [];
       var routeIndex = 0;
-      var route, params;
+      var route, pathParams, queryParams;
 
-      while (!params && routeIndex < possibleRoutes.length) {
+      while (!pathParams && routeIndex < possibleRoutes.length) {
 
         route = possibleRoutes[routeIndex];
-        params = route.match(path);
+        pathParams = route.match(path);
         routeIndex++;
       }
 
-      if (!params) return null;
+      if (!pathParams) return null;
 
-      if (query) {
+      queryParams = queryString
+        ? route.parseQuery(queryString)
+        : {};
 
-        xtend(params, route.parseQuery(query));
-      }
-
-      return [route.name, params];
+      return [route.name, pathParams, queryParams];
     },
 
 

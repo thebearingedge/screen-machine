@@ -5,13 +5,15 @@
 module.exports = Transition;
 
 
-function Transition(machine, to, toParams) {
+function Transition(machine, toState, toParams, toQuery) {
 
   this.machine = machine;
-  this.to = to;
+  this.toState = toState;
   this.toParams = toParams;
-  this.from = machine.currentState;
-  this.fromParams = machine.currentParams;
+  this.toQuery = toQuery;
+  this.fromState = machine.$state.current;
+  this.fromParams = machine.$state.params;
+  this.fromQuery = machine.$state.query;
 }
 
 
@@ -65,7 +67,7 @@ Transition.prototype.cancel = function () {
 Transition.prototype.finish = function () {
 
   this.succeeded = true;
-  this.machine.init(this.to, this.toParams);
+  this.machine.init(this.toState, this.toParams, this.toQuery);
 };
 
 
@@ -77,5 +79,5 @@ Transition.prototype.redirect = function () {
 
 Transition.prototype.retry = function () {
 
-  return this.redirect(this.to, this.toParams);
+  return this.redirect(this.toState, this.toParams, this.toQuery);
 };

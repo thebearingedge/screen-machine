@@ -51,7 +51,7 @@ describe('router', function () {
 
       router.add('foo', ['foo', ':bar'], []);
       expect(router.findRoute('/foo/1'))
-          .to.deep.equal(['foo', { bar: '1' }]);
+          .to.deep.equal(['foo', { bar: '1' }, {}]);
     });
 
 
@@ -59,7 +59,7 @@ describe('router', function () {
 
       router.add('foo', ['foo', ':bar'], ['baz']);
       expect(router.findRoute('/foo/1?baz=qux'))
-        .to.deep.equal([ 'foo', { bar: '1', baz: 'qux' }]);
+        .to.deep.equal([ 'foo', { bar: '1' }, { baz: 'qux' }]);
     });
 
 
@@ -294,7 +294,7 @@ describe('router', function () {
 
       expect(onChange)
         .to.have.been
-        .calledWithExactly('foo', { bar: '42', baz: 'qux' });
+        .calledWithExactly('foo', { bar: '42' }, { baz: 'qux' });
       expect(window.addEventListener)
         .to.have.been.calledWith('popstate');
     });
@@ -314,7 +314,7 @@ describe('router', function () {
 
       expect(onChange)
         .to.have.been
-        .calledWithExactly('foo', { bar: '42', baz: 'qux' });
+        .calledWithExactly('foo', { bar: '42' }, { baz: 'qux' });
       expect(window.addEventListener)
         .to.have.been.calledWith('hashchange');
     });

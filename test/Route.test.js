@@ -17,34 +17,26 @@ describe('Route', function () {
 
     it('should reverse a path with no params or query', function () {
 
-      var route = new Route('foo', ['foo'], []);
+      var route = new Route('foo', ['foo']);
 
-      expect(route.toRouteString({})).to.equal('/foo');
+      expect(route.toRouteString({}, {})).to.equal('/foo');
     });
 
 
     it('should reverse a path with params', function () {
 
-      var route = new Route('foo', ['foo', ':bar'], []);
+      var route = new Route('foo', ['foo', ':bar']);
 
-      expect(route.toRouteString({ bar: 1 })).to.equal('/foo/1');
+      expect(route.toRouteString({ bar: 1 }, {})).to.equal('/foo/1');
     });
 
 
     it('should reverse a path with query params', function () {
 
-      var route = new Route('foo', ['foo', ':bar'], ['baz']);
+      var route = new Route('foo', ['foo', ':bar']);
 
-      expect(route.toRouteString({ bar: 1, baz: 'qux' }))
+      expect(route.toRouteString({ bar: 1 }, { baz: 'qux' }))
         .to.equal('/foo/1?baz=qux');
-    });
-
-
-    it('should OPTIONALLY compile a querystring', function () {
-
-      var route = new Route('foo', ['foo', ':bar'], ['baz']);
-
-      expect(route.toRouteString({ bar: 1 })).to.equal('/foo/1');
     });
 
   });
@@ -54,7 +46,7 @@ describe('Route', function () {
 
     it('should create a params object with path params', function () {
 
-      var route = new Route('foo', ['foo', ':bar'], []);
+      var route = new Route('foo', ['foo', ':bar']);
 
       expect(route.match('/foo/1')).to.deep.equal({ bar: '1' });
     });
@@ -62,9 +54,9 @@ describe('Route', function () {
 
     it('should not return a params object if url is not matched', function () {
 
-      var route = new Route('foo', ['foo', ':bar'], ['baz']);
+      var route = new Route('foo', ['foo', ':bar']);
 
-      expect(route.match('/quux/1?baz=qux&grault=garpley')).to.equal(null);
+      expect(route.match('/quux/1')).to.equal(null);
     });
 
   });
@@ -74,10 +66,10 @@ describe('Route', function () {
 
     it('should ignore query params it is not responsible for', function () {
 
-      var route = new Route('foo', ['foo', ':bar'], ['baz']);
+      var route = new Route('foo', ['foo', ':bar']);
 
       expect(route.parseQuery('baz=qux&quux=grault'))
-        .to.deep.equal({ baz: 'qux' });
+        .to.deep.equal({ baz: 'qux', quux: 'grault' });
     });
 
   });

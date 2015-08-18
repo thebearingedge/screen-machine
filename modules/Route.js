@@ -8,21 +8,11 @@ var reversePath = require('reverse-path');
 module.exports = Route;
 
 
-function Route(name, pathSegments, querySegments) {
+function Route(name, pathSegments) {
 
   this.name = name;
   this.path = '/' + pathSegments.join('/');
   this.pattern = new UrlPattern(this.path);
-  this.queryKeys = querySegments
-    .map(function (segment) {
-
-      return segment.split('&');
-    })
-    .reduce(function (keys, splitSegment) {
-
-      return keys.concat(splitSegment);
-    }, []);
-
 }
 
 
@@ -32,17 +22,14 @@ Route.prototype.match = function (path) {
 };
 
 
-Route.prototype.toRouteString = function (params) {
+Route.prototype.toRouteString = function (params, query) {
 
   var path = reversePath(this.path, params);
-  var queryPairs = this
-    .queryKeys
+  var queryPairs = Object
+    .keys(query)
     .reduce(function (pairs, key) {
 
-      if (typeof params[key] !== 'undefined') {
-
-        pairs.push(key + '=' + params[key]);
-      }
+      pairs.push(key + '=' + query[key]);
 
       return pairs;
     }, []);
@@ -58,18 +45,13 @@ Route.prototype.toRouteString = function (params) {
 
 Route.prototype.parseQuery = function (queryString) {
 
-  var queryKeys = this.queryKeys;
-
   return queryString
     .split('&')
     .reduce(function (queryParams, pair) {
 
       var querySplit = pair.split('=');
 
-      if (queryKeys.indexOf(querySplit[0]) > -1 ) {
-
-        queryParams[querySplit[0]] = querySplit[1];
-      }
+      queryParams[querySplit[0]] = querySplit[1];
 
       return queryParams;
     }, {});

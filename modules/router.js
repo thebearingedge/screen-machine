@@ -90,9 +90,9 @@ function router(window, options) {
     },
 
 
-    href: function (name, params) {
+    href: function (name, params, query) {
 
-      return this.routes[name].toRouteString(params);
+      return this.routes[name].toRouteString(params, query);
     },
 
 
@@ -117,9 +117,9 @@ function router(window, options) {
     },
 
 
-    update: function (stateName, params, options) {
+    update: function (stateName, params, query, options) {
 
-      var url = this.href(stateName, params);
+      var url = this.href(stateName, params, query);
 
       this.setUrl(url, options);
     },

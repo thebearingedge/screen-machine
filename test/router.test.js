@@ -71,7 +71,7 @@ describe('router', function () {
   });
 
 
-  describe('.href(routeName, params)', function () {
+  describe('.href(routeName, params, query)', function () {
 
     var window = { history: {} };
     var router;
@@ -84,9 +84,9 @@ describe('router', function () {
 
     it('should create a route string from name and params', function () {
 
-      router.add('foo', ['foo', ':bar'], ['baz']);
+      router.add('foo', ['foo', ':bar']);
 
-      var href = router.href('foo', { bar: 1, baz: 'qux' });
+      var href = router.href('foo', { bar: 1 }, { baz: 'qux' });
 
       expect(href).to.equal('/foo/1?baz=qux');
     });

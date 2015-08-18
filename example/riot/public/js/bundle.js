@@ -2031,7 +2031,7 @@ function DependentResolve(resolveKey, state, cache) {
 }
 
 
-DependentResolve.prototype.execute = function (params, dependencies) {
+DependentResolve.prototype.execute = function (params, query, dependencies) {
 
   var args = this
     .injectables
@@ -2039,7 +2039,7 @@ DependentResolve.prototype.execute = function (params, dependencies) {
 
       return dependencies[injectableId];
     })
-    .concat(params);
+    .concat(params, query);
 
   return this.invokable.apply(null, args);
 };
@@ -2058,11 +2058,12 @@ DependentResolve.prototype.clearCache = function () {
 module.exports = ResolveTask;
 
 
-function ResolveTask(resolve, params, resolveCache, Promise) {
+function ResolveTask(resolve, params, query, resolveCache, Promise) {
 
   this.resolve = resolve;
   this.id = resolve.id;
   this.params = params;
+  this.query = query;
   this.cache = resolveCache;
   this.Promise = Promise;
   this.waitingFor = resolve.injectables
@@ -2156,7 +2157,7 @@ ResolveTask.prototype.exec = function () {
 
       resultOrPromise = this
         .resolve
-        .execute(this.params, this.dependencies);
+        .execute(this.params, this.query, this.dependencies);
     }
 
     catch (e) {
@@ -2187,21 +2188,11 @@ var reversePath = require('reverse-path');
 module.exports = Route;
 
 
-function Route(name, pathSegments, querySegments) {
+function Route(name, pathSegments) {
 
   this.name = name;
   this.path = '/' + pathSegments.join('/');
   this.pattern = new UrlPattern(this.path);
-  this.queryKeys = querySegments
-    .map(function (segment) {
-
-      return segment.split('&');
-    })
-    .reduce(function (keys, splitSegment) {
-
-      return keys.concat(splitSegment);
-    }, []);
-
 }
 
 
@@ -2211,17 +2202,14 @@ Route.prototype.match = function (path) {
 };
 
 
-Route.prototype.toRouteString = function (params) {
+Route.prototype.toRouteString = function (params, query) {
 
   var path = reversePath(this.path, params);
-  var queryPairs = this
-    .queryKeys
+  var queryPairs = Object
+    .keys(query)
     .reduce(function (pairs, key) {
 
-      if (typeof params[key] !== 'undefined') {
-
-        pairs.push(key + '=' + params[key]);
-      }
+      pairs.push(key + '=' + query[key]);
 
       return pairs;
     }, []);
@@ -2237,18 +2225,13 @@ Route.prototype.toRouteString = function (params) {
 
 Route.prototype.parseQuery = function (queryString) {
 
-  var queryKeys = this.queryKeys;
-
   return queryString
     .split('&')
     .reduce(function (queryParams, pair) {
 
       var querySplit = pair.split('=');
 
-      if (queryKeys.indexOf(querySplit[0]) > -1 ) {
-
-        queryParams[querySplit[0]] = querySplit[1];
-      }
+      queryParams[querySplit[0]] = querySplit[1];
 
       return queryParams;
     }, {});
@@ -2274,9 +2257,9 @@ function SimpleResolve(resolveKey, state, cache) {
 }
 
 
-SimpleResolve.prototype.execute = function (params) {
+SimpleResolve.prototype.execute = function (params, query) {
 
-  return this.invokable.call(null, params);
+  return this.invokable.call(null, params, query);
 };
 
 
@@ -2452,29 +2435,35 @@ State.prototype.getResolveResults = function (resolveCache) {
 };
 
 
-State.prototype.filterParams = function (allParams) {
+State.prototype.filterParams = function (params) {
 
   return this
     .$paramKeys
-    .concat(this.$queryKeys)
     .reduce(function (ownParams, key) {
 
-      ownParams[key] = allParams[key];
+      ownParams[key] = params[key];
 
       return ownParams;
     }, {});
 };
 
 
-State.prototype.isStale = function (oldParams, newParams) {
+State.prototype.isStale = function (oldParams, newParams, oldQuery, newQuery) {
 
-  return this
+  var staleParams = this
     .$paramKeys
-    .concat(this.$queryKeys)
     .some(function (key) {
 
       return newParams[key] !== oldParams[key];
     });
+  var staleQuery = this
+    .$queryKeys
+    .some(function (key) {
+
+      return newQuery[key] !== oldParams[key];
+    });
+
+  return staleParams || staleQuery;
 };
 
 
@@ -2628,7 +2617,7 @@ Transition.prototype.cancel = function () {
 Transition.prototype.finish = function () {
 
   this.succeeded = true;
-  this.machine.init(this.toState, this.toParams);
+  this.machine.init(this.toState, this.toParams, this.toQuery);
 };
 
 
@@ -2640,7 +2629,7 @@ Transition.prototype.redirect = function () {
 
 Transition.prototype.retry = function () {
 
-  return this.redirect(this.toState, this.toParams);
+  return this.redirect(this.toState, this.toParams, this.toQuery);
 };
 
 },{}],17:[function(require,module,exports){
@@ -2775,11 +2764,11 @@ View.prototype.isShadowed = function () {
 };
 
 
-View.prototype.publish = function (resolved, params) {
+View.prototype.publish = function (resolved, params, query) {
 
   if (this.shouldUpdate()) {
 
-    this.currentComponent.update(resolved, params);
+    this.currentComponent.update(resolved, params, query);
 
     return this;
   }
@@ -2980,11 +2969,11 @@ function resolveService(Promise) {
     },
 
 
-    createTask: function (resolve, params, resolveCache) {
+    createTask: function (resolve, params, query, resolveCache) {
 
       var taskParams = resolve.state.filterParams(params);
 
-      return new ResolveTask(resolve, taskParams, resolveCache, Promise);
+      return new ResolveTask(resolve, taskParams, query, resolveCache, Promise);
     },
 
 
@@ -3183,9 +3172,9 @@ function router(window, options) {
     },
 
 
-    href: function (name, params) {
+    href: function (name, params, query) {
 
-      return this.routes[name].toRouteString(params);
+      return this.routes[name].toRouteString(params, query);
     },
 
 
@@ -3210,9 +3199,9 @@ function router(window, options) {
     },
 
 
-    update: function (stateName, params, options) {
+    update: function (stateName, params, query, options) {
 
-      var url = this.href(stateName, params);
+      var url = this.href(stateName, params, query);
 
       this.setUrl(url, options);
     },
@@ -3327,13 +3316,13 @@ function stateMachine(events, registry, resolves, router, views) {
     },
 
 
-    transitionTo: function (stateName, toParams, toQuery, options) {
+    transitionTo: function (stateOrName, toParams, toQuery, options) {
 
       options || (options = {});
 
-      var toState = typeof stateName === 'string'
-        ? registry.states[stateName]
-        : stateName;
+      var toState = typeof stateOrName === 'string'
+        ? registry.states[stateOrName]
+        : stateOrName;
       var fromState = this.$state.current;
       var fromParams = this.$state.params;
       var fromQuery = this.$state.query;
@@ -3355,8 +3344,8 @@ function stateMachine(events, registry, resolves, router, views) {
         .getBranch()
         .filter(function (state) {
 
-          return state.isStale(fromParams, toParams, toQuery) ||
-            state.shouldResolve(resolveCache.$store);
+          return state.isStale(fromParams, toParams, fromQuery, toQuery) ||
+                 state.shouldResolve(resolveCache.$store);
         })
         .reduce(function (resolves, state) {
 
@@ -3364,7 +3353,7 @@ function stateMachine(events, registry, resolves, router, views) {
         }, [])
         .map(function (resolve) {
 
-          return resolves.createTask(resolve, toParams, resolveCache);
+          return resolves.createTask(resolve, toParams, toQuery, resolveCache);
         });
 
       return resolves
@@ -3393,7 +3382,7 @@ function stateMachine(events, registry, resolves, router, views) {
 
           if (!options.routeChange) {
 
-            router.update(toState.name, toParams, { replace: false });
+            router.update(toState.name, toParams, toQuery, { replace: false });
           }
 
           fromState
@@ -3982,9 +3971,9 @@ function riotComponent(riot) {
       tagInstance: null,
 
 
-      render: function (resolved, params) {
+      render: function (resolved, params, query) {
 
-        var opts = this.getOpts(resolved, params);
+        var opts = this.getOpts(resolved, params, query);
 
         this.node = document.createElement(this.tagName);
         this.tagInstance = riot.mount(this.node, this.tagName, opts)[0];
@@ -4000,9 +3989,9 @@ function riotComponent(riot) {
       },
 
 
-      update: function (resolved, params) {
+      update: function (resolved, params, query) {
 
-        this.tagInstance.opts = this.getOpts(resolved, params);
+        this.tagInstance.opts = this.getOpts(resolved, params, query);
         this.tagInstance.update();
 
         return this;
@@ -4025,10 +4014,11 @@ function riotComponent(riot) {
       },
 
 
-      getOpts: function (resolved, params) {
+      getOpts: function (resolved, params, query) {
 
         var opts = {
-          params: params
+          params: params,
+          query: query
         };
 
         return this

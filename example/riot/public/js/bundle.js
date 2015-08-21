@@ -2,6 +2,7 @@
 
 'use strict';
 
+var urlWatcher = require('./modules/urlWatcher');
 var eventBus = require('./modules/eventBus');
 var viewTree = require('./modules/viewTree');
 var resolveService = require('./modules/resolveService');
@@ -18,20 +19,87 @@ function screenMachine(config) {
   var document = config.document;
   var window = document.defaultView;
   var Promise = config.promises;
-  var routes = router(window, { html5: config.html5 });
+  var url = urlWatcher(window, { html5: config.html5 });
+  var routes = router();
   var Component = config.components(document, routes);
   var views = viewTree(document, Component);
   var resolves = resolveService(Promise);
-  var states = stateRegistry(views, resolves, routes);
+  var registry = stateRegistry(views, resolves, routes);
   var events = eventBus(config.events);
+  var machine = stateMachine(events, registry, resolves, views);
 
-  var machine = stateMachine(events, states, resolves, routes, views);
+  return {
 
-  return machine.init(states.$root, {});
+    state: function state() {
+
+      var registered = registry.add.apply(registry, arguments);
+
+      if (typeof registered.path !== undefined) {
+
+        routes.add(registered.name, registered.path);
+      }
+
+      return this;
+    },
+
+    start: function start() {
+
+      machine.init(registry.$root, {});
+      views.mountRoot();
+      url.subscribe(this.fromUrl.bind(this));
+
+      return this;
+    },
+
+    fromUrl: function fromUrl(url) {
+
+      var args = routes.find(url);
+
+      if (!args) {
+
+        events.notify('routeNotFound', url);
+      }
+      if (args) {
+
+        args.push({ routeChange: true });
+
+        return this.transitionTo.apply(this, args);
+      }
+    },
+
+    transitionTo: function transitionTo(stateOrName, params, query, options) {
+
+      options || (options = {});
+
+      return machine.transitionTo.apply(machine, arguments)
+        .then(function (transition) {
+
+          if (transition.isCanceled()) return;
+
+          var state = transition.toState;
+          var components = state.getAllComponents();
+          var resolved = transition.resolved;
+
+          views.compose(components, resolved, params, query);
+
+          if (!options.routeChange) {
+
+            url.push(routes.href(state.name, params, query));
+          }
+
+          transition.cleanup();
+        });
+    },
+
+    go: function go() {
+
+      return this.transitionTo.apply(null, arguments);
+    }
+  };
 }
 
 
-},{"./modules/eventBus":18,"./modules/resolveService":20,"./modules/router":21,"./modules/stateMachine":22,"./modules/stateRegistry":23,"./modules/viewTree":24}],2:[function(require,module,exports){
+},{"./modules/eventBus":18,"./modules/resolveService":20,"./modules/router":22,"./modules/stateMachine":23,"./modules/stateRegistry":24,"./modules/urlWatcher":26,"./modules/viewTree":27}],2:[function(require,module,exports){
 /*!
   * domready (c) Dustin Diaz 2014 - License MIT
   */
@@ -82,7 +150,7 @@ if (typeof document !== 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":29}],4:[function(require,module,exports){
+},{"min-document":30}],4:[function(require,module,exports){
 (function (global){
 /*! Native Promise Only
     v0.8.1 (c) Kyle Simpson
@@ -1951,7 +2019,7 @@ domready(function () {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../../../ScreenMachine":1,"../../../riotComponent":28,"./screens/home":6,"./screens/viewLibs":7,"./tags":8,"domready":2,"events":30,"global/document":3,"native-promise-only":4,"riot":5}],10:[function(require,module,exports){
+},{"../../../ScreenMachine":1,"../../../riotComponent":29,"./screens/home":6,"./screens/viewLibs":7,"./tags":8,"domready":2,"events":31,"global/document":3,"native-promise-only":4,"riot":5}],10:[function(require,module,exports){
 
 'use strict';
 
@@ -2181,63 +2249,136 @@ ResolveTask.prototype.commit = function () {
 
 'use strict';
 
-var UrlPattern = require('url-pattern');
-var reversePath = require('reverse-path');
+var routeSegment = require('./routeSegment');
 
 
 module.exports = Route;
 
 
-function Route(name, pathSegments) {
+function Route(name, path) {
+
+  var splitPath = path.split('/');
+
+  var rawSegments = path[0] === '/'
+    ? splitPath.slice(1)
+    : splitPath;
 
   this.name = name;
-  this.path = '/' + pathSegments.join('/');
-  this.pattern = new UrlPattern(this.path);
+  this.path = path;
+  this.segments = rawSegments
+    .map(function (segmentString) {
+
+      return routeSegment.create(segmentString);
+    });
+  this.specificity = this.segments
+    .map(function (segment) {
+
+      return segment.specificity;
+    })
+    .join('');
+
+  var splitNames = name.split('.');
+
+  this.parentName = splitNames[1]
+    ? splitNames.slice(0, splitNames.length - 1).join('.')
+    : null;
 }
 
 
-Route.prototype.match = function (path) {
+Route.prototype.parent = null;
+Route.prototype.children = null;
 
-  return this.pattern.match.call(this.pattern, path);
+
+Route.prototype.isAbsolute = function isAbsolute() {
+
+  return this.path[0] === '/';
 };
 
 
-Route.prototype.toRouteString = function (params, query) {
+Route.prototype.match = function (unmatched) {
 
-  var path = reversePath(this.path, params);
-  var queryPairs = Object
-    .keys(query)
-    .reduce(function (pairs, key) {
+  var toMatch = this.segments.length;
+  var i = 0;
+  var matched = [];
 
-      pairs.push(key + '=' + query[key]);
+  while (i < toMatch && toMatch <= unmatched.length) {
 
-      return pairs;
-    }, []);
+    var result;
+    var segment = this.segments[i];
 
-  if (queryPairs.length) {
+    if (segment.type === 'splat') {
 
-    path += '?' + queryPairs.join('&');
+      var remainder = unmatched.slice(matched.length).join('/');
+      result = segment.match(remainder);
+      matched.push(result);
+      unmatched.splice(0);
+
+      return matched;
+    }
+
+    // jshint -W084
+    if (result = segment.match(unmatched[i])) {
+
+      matched.push(result);
+    }
+    else {
+
+      break;
+    }
+
+    i++;
   }
 
-  return path;
+  if (matched.length < toMatch) {
+
+    return null;
+  }
+
+  unmatched.splice(0, toMatch);
+
+  return matched;
 };
 
 
-Route.prototype.parseQuery = function (queryString) {
+Route.prototype.addChild = function (route) {
 
-  return queryString
-    .split('&')
-    .reduce(function (queryParams, pair) {
+  route.parent = this;
 
-      var querySplit = pair.split('=');
-
-      queryParams[querySplit[0]] = querySplit[1];
-
-      return queryParams;
-    }, {});
+  this.children || (this.children = []);
+  this.children.push(route);
 };
 
-},{"reverse-path":25,"url-pattern":26}],14:[function(require,module,exports){
+
+Route.prototype.generate = function (params) {
+
+  if (this.path === '/') return '/';
+
+  var child = this;
+  var allSegments = [];
+
+  while (child) {
+
+    child.segments.slice().reverse().forEach(collectSegment);
+    child = child.parent;
+  }
+
+  var path = allSegments
+    .map(function (segment) {
+
+      return segment.interpolate(params);
+    })
+    .filter(function (segment) {
+
+      return segment !== '';
+    })
+    .join('/');
+
+  return '/' + path;
+
+  function collectSegment(segment) { allSegments.unshift(segment); }
+};
+
+},{"./routeSegment":21}],14:[function(require,module,exports){
 
 'use strict';
 
@@ -2547,7 +2688,7 @@ State.prototype.shouldResolve = function (resolved) {
     });
 };
 
-},{"xtend/mutable":27}],16:[function(require,module,exports){
+},{"xtend/mutable":28}],16:[function(require,module,exports){
 
 'use strict';
 
@@ -2571,6 +2712,7 @@ Transition.prototype.canceled = false;
 Transition.prototype.succeeded = false;
 Transition.prototype.error = null;
 Transition.prototype.handled = null;
+Transition.prototype.resolved = null;
 
 
 Transition.prototype.setError = function (err) {
@@ -2606,6 +2748,12 @@ Transition.prototype.isCanceled = function isCanceled() {
 };
 
 
+Transition.prototype.isSuccessful = function isSuccessful() {
+
+  return this.succeeded;
+};
+
+
 Transition.prototype.cancel = function () {
 
   this.canceled = true;
@@ -2618,6 +2766,21 @@ Transition.prototype.finish = function () {
 
   this.succeeded = true;
   this.machine.init(this.toState, this.toParams, this.toQuery);
+};
+
+
+Transition.prototype.cleanup = function () {
+
+  this.fromState
+    .getBranch()
+    .filter(function (state) {
+
+      return !this.toState.contains(state);
+    }, this)
+    .forEach(function (exiting) {
+
+      exiting.sleep();
+    });
 };
 
 
@@ -2875,22 +3038,24 @@ var cache = {
   set: function (resolveId, value) {
 
     this.$store[resolveId] = value;
-
-    return this;
   },
 
 
   unset: function (resolveId) {
 
     delete this.$store[resolveId];
-
-    return this;
   },
 
 
   get: function (resolveId) {
 
     return this.$store[resolveId];
+  },
+
+
+  store: function () {
+
+    return xtend({}, this.$store);
   }
 
 };
@@ -2913,7 +3078,7 @@ function resolveCache(options) {
   return instance;
 }
 
-},{"xtend/mutable":27}],20:[function(require,module,exports){
+},{"xtend/mutable":28}],20:[function(require,module,exports){
 
 'use strict';
 
@@ -3083,185 +3248,282 @@ function resolveService(Promise) {
 
 'use strict';
 
+module.exports = {
+
+  create: function (string) {
+
+    return new Segment(string);
+  }
+
+};
+
+
+function Segment(string) {
+
+  var match;
+
+  // jshint -W084
+  if (match = string.match(/^:([^\/]+)$/)) {
+
+    this.type = 'dynamic';
+    this.key = match[0].slice(1);
+    this.specificity = '3';
+  }
+  else if (match = string.match(/^\*([^\/]+)$/)) {
+
+    this.type = 'splat';
+    this.key = match[0].slice(1);
+    this.specificity = '2';
+  }
+  else if (string === '') {
+
+    this.type = 'epsilon';
+    this.key = '';
+    this.specificity = '1';
+  }
+  else {
+
+    this.type = 'static';
+    this.key = string;
+    this.specificity = '4';
+  }
+}
+
+
+Segment.prototype.match = function match(string) {
+
+  if (this.type === 'splat' || this.type === 'dynamic') {
+
+    var result = {};
+
+    result[this.key] = string;
+
+    return result;
+  }
+
+  return this.key === string
+    ? {}
+    : null;
+};
+
+
+Segment.prototype.interpolate = function interpolate(params) {
+
+  switch (this.type) {
+    case 'dynamic': return encodeURIComponent(params[this.key]);
+    case 'splat': return params[this.key]
+      .split('/')
+      .map(function (string) {
+
+        return encodeURIComponent(string);
+      })
+      .join('/');
+    case 'epsilon': return '';
+    default: return this.key;
+  }
+};
+
+},{}],22:[function(require,module,exports){
+
+'use strict';
+
 var xtend = require('xtend/mutable');
 var Route = require('./Route');
+var urlTools = require('./urlTools');
 
 
-module.exports = router;
-
-
-function router(window, options) {
-
-  options || (options = {});
-
-  var location = window.location;
-  var history = window.history;
-  var windowEvent = history.pushState && (options.html5 !== false)
-    ? 'popstate'
-    : 'hashchange';
+module.exports = function routerFactory() {
 
   return {
 
-    onChange: null,
-
-
-    sendRouteChange: function () {
-
-      var url = this.getUrl();
-      var found = this.findRoute(url);
-
-      this.onChange.apply(null, found);
-    },
+    root: null,
 
 
     routes: {},
 
 
-    routesByLength: {},
+    queues: {
+      __absolute__: []
+    },
 
 
-    add: function (name, pathSegments, querySegment) {
+    add: function (name, path) {
 
-      var route = new Route(name, pathSegments, querySegment);
-      var pathLength = pathSegments.length;
-      var routesByLength = this.routesByLength;
+      var route = new Route(name, path);
 
-      routesByLength[pathLength] || (routesByLength[pathLength] = []);
-      routesByLength[pathLength].push(route);
-      this.routes[name] = route;
+      this.register(route);
 
       return route;
     },
 
 
-    findRoute: function (url) {
+    register: function (route) {
 
-      var queryStart = url.indexOf('?');
-      var path;
-      var queryString;
+      if (route.path === '/') {
 
-      if (queryStart > -1) {
+        this.routes[route.name] = this.root = route;
 
-        path = url.slice(0, queryStart);
-        queryString = url.slice(queryStart + 1);
-      }
-      else {
-
-        path = url;
+        return this.flushQueueFor(route);
       }
 
-      var pathLength = path.split('/').length - 1;
-      var possibleRoutes = this.routesByLength[pathLength] || [];
-      var routeIndex = 0;
-      var route, pathParams, queryParams;
+      if (route.isAbsolute()) {
 
-      while (!pathParams && routeIndex < possibleRoutes.length) {
+        if (!this.root) {
 
-        route = possibleRoutes[routeIndex];
-        pathParams = route.match(path);
-        routeIndex++;
+          return this.enqueue(null, route);
+        }
+
+        this.routes[route.name] = route;
+        this.root.addChild(route);
+
+        return this.flushQueueFor(route);
       }
 
-      if (!pathParams) return null;
+      var parentName = route.parentName;
+      var parentRoute = this.routes[parentName];
 
-      queryParams = queryString
-        ? route.parseQuery(queryString)
+      if (parentName && !parentRoute) {
+
+        return this.enqueue(parentName, route);
+      }
+
+      this.routes[route.name] = route;
+      parentRoute || (parentRoute = this.root);
+      parentRoute.addChild(route);
+
+      return this.flushQueueFor(route);
+    },
+
+
+    find: function (url) {
+
+      var urlParts = urlTools.toParts(url);
+      var unmatched = urlParts.pathname.split('/').slice(1);
+      var results = [];
+      var route = this.root;
+
+      results.push(route.match(unmatched));
+
+      var children = route.children
+        ? route.children.slice()
+        : [];
+
+      while (unmatched.length && children.length) {
+
+        var matched;
+
+        children.sort(function (a, b) {
+
+          return b.specificity - a.specificity;
+        });
+
+        for (var i = 0; i < children.length; i++) {
+
+          var child = children[i];
+
+          // jshint -W084
+          if (matched = child.match(unmatched)) {
+
+            results = results.concat(matched);
+            route = child;
+            children = route.children
+              ? route.children.slice()
+              : [];
+
+            break;
+          }
+          else {
+
+            continue;
+          }
+        }
+
+        if (!matched) {
+
+          break;
+        }
+      }
+
+      if (unmatched.length) {
+
+        return null;
+      }
+
+      var params = this.flattenParams(results);
+      var query = urlParts.search
+        ? urlTools.parseQuery(urlParts.search)
         : {};
 
-      return [route.name, pathParams, queryParams];
+      return [route.name, params, query];
     },
 
 
-    href: function (name, params, query) {
+    href: function (name, params, query, fragment) {
 
-      return this.routes[name].toRouteString(params, query);
+      var pathname = this.routes[name].generate(params);
+
+      return urlTools.combine(pathname, query, fragment);
     },
 
 
-    listen: function (onChange) {
+    flattenParams: function (results) {
 
-      this.onChange = onChange;
-      this.sendRouteChange = this.sendRouteChange.bind(this);
-      this.watchLocation();
-      this.sendRouteChange();
+      return results
+        .reduce(function (flattened, resultSet) {
+
+          return flattened.concat(resultSet);
+        }, [])
+        .reduce(function (params, result) {
+
+          return xtend(params, result);
+        }, {});
     },
 
 
-    watchLocation: function () {
+    enqueue: function (parentName, route) {
 
-      window.addEventListener(windowEvent, this.sendRouteChange);
-    },
+      if (!parentName) {
 
-
-    ignoreLocation: function () {
-
-      window.removeEventListener(windowEvent, this.sendRouteChange);
-    },
-
-
-    update: function (stateName, params, query, options) {
-
-      var url = this.href(stateName, params, query);
-
-      this.setUrl(url, options);
-    },
-
-
-    getUrl: function () {
-
-      return windowEvent === 'popstate'
-        ? location.pathname + location.search + location.hash
-        : location.hash.slice(1) || '/';
-    },
-
-
-    setUrl: function (url, options) {
-
-      var defaults = { replace: false };
-
-      options || (options = {});
-      options = xtend(defaults, options);
-
-      if (windowEvent === 'popstate') {
-
-        if (options.replace) {
-
-          history.replaceState({}, null, url);
-        }
-        else {
-
-          history.pushState({}, null, url);
-        }
+        this.queues.__absolute__.push(route);
       }
       else {
 
-        if (options.replace) {
+        this.queues[parentName] || (this.queues[parentName] = []);
+        this.queues[parentName].push(route);
+      }
 
-          var href = location.protocol +
-            '//' +
-            location.host +
-            location.pathname +
-            location.search +
-            '#' +
-            url;
+      return this;
+    },
 
-          this.ignoreLocation();
-          location.replace(href);
-          this.watchLocation();
-        }
-        else {
 
-          this.ignoreLocation();
-          location.hash = url;
-          this.watchLocation();
+    flushQueueFor: function (route) {
+
+      var queue;
+
+      if (route === this.root) {
+
+        queue = this.queues.__absolute__;
+
+        while (queue && queue.length) {
+
+          this.register(queue.pop());
         }
       }
+
+      queue = this.queues[route.name];
+
+      while (queue && queue.length) {
+
+        this.register(queue.pop());
+      }
+
+      return this;
     }
 
   };
-}
+};
 
-},{"./Route":13,"xtend/mutable":27}],22:[function(require,module,exports){
+},{"./Route":13,"./urlTools":25,"xtend/mutable":28}],23:[function(require,module,exports){
 
 'use strict';
 
@@ -3271,7 +3533,7 @@ var Transition = require('./Transition');
 module.exports = stateMachine;
 
 
-function stateMachine(events, registry, resolves, router, views) {
+function stateMachine(events, registry, resolves, views) {
 
   var Promise = resolves.Promise;
 
@@ -3291,26 +3553,6 @@ function stateMachine(events, registry, resolves, router, views) {
       this.$state.params = params;
       this.$state.query = query;
       this.$state.transition = null;
-
-      return this;
-    },
-
-
-    state: function () {
-
-      registry.add.apply(registry, arguments);
-
-      return this;
-    },
-
-
-    start: function () {
-
-      views.mountRoot();
-      router.listen(function onRouteChange(name, params, query) {
-
-        return this.transitionTo(name, params, query, { routeChange: true });
-      }.bind(this));
 
       return this;
     },
@@ -3373,30 +3615,11 @@ function stateMachine(events, registry, resolves, router, views) {
               task.commit();
             });
 
+          transition.resolved = resolveCache.$store;
           transition.finish();
-
-          var components = toState.getAllComponents();
-          var resolved = resolveCache.$store;
-
-          views.compose(components, resolved, toParams);
-
-          if (!options.routeChange) {
-
-            router.update(toState.name, toParams, toQuery, { replace: false });
-          }
-
-          fromState
-            .getBranch()
-            .filter(function (state) {
-
-              return !toState.contains(state);
-            })
-            .forEach(function (exiting) {
-
-              exiting.sleep();
-            });
-
           events.notify('stateChangeSuccess', transition);
+
+          return Promise.resolve(transition);
 
         }.bind(this))
         .catch(function (err) {
@@ -3416,7 +3639,7 @@ function stateMachine(events, registry, resolves, router, views) {
   };
 }
 
-},{"./Transition":16}],23:[function(require,module,exports){
+},{"./Transition":16}],24:[function(require,module,exports){
 
 'use strict';
 
@@ -3426,7 +3649,7 @@ var State = require('./State');
 module.exports = stateRegistry;
 
 
-function stateRegistry(viewTree, resolveService, router) {
+function stateRegistry(viewTree, resolveService) {
 
   var registry = {
 
@@ -3448,7 +3671,9 @@ function stateRegistry(viewTree, resolveService, router) {
 
       var state = new State(definition);
 
-      return this.register(state);
+      this.register(state);
+
+      return state;
     },
 
 
@@ -3466,7 +3691,6 @@ function stateRegistry(viewTree, resolveService, router) {
 
       viewTree.processState(state);
       resolveService.addResolvesTo(state);
-      router.add(state.name, state.$pathSegments, state.$queryKeys);
 
       return this.flushQueueFor(state);
     },
@@ -3503,7 +3727,200 @@ function stateRegistry(viewTree, resolveService, router) {
   return registry;
 }
 
-},{"./State":15}],24:[function(require,module,exports){
+},{"./State":15}],25:[function(require,module,exports){
+
+'use strict';
+
+
+module.exports = {
+
+  toParts: function toParts(encodedUrl) {
+
+    var url = decodeURIComponent(encodedUrl);
+
+    var hashAt = url.indexOf('#');
+    var searchAt = url.indexOf('?');
+
+    var hasHash = hashAt > -1;
+    var hasQuery = searchAt > -1;
+
+    return {
+
+      pathname: hasQuery
+        ? url.slice(0, searchAt)
+        : hasHash
+          ? url.slice(0, hashAt)
+          : url,
+
+      search: hasQuery && hasHash
+        ? url.slice(searchAt + 1, hashAt)
+        : hasQuery
+          ? url.slice(searchAt + 1)
+          : undefined,
+
+      hash: hasHash
+        ? url.slice(hashAt + 1)
+        : undefined
+
+    };
+  },
+
+
+  parseQuery: function parseQuery(queryString) {
+
+    return queryString
+      .split('&')
+      .reduce(function (queryParams, queryPair) {
+
+        var keyVal = queryPair.split('=');
+
+        queryParams[keyVal[0]] = keyVal[1];
+
+        return queryParams;
+      }, {});
+  },
+
+
+  formatQuery: function formatQuery(queryParams) {
+
+    return Object
+      .keys(queryParams)
+      .reduce(function (pairs, key) {
+
+        var queryKey = encodeURIComponent(key);
+        var queryValue = encodeURIComponent(queryParams[key]);
+
+        return pairs.concat(queryKey + '=' + queryValue);
+      }, [])
+      .join('&');
+  },
+
+
+  combine: function (pathname, search, hash) {
+
+    search || (search = '');
+
+    if (typeof search === 'object') {
+
+      search = this.formatQuery(search);
+    }
+
+    var url = pathname;
+
+    if (search) {
+
+      url += '?' + search;
+    }
+
+    if (typeof hash !== 'undefined' && hash !== '') {
+
+      url += '#' + hash;
+    }
+
+    return url;
+  }
+
+};
+
+},{}],26:[function(require,module,exports){
+
+'use strict';
+
+module.exports = urlWatcher;
+
+
+function urlWatcher(window, options) {
+
+  options || (options = {});
+
+  var history = window.history;
+  var location = window.location;
+  var windowEvent = history && history.pushState && (options.html5 !== false)
+    ? 'popstate'
+    : 'hashchange';
+
+  var watcher = {
+
+    listener: null,
+
+
+    subscribe: function subscribe(onChange) {
+
+      this.listener = function () {
+
+        onChange.call(null, this.get());
+      }.bind(this);
+
+      this.watch();
+      onChange.call(null, this.get());
+    },
+
+
+    watch: function watch() {
+
+      window.addEventListener(windowEvent, this.listener);
+    },
+
+
+    ignore: function ignore() {
+
+      window.removeEventListener(windowEvent, this.listener);
+    },
+
+
+    get: function get() {
+
+      var url = windowEvent === 'popstate'
+        ? location.pathname + location.search + location.hash
+        : location.hash.slice(1) || '/';
+
+      return decodeURIComponent(url);
+    },
+
+
+    push: function push(url) {
+
+      if (windowEvent === 'popstate') {
+
+        history.pushState({}, null, url);
+      }
+      else {
+
+        this.ignore();
+        location.hash = url;
+        this.watch();
+      }
+    },
+
+
+    replace: function replace(url) {
+
+      if (windowEvent === 'popstate') {
+
+        history.replaceState({}, null, url);
+      }
+      else {
+
+        var href = location.protocol +
+          '//' +
+          location.host +
+          location.pathname +
+          location.search +
+          '#' +
+          url;
+
+        this.ignore();
+        location.replace(href);
+        this.watch();
+      }
+    }
+
+  };
+
+  return watcher;
+}
+
+},{}],27:[function(require,module,exports){
 
 'use strict';
 
@@ -3610,7 +4027,7 @@ function viewTree(document, Component) {
     },
 
 
-    compose: function (components, resolved, params) {
+    compose: function (components, resolved, params, query) {
 
       components
         .map(function (component) {
@@ -3623,7 +4040,7 @@ function viewTree(document, Component) {
         })
         .forEach(function (component) {
 
-          component.render(resolved, params);
+          component.render(resolved, params, query);
         });
 
       tree
@@ -3650,7 +4067,7 @@ function viewTree(document, Component) {
         .loadedViews
         .map(function (view) {
 
-          return view.publish(resolved, params);
+          return view.publish(resolved, params, query);
         })
         .forEach(function (view) {
 
@@ -3674,254 +4091,7 @@ function viewTree(document, Component) {
 
   };
 }
-},{"./View":17}],25:[function(require,module,exports){
-'use strict';
-
-module.exports = reversePath;
-
-// regex from https://github.com/component/path-to-regexp
-var PATH_REGEXP = new RegExp([
-  // Match already escaped characters that would otherwise incorrectly appear
-  // in future matches. This allows the user to escape special characters that
-  // shouldn't be transformed.
-  '(\\\\.)',
-  // Match Express-style parameters and un-named parameters with a prefix
-  // and optional suffixes. Matches appear as:
-  //
-  // "/:test(\\d+)?" => ["/", "test", "\d+", undefined, "?"]
-  // "/route(\\d+)" => [undefined, undefined, undefined, "\d+", undefined]
-  '([\\/.])?(?:\\:(\\w+)(?:\\((.+)\\))?|\\((.+)\\))([?])?',
-  // Match regexp special characters that should always be escaped.
-  '([.+*?=^!:${}()[\\]|\\/])'
-].join('|'), 'g');
-
-function reversePath(path, params, options) {
-    var index = 0;
-    params = params || {};
-    options = options || {};
-
-    return path.replace(PATH_REGEXP, replace);
-
-
-  function replace(match, escaped, prefix, key, capture, group, optional, escape) {
-      if(escaped) return escaped;
-      if(escape) return escape;
-
-      prefix = prefix || '';
-
-      var value = params[key || index++];
-
-      if(value === undefined) {
-          if(optional) {
-              value = '';
-          } else {
-              throw new Error('Parameter "' + key + '" is required.');
-          }
-      }
-
-      return prefix + value;
-  }
-}
-
-},{}],26:[function(require,module,exports){
-// Generated by CoffeeScript 1.9.2
-(function(root, factory) {
-  if (('function' === typeof define) && (define.amd != null)) {
-    return define([], factory);
-  } else if (typeof exports !== "undefined" && exports !== null) {
-    return module.exports = factory();
-  } else {
-    return root.UrlPattern = factory();
-  }
-})(this, function() {
-  var Compiler, UrlPattern, escapeForRegex;
-  escapeForRegex = function(string) {
-    return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-  };
-  Compiler = function() {};
-  Compiler.prototype.escapeChar = '\\';
-  Compiler.prototype.segmentNameStartChar = ':';
-  Compiler.prototype.segmentNameCharset = 'a-zA-Z0-9';
-  Compiler.prototype.segmentValueCharset = 'a-zA-Z0-9-_ %';
-  Compiler.prototype.optionalSegmentStartChar = '(';
-  Compiler.prototype.optionalSegmentEndChar = ')';
-  Compiler.prototype.wildcardChar = '*';
-  Compiler.prototype.segmentValueRegexString = function() {
-    return "([" + this.segmentValueCharset + "]+)";
-  };
-  Compiler.prototype.segmentNameCharRegex = function() {
-    return new RegExp('^[' + this.segmentNameCharset + ']$');
-  };
-  Compiler.prototype.transition = function(nextMode) {
-    if (this.mode === nextMode) {
-      if (this.mode === 'namedSegment' || this.mode === 'staticSegment') {
-        this.segment += this.char;
-      }
-      return;
-    }
-    if (this.mode === 'staticSegmentEscapeNextChar' && nextMode === 'staticSegment') {
-      this.segment += this.char;
-      this.mode = nextMode;
-      return;
-    }
-    if (!(this.mode === 'staticSegment' && nextMode === 'staticSegmentEscapeNextChar')) {
-      switch (this.mode) {
-        case 'namedSegment':
-          this.names.push(this.segment);
-          this.regexString += this.segmentValueRegexString();
-          break;
-        case 'staticSegment':
-          this.regexString += escapeForRegex(this.segment);
-          break;
-        case 'namedSegmentStart':
-          if (nextMode !== 'namedSegment') {
-            throw new Error("`" + this.segmentNameStartChar + "` must be followed by the name of the named segment consisting of at least one character in character set `" + this.segmentNameCharset + "` at " + this.index);
-          }
-      }
-    }
-    if (this.mode !== 'staticSegment' && nextMode === 'staticSegmentEscapeNextChar') {
-      this.segment = '';
-    }
-    if (nextMode === 'namedSegment' || nextMode === 'staticSegment') {
-      this.segment = this.char;
-    }
-    return this.mode = nextMode;
-  };
-  Compiler.prototype.compile = function(string) {
-    var length, segmentNameCharRegex;
-    this.string = string;
-    this.index = -1;
-    this.char = '';
-    this.mode = 'unknown';
-    this.segment = '';
-    this.openParens = 0;
-    this.names = [];
-    this.regexString = '^';
-    segmentNameCharRegex = this.segmentNameCharRegex();
-    length = this.string.length;
-    while (++this.index < length) {
-      this.char = this.string.charAt(this.index);
-      if (this.mode === 'staticSegmentEscapeNextChar') {
-        this.transition('staticSegment');
-        continue;
-      }
-      switch (this.char) {
-        case this.segmentNameStartChar:
-          if (this.mode === 'namedSegment') {
-            throw new Error("cannot start named segment right after named segment at " + this.index);
-          }
-          this.transition('namedSegmentStart');
-          break;
-        case this.escapeChar:
-          this.transition('staticSegmentEscapeNextChar');
-          break;
-        case this.optionalSegmentStartChar:
-          this.transition('unknown');
-          this.openParens++;
-          this.regexString += '(?:';
-          break;
-        case this.optionalSegmentEndChar:
-          this.transition('unknown');
-          this.openParens--;
-          if (this.openParens < 0) {
-            throw new Error("did not expect " + this.optionalSegmentEndChar + " at " + this.index);
-          }
-          this.regexString += ')?';
-          break;
-        case this.wildcardChar:
-          this.transition('unknown');
-          this.regexString += '(.*?)';
-          this.names.push('_');
-          break;
-        default:
-          switch (this.mode) {
-            case 'namedSegmentStart':
-              if (segmentNameCharRegex.test(this.char)) {
-                this.transition('namedSegment');
-              } else {
-                this.transition('staticSegment');
-              }
-              break;
-            case 'namedSegment':
-              if (segmentNameCharRegex.test(this.char)) {
-                this.transition('namedSegment');
-              } else {
-                this.transition('staticSegment');
-              }
-              break;
-            case 'staticSegment':
-              this.transition('staticSegment');
-              break;
-            case 'unknown':
-              this.transition('staticSegment');
-          }
-      }
-    }
-    if (this.openParens > 0) {
-      throw new Error("unclosed parentheses at " + this.index);
-    }
-    this.transition('unknown');
-    this.regexString += '$';
-    this.regex = new RegExp(this.regexString);
-  };
-  UrlPattern = function(arg, compiler) {
-    if (compiler == null) {
-      compiler = new UrlPattern.Compiler;
-    }
-    if (arg instanceof UrlPattern) {
-      this.isRegex = arg.isRegex;
-      this.regex = arg.regex;
-      this.names = arg.names;
-      return;
-    }
-    this.isRegex = arg instanceof RegExp;
-    if (!(('string' === typeof arg) || this.isRegex)) {
-      throw new TypeError('argument must be a regex or a string');
-    }
-    if (this.isRegex) {
-      this.regex = arg;
-    } else {
-      compiler.compile(arg);
-      this.regex = compiler.regex;
-      this.names = compiler.names;
-    }
-  };
-  UrlPattern.prototype.match = function(url) {
-    var bound, captured, index, length, match, name, value;
-    match = this.regex.exec(url);
-    if (match == null) {
-      return null;
-    }
-    captured = match.slice(1);
-    if (this.isRegex) {
-      return captured;
-    }
-    bound = {};
-    index = -1;
-    length = captured.length;
-    while (++index < length) {
-      value = captured[index];
-      name = this.names[index];
-      if (value == null) {
-        continue;
-      }
-      if (bound[name] != null) {
-        if (!Array.isArray(bound[name])) {
-          bound[name] = [bound[name]];
-        }
-        bound[name].push(value);
-      } else {
-        bound[name] = value;
-      }
-    }
-    return bound;
-  };
-  UrlPattern.Compiler = Compiler;
-  UrlPattern.escapeForRegex = escapeForRegex;
-  return UrlPattern;
-});
-
-},{}],27:[function(require,module,exports){
+},{"./View":17}],28:[function(require,module,exports){
 module.exports = extend
 
 function extend(target) {
@@ -3938,7 +4108,7 @@ function extend(target) {
     return target
 }
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 
 'use strict';
 
@@ -4039,9 +4209,9 @@ function riotComponent(riot) {
 
 }
 
-},{"./modules/BaseComponent":10,"xtend/mutable":27}],29:[function(require,module,exports){
+},{"./modules/BaseComponent":10,"xtend/mutable":28}],30:[function(require,module,exports){
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a

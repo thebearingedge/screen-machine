@@ -104,7 +104,7 @@ function viewTree(document, Component) {
     },
 
 
-    compose: function (components, resolved, params) {
+    compose: function (components, resolved, params, query) {
 
       components
         .map(function (component) {
@@ -117,7 +117,7 @@ function viewTree(document, Component) {
         })
         .forEach(function (component) {
 
-          component.render(resolved, params);
+          component.render(resolved, params, query);
         });
 
       tree
@@ -144,7 +144,7 @@ function viewTree(document, Component) {
         .loadedViews
         .map(function (view) {
 
-          return view.publish(resolved, params);
+          return view.publish(resolved, params, query);
         })
         .forEach(function (view) {
 

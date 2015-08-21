@@ -7,7 +7,7 @@ var State = require('./State');
 module.exports = stateRegistry;
 
 
-function stateRegistry(viewTree, resolveService, router) {
+function stateRegistry(viewTree, resolveService) {
 
   var registry = {
 
@@ -29,7 +29,9 @@ function stateRegistry(viewTree, resolveService, router) {
 
       var state = new State(definition);
 
-      return this.register(state);
+      this.register(state);
+
+      return state;
     },
 
 
@@ -47,7 +49,6 @@ function stateRegistry(viewTree, resolveService, router) {
 
       viewTree.processState(state);
       resolveService.addResolvesTo(state);
-      router.add(state.name, state.$pathSegments, state.$queryKeys);
 
       return this.flushQueueFor(state);
     },

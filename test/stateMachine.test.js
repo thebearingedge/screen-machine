@@ -8,13 +8,11 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-
 var BaseComponent = require('../modules/BaseComponent');
 var eventBus = require('../modules/EventBus');
 var viewTree = require('../modules/viewTree');
 var resolveService = require('../modules/resolveService');
 var stateRegistry = require('../modules/stateRegistry');
-var router = require('../modules/router');
 
 
 var stateMachine = require('../modules/stateMachine');
@@ -22,25 +20,13 @@ var stateMachine = require('../modules/stateMachine');
 
 describe('stateMachine', function () {
 
-  var window, document;
-  var routerOptions, views, resolves, routes, registry, events, machine;
+  var document;
+  var views, resolves, registry, events, machine;
 
 
   beforeEach(function () {
 
-    window = {
-      history: {
-        replaceState: function () {},
-        pushState: function () {}
-      },
-      location: {
-        replace: function () {}
-      },
-      addEventListener: function () {},
-      removeEventListener: function () {}
-    };
     document = {};
-    routerOptions = {};
     events = eventBus({
       emitter: { emit: function () {} },
       trigger: 'emit'
@@ -48,9 +34,8 @@ describe('stateMachine', function () {
 
     views = viewTree(document, BaseComponent);
     resolves = resolveService(Promise);
-    routes = router(window, routerOptions);
-    registry = stateRegistry(views, resolves, routes);
-    machine = stateMachine(events, registry, resolves, routes, views);
+    registry = stateRegistry(views, resolves);
+    machine = stateMachine(events, registry, resolves, views);
   });
 
 
@@ -70,24 +55,6 @@ describe('stateMachine', function () {
   });
 
 
-  describe('.start()', function () {
-
-    it('should bootstrap the machine', function () {
-
-      sinon.stub(machine, 'transitionTo');
-      sinon.stub(views.views['@'], 'attachWithin');
-      sinon.stub(routes, 'getUrl');
-      sinon.stub(routes, 'findRoute')
-        .returns(['app', {}, {}]);
-
-      machine.start();
-
-      expect(machine.transitionTo)
-        .to.have.been.calledWithExactly('app', {}, {}, { routeChange: true });
-    });
-  });
-
-
   describe('.transitionTo(stateOrName, params, query, options)', function () {
 
     var rootState, appState, fooState, barState, bazState, quxState, quuxState;
@@ -99,17 +66,21 @@ describe('stateMachine', function () {
       initialParams = {};
       initialQuery = {};
 
-      machine
-        .state('app', {
+      appState = registry
+        .add('app', {
           path: '/'
-        })
-        .state('app.foo', {
+        });
+
+      fooState = registry
+        .add('app.foo', {
           path: 'foo/:fooParam',
           resolve: {
             fooResolve: sinon.spy()
           }
-        })
-        .state('app.foo.bar', {
+        });
+
+      barState = registry
+        .add('app.foo.bar', {
           path: 'bar?barQuery',
           resolve: {
             barResolve: sinon.spy(function (params) {
@@ -117,17 +88,23 @@ describe('stateMachine', function () {
               return params.fooParam;
             })
           }
-        })
-        .state('app.foo.bar.baz', {
+        });
+
+      bazState = registry
+        .add('app.foo.bar.baz', {
           path: '/baz/:bazParam',
           resolve: {
             bazResolve: ['barResolve@app.foo.bar', sinon.spy()]
           }
-        })
-        .state('qux', {
+        });
+
+      quxState = registry
+        .add('qux', {
           path: '/qux'
-        })
-        .state('quux', {
+        });
+
+      quuxState = registry
+        .add('quux', {
           parent: 'qux',
           path: '/:quuxParam',
           resolve: {
@@ -135,12 +112,6 @@ describe('stateMachine', function () {
           }
         });
 
-      appState = registry.states.app;
-      fooState = registry.states['app.foo'];
-      barState = registry.states['app.foo.bar'];
-      bazState = registry.states['app.foo.bar.baz'];
-      quxState = registry.states.qux;
-      quuxState = registry.states.quux;
     });
 
 
@@ -177,24 +148,6 @@ describe('stateMachine', function () {
           expect(machine.$state.current).to.equal(appState);
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
-          return done();
-        });
-    });
-
-
-    it('should not update router after route change', function (done) {
-
-      machine.init(rootState, initialParams, initialQuery);
-      sinon.spy(routes, 'update');
-
-      var params = {};
-      var query = {};
-
-      return machine
-        .transitionTo('app', params, query, { routeChange: true })
-        .then(function () {
-
-          expect(routes.update.called).to.equal(false);
           return done();
         });
     });

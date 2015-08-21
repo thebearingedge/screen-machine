@@ -2,10 +2,7 @@
 'use strict';
 
 var chai = require('chai');
-var sinonChai = require('sinon-chai');
 var expect = chai.expect;
-
-chai.use(sinonChai);
 
 
 var Route = require('../modules/Route');
@@ -13,66 +10,123 @@ var Route = require('../modules/Route');
 
 describe('Route', function () {
 
-  describe('.toRouteString(params)', function () {
+  it('should have a specificity rating', function () {
 
-    it('should reverse a path with no params or query', function () {
+    var route;
 
-      var route = new Route('foo', ['foo']);
+    route = new Route('app', '/');
+    expect(route.specificity).to.equal('1');
 
-      expect(route.toRouteString({}, {})).to.equal('/foo');
-    });
+    route = new Route('app.login', 'login');
+    expect(route.specificity).to.equal('4');
 
-
-    it('should reverse a path with params', function () {
-
-      var route = new Route('foo', ['foo', ':bar']);
-
-      expect(route.toRouteString({ bar: 1 }, {})).to.equal('/foo/1');
-    });
+    route = new Route('app.pictures.picture', 'pictures/:pictureId');
+    expect(route.specificity).to.equal('43');
+  });
 
 
-    it('should reverse a path with query params', function () {
+  describe('.addChild(route)', function () {
 
-      var route = new Route('foo', ['foo', ':bar']);
+    it('should add a child route and set itself as parent', function () {
 
-      expect(route.toRouteString({ bar: 1 }, { baz: 'qux' }))
-        .to.equal('/foo/1?baz=qux');
+      var parent = new Route('app', '/');
+      var child = new Route('app.login', '/login');
+
+      parent.addChild(child);
+
+      expect(parent.children[0]).to.equal(child);
+      expect(child.parent).to.equal(parent);
     });
 
   });
 
 
-  describe('.match(url)', function () {
+  describe('.match(pathStrings)', function () {
 
-    it('should create a params object with path params', function () {
+    it('should extract match from pathStrings', function () {
 
-      var route = new Route('foo', ['foo', ':bar']);
+      var strings = ['profile', 'foo'];
+      var route = new Route('app.login', 'profile/:username');
+      var matched = route.match(strings);
 
-      expect(route.match('/foo/1')).to.deep.equal({ bar: '1' });
+      expect(matched).to.deep.equal([{}, { username: 'foo' }]);
+      expect(strings.length).to.equal(0);
     });
 
 
-    it('should not return a params object if url is not matched', function () {
+    it('should not extract a match if path is too short', function () {
 
-      var route = new Route('foo', ['foo', ':bar']);
+      var strings = ['pictures', 'favorites'];
+      var route = new Route('app.login', 'pictures/favorites/:pictureId');
+      var matched = route.match(strings);
 
-      expect(route.match('/quux/1')).to.equal(null);
+      expect(matched).to.equal(null);
+      expect(strings.length).to.equal(2);
+    });
+
+
+    it('should not extract a match if not all segments match', function () {
+
+      var strings = ['pictures', '7', 'captions'];
+      var route = new Route('caption', 'pictures/:pictureId/tags');
+      var matched = route.match(strings);
+
+      expect(matched).to.equal(null);
+      expect(strings.length).to.equal(3);
+    });
+
+
+    it('should extract partial matches', function () {
+
+      var strings = ['pictures', '7', 'captions'];
+      var route = new Route('caption', 'pictures/:pictureId');
+      var matched = route.match(strings);
+
+      expect(matched).to.deep.equal([{}, { pictureId: '7' }]);
+      expect(strings.length).to.equal(1);
+    });
+
+
+    it('should match the remaining strings with a final splat', function () {
+
+      var strings = ['feed', 'stories', '42', 'comments', '70'];
+      var route = new Route('story', 'feed/stories/:storyId/*notFound');
+      var matched = route.match(strings);
+
+      expect(matched)
+        .to.deep.equal([{}, {}, { storyId: '42' }, { notFound: 'comments/70'}]);
+      expect(strings.length).to.equal(0);
     });
 
   });
 
 
-  describe('.parseQuery(queryString)', function () {
+  describe('.generate(params)', function () {
 
-    it('should ignore query params it is not responsible for', function () {
+    it('should return a url path', function () {
 
-      var route = new Route('foo', ['foo', ':bar']);
+      var route = new Route('root', '/');
 
-      expect(route.parseQuery('baz=qux&quux=grault'))
-        .to.deep.equal({ baz: 'qux', quux: 'grault' });
+      var path = route.generate({});
+
+      expect(path).to.equal('/');
+    });
+
+
+    it('should interpolate a url path', function () {
+
+      var root = new Route('root', '/');
+      var foo = new Route('foo', 'foo/:bar');
+      var qux = new Route('qux', 'qux/:quux');
+
+      root.addChild(foo);
+      foo.addChild(qux);
+
+      expect(foo.generate({ bar: 'baz' })).to.equal('/foo/baz');
+      expect(qux.generate({ bar: 'baz', quux: 'grault' }))
+        .to.equal('/foo/baz/qux/grault');
     });
 
   });
-
 
 });

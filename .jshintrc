@@ -4,5 +4,5 @@
   "expr": true,
   "eqnull": true,
   "maxcomplexity": 10,
-  "maxdepth": 2
+  "maxdepth": 3
 }

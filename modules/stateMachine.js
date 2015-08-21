@@ -7,7 +7,7 @@ var Transition = require('./Transition');
 module.exports = stateMachine;
 
 
-function stateMachine(events, registry, resolves, router, views) {
+function stateMachine(events, registry, resolves, views) {
 
   var Promise = resolves.Promise;
 
@@ -27,26 +27,6 @@ function stateMachine(events, registry, resolves, router, views) {
       this.$state.params = params;
       this.$state.query = query;
       this.$state.transition = null;
-
-      return this;
-    },
-
-
-    state: function () {
-
-      registry.add.apply(registry, arguments);
-
-      return this;
-    },
-
-
-    start: function () {
-
-      views.mountRoot();
-      router.listen(function onRouteChange(name, params, query) {
-
-        return this.transitionTo(name, params, query, { routeChange: true });
-      }.bind(this));
 
       return this;
     },
@@ -109,30 +89,11 @@ function stateMachine(events, registry, resolves, router, views) {
               task.commit();
             });
 
+          transition.resolved = resolveCache.$store;
           transition.finish();
-
-          var components = toState.getAllComponents();
-          var resolved = resolveCache.$store;
-
-          views.compose(components, resolved, toParams);
-
-          if (!options.routeChange) {
-
-            router.update(toState.name, toParams, toQuery, { replace: false });
-          }
-
-          fromState
-            .getBranch()
-            .filter(function (state) {
-
-              return !toState.contains(state);
-            })
-            .forEach(function (exiting) {
-
-              exiting.sleep();
-            });
-
           events.notify('stateChangeSuccess', transition);
+
+          return Promise.resolve(transition);
 
         }.bind(this))
         .catch(function (err) {

@@ -36,29 +36,32 @@ describe('Riot Component Composition', function () {
 
     views.mountRoot();
 
-    registry
-      .add('home', {
+      registry.add('home', {
         component: 'home',
         resolve: {
           user: function () {}
         }
-      })
-      .add('home.messages', {
+      });
+
+      registry.add('home.messages', {
         component: 'messages',
         resolve: {
           messages: function () {}
         }
-      })
-      .add('home.albums', {
+      });
+
+      registry.add('home.albums', {
         component: 'albums',
         resolve: {
           albums: function () {}
         }
-      })
-      .add('profile', {
+      });
+
+      registry.add('profile', {
         component: 'profile'
-      })
-      .add('timeline', {
+      });
+
+      registry.add('timeline', {
         views: {
           '@timeline': {
             component: 'share'
@@ -70,8 +73,9 @@ describe('Riot Component Composition', function () {
         resolve: {
           stories: function () {}
         }
-      })
-      .add('home.about', {
+      });
+
+      registry.add('home.about', {
         views: {
           '': {
             component: 'about'
@@ -80,8 +84,9 @@ describe('Riot Component Composition', function () {
             component: 'modal'
           }
         }
-      })
-      .add('home.about.contact', {
+      });
+
+      registry.add('home.about.contact', {
         views: {
           '@': {
             component: 'contact'

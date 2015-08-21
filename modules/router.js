@@ -3,178 +3,196 @@
 
 var xtend = require('xtend/mutable');
 var Route = require('./Route');
+var urlTools = require('./urlTools');
 
 
-module.exports = router;
-
-
-function router(window, options) {
-
-  options || (options = {});
-
-  var location = window.location;
-  var history = window.history;
-  var windowEvent = history.pushState && (options.html5 !== false)
-    ? 'popstate'
-    : 'hashchange';
+module.exports = function routerFactory() {
 
   return {
 
-    onChange: null,
-
-
-    sendRouteChange: function () {
-
-      var url = this.getUrl();
-      var found = this.findRoute(url);
-
-      this.onChange.apply(null, found);
-    },
+    root: null,
 
 
     routes: {},
 
 
-    routesByLength: {},
+    queues: {
+      __absolute__: []
+    },
 
 
-    add: function (name, pathSegments, querySegment) {
+    add: function (name, path) {
 
-      var route = new Route(name, pathSegments, querySegment);
-      var pathLength = pathSegments.length;
-      var routesByLength = this.routesByLength;
+      var route = new Route(name, path);
 
-      routesByLength[pathLength] || (routesByLength[pathLength] = []);
-      routesByLength[pathLength].push(route);
-      this.routes[name] = route;
+      this.register(route);
 
       return route;
     },
 
 
-    findRoute: function (url) {
+    register: function (route) {
 
-      var queryStart = url.indexOf('?');
-      var path;
-      var queryString;
+      if (route.path === '/') {
 
-      if (queryStart > -1) {
+        this.routes[route.name] = this.root = route;
 
-        path = url.slice(0, queryStart);
-        queryString = url.slice(queryStart + 1);
-      }
-      else {
-
-        path = url;
+        return this.flushQueueFor(route);
       }
 
-      var pathLength = path.split('/').length - 1;
-      var possibleRoutes = this.routesByLength[pathLength] || [];
-      var routeIndex = 0;
-      var route, pathParams, queryParams;
+      if (route.isAbsolute()) {
 
-      while (!pathParams && routeIndex < possibleRoutes.length) {
+        if (!this.root) {
 
-        route = possibleRoutes[routeIndex];
-        pathParams = route.match(path);
-        routeIndex++;
+          return this.enqueue(null, route);
+        }
+
+        this.routes[route.name] = route;
+        this.root.addChild(route);
+
+        return this.flushQueueFor(route);
       }
 
-      if (!pathParams) return null;
+      var parentName = route.parentName;
+      var parentRoute = this.routes[parentName];
 
-      queryParams = queryString
-        ? route.parseQuery(queryString)
+      if (parentName && !parentRoute) {
+
+        return this.enqueue(parentName, route);
+      }
+
+      this.routes[route.name] = route;
+      parentRoute || (parentRoute = this.root);
+      parentRoute.addChild(route);
+
+      return this.flushQueueFor(route);
+    },
+
+
+    find: function (url) {
+
+      var urlParts = urlTools.toParts(url);
+      var unmatched = urlParts.pathname.split('/').slice(1);
+      var results = [];
+      var route = this.root;
+
+      results.push(route.match(unmatched));
+
+      var children = route.children
+        ? route.children.slice()
+        : [];
+
+      while (unmatched.length && children.length) {
+
+        var matched;
+
+        children.sort(function (a, b) {
+
+          return b.specificity - a.specificity;
+        });
+
+        for (var i = 0; i < children.length; i++) {
+
+          var child = children[i];
+
+          // jshint -W084
+          if (matched = child.match(unmatched)) {
+
+            results = results.concat(matched);
+            route = child;
+            children = route.children
+              ? route.children.slice()
+              : [];
+
+            break;
+          }
+          else {
+
+            continue;
+          }
+        }
+
+        if (!matched) {
+
+          break;
+        }
+      }
+
+      if (unmatched.length) {
+
+        return null;
+      }
+
+      var params = this.flattenParams(results);
+      var query = urlParts.search
+        ? urlTools.parseQuery(urlParts.search)
         : {};
 
-      return [route.name, pathParams, queryParams];
+      return [route.name, params, query];
     },
 
 
-    href: function (name, params, query) {
+    href: function (name, params, query, fragment) {
 
-      return this.routes[name].toRouteString(params, query);
+      var pathname = this.routes[name].generate(params);
+
+      return urlTools.combine(pathname, query, fragment);
     },
 
 
-    listen: function (onChange) {
+    flattenParams: function (results) {
 
-      this.onChange = onChange;
-      this.sendRouteChange = this.sendRouteChange.bind(this);
-      this.watchLocation();
-      this.sendRouteChange();
+      return results
+        .reduce(function (flattened, resultSet) {
+
+          return flattened.concat(resultSet);
+        }, [])
+        .reduce(function (params, result) {
+
+          return xtend(params, result);
+        }, {});
     },
 
 
-    watchLocation: function () {
+    enqueue: function (parentName, route) {
 
-      window.addEventListener(windowEvent, this.sendRouteChange);
-    },
+      if (!parentName) {
 
-
-    ignoreLocation: function () {
-
-      window.removeEventListener(windowEvent, this.sendRouteChange);
-    },
-
-
-    update: function (stateName, params, query, options) {
-
-      var url = this.href(stateName, params, query);
-
-      this.setUrl(url, options);
-    },
-
-
-    getUrl: function () {
-
-      return windowEvent === 'popstate'
-        ? location.pathname + location.search + location.hash
-        : location.hash.slice(1) || '/';
-    },
-
-
-    setUrl: function (url, options) {
-
-      var defaults = { replace: false };
-
-      options || (options = {});
-      options = xtend(defaults, options);
-
-      if (windowEvent === 'popstate') {
-
-        if (options.replace) {
-
-          history.replaceState({}, null, url);
-        }
-        else {
-
-          history.pushState({}, null, url);
-        }
+        this.queues.__absolute__.push(route);
       }
       else {
 
-        if (options.replace) {
+        this.queues[parentName] || (this.queues[parentName] = []);
+        this.queues[parentName].push(route);
+      }
 
-          var href = location.protocol +
-            '//' +
-            location.host +
-            location.pathname +
-            location.search +
-            '#' +
-            url;
+      return this;
+    },
 
-          this.ignoreLocation();
-          location.replace(href);
-          this.watchLocation();
-        }
-        else {
 
-          this.ignoreLocation();
-          location.hash = url;
-          this.watchLocation();
+    flushQueueFor: function (route) {
+
+      var queue;
+
+      if (route === this.root) {
+
+        queue = this.queues.__absolute__;
+
+        while (queue && queue.length) {
+
+          this.register(queue.pop());
         }
       }
+
+      queue = this.queues[route.name];
+
+      while (queue && queue.length) {
+
+        this.register(queue.pop());
+      }
+
+      return this;
     }
 
   };
-}
+};

@@ -2,321 +2,183 @@
 'use strict';
 
 var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
 var expect = chai.expect;
-var mockLocation = require('mock-location');
-
-chai.use(sinonChai);
 
 
 var routerFactory = require('../modules/router');
-var Route = require('../modules/Route');
-
 
 describe('router', function () {
 
-  describe('.add(name, pathSegments, querySegment)', function () {
+  describe('.add(name, path)', function () {
 
-    var window = { history: {} };
     var router;
 
     beforeEach(function () {
 
-      router = routerFactory(window);
+      router = routerFactory();
     });
 
     it('should register routes', function () {
 
-      var route = router.add('foo', ['foo'], []);
+      var appRoute = router.add('app', '/');
 
-      expect(router.routes.foo instanceof Route).to.equal(true);
-      expect(router.routesByLength['1']).to.deep.equal([route]);
+      expect(appRoute).to.equal(router.root);
+
+      var photosRoute = router.add('app.photos', 'photos');
+
+      expect(photosRoute.parent).to.equal(appRoute);
+      expect(appRoute.children[0]).to.equal(photosRoute);
+
+      var loginRoute = router.add('app.login', 'login');
+
+      expect(loginRoute.parent).to.equal(appRoute);
+      expect(appRoute.children[1]).to.equal(loginRoute);
+
+      var landingRoute = router.add('landing', 'landing');
+
+      expect(landingRoute.parent).to.equal(appRoute);
+      expect(appRoute.children[2]).to.equal(landingRoute);
     });
 
   });
 
 
-  describe('.findRoute(routeString)', function () {
+  describe('.href(name, params, query, fragment)', function () {
 
-    var window, router;
+    var router;
 
     beforeEach(function () {
-      window = { history: {} };
-      router = routerFactory(window);
+
+      router = routerFactory();
+
+      router.add('app', '/');
+      router.add('app.users', 'users');
+      router.add('app.users.profile', ':userId');
+      router.add('landing', '/landing');
+      router.add('landing.about', '/about');
+    });
+
+
+    it('should compile absolute routes', function () {
+
+      var href = router.href('landing');
+
+      expect(href).to.equal('/landing');
+    });
+
+
+    it('should compile reset absolute routes', function () {
+
+      var href = router.href('landing.about');
+
+      expect(href).to.equal('/about');
+    });
+
+
+    it('should compile routes with params', function () {
+
+      var href = router.href('app.users.profile', { userId: '7' });
+
+      expect(href).to.equal('/users/7');
+    });
+
+
+    it('should compile routes with queries', function () {
+
+      var href = router.href('app', {}, { foo: 'bar' });
+
+      expect(href).to.equal('/?foo=bar');
+    });
+
+
+    it('should compile routes with fragments', function () {
+
+      var href = router.href('app.users', {}, {}, 'howdy');
+
+      expect(href).to.equal('/users#howdy');
+    });
+
+
+    it('should compile complex routes', function () {
+
+      var href = router
+        .href('app.users.profile', { userId: '7' }, { foo: 'bar' }, 'howdy');
+
+      expect(href).to.equal('/users/7?foo=bar#howdy');
+    });
+
+  });
+
+
+  describe('.find(path)', function () {
+
+    var router;
+
+    beforeEach(function () {
+
+      router = routerFactory();
+
+      router.add('app.users', 'users');
+      router.add('landing', '/landing');
+      router.add('app.login', 'login');
+      router.add('app', '/');
+      router.add('app.users.profile', ':userId');
+      router.add('app.users.profile.notFound', '*notFound');
+      router.add('app.users.search', 'search');
+      router.add('app.users.profile.friends', 'friends');
+      router.add('landing.about', '/about');
     });
 
 
     it('should find a route', function () {
 
-      router.add('foo', ['foo', ':bar'], []);
-      expect(router.findRoute('/foo/1'))
-          .to.deep.equal(['foo', { bar: '1' }, {}]);
+      expect(router.routes['landing.about']).to.be.ok;
+
+      expect(router.find('/?foo=bar'))
+        .to.deep.equal(['app', {}, { foo: 'bar' }]);
+      expect(router.find('/login')).to.deep.equal(['app.login', {}, {}]);
+      expect(router.find('/users')).to.deep.equal(['app.users', {}, {}]);
+      expect(router.find('/landing')).to.deep.equal(['landing', {}, {}]);
+      expect(router.find('/about'))
+        .to.deep.equal(['landing.about', {}, {}]);
     });
 
 
-    it('should merge path and query params', function () {
+    it('should find a static route first', function () {
 
-      router.add('foo', ['foo', ':bar'], ['baz']);
-      expect(router.findRoute('/foo/1?baz=qux'))
-        .to.deep.equal([ 'foo', { bar: '1' }, { baz: 'qux' }]);
+      expect(router.find('/users/search'))
+        .to.deep.equal(['app.users.search', {}, {}]);
     });
 
 
-    it('should return nothing if route is not found', function () {
+    it('should find a dynamic route second', function () {
 
-      expect(router.findRoute('/hype')).to.equal(null);
-    });
-
-  });
-
-
-  describe('.href(routeName, params, query)', function () {
-
-    var window = { history: {} };
-    var router;
-
-    beforeEach(function () {
-
-      router = routerFactory(window);
+      expect(router.find('/users/7'))
+        .to.deep.equal(['app.users.profile', { userId: '7' }, {}]);
     });
 
 
-    it('should create a route string from name and params', function () {
+    it('should find a splat route', function () {
 
-      router.add('foo', ['foo', ':bar']);
-
-      var href = router.href('foo', { bar: 1 }, { baz: 'qux' });
-
-      expect(href).to.equal('/foo/1?baz=qux');
-    });
-
-  });
-
-
-  describe('.watchLocation()', function () {
-
-    it('should watch for hash changes', function () {
-
-      var window = {
-        history: {},
-        addEventListener: sinon.spy(),
-        removeEventListener: sinon.spy()
-      };
-      var router = routerFactory(window);
-
-      router.watchLocation();
-
-      expect(window.addEventListener)
-        .to.have.been.calledWith('hashchange');
-
-      router.ignoreLocation();
-
-      expect(window.removeEventListener)
-        .to.have.been.calledWith('hashchange');
+      expect(router.find('/users/7/so/cool'))
+        .to.deep.equal([
+          'app.users.profile.notFound',
+          { userId: '7', notFound: 'so/cool' },
+          {}
+        ]);
     });
 
 
-    it('should watch for pop states', function () {
+    it('should find a static nested route before a splat route', function () {
 
-      var window = {
-        history: {
-          pushState: function () {}
-        },
-        addEventListener: sinon.spy(),
-        removeEventListener: sinon.spy()
-      };
-      var router = routerFactory(window);
-
-      router.watchLocation();
-
-      expect(window.addEventListener)
-        .to.have.been.calledWith('popstate');
-
-      router.ignoreLocation();
-
-      expect(window.removeEventListener)
-        .to.have.been.calledWith('popstate');
-    });
-
-  });
-
-
-  describe('.getUrl()', function () {
-
-    it('should retrieve the hash from the current url', function () {
-
-      var window = {
-        history: {},
-        location: mockLocation('http://www.example.com')
-      };
-      var router = routerFactory(window);
-
-      expect(router.getUrl()).to.equal('/');
-
-      window.location.hash = '/hash-route';
-
-      expect(router.getUrl()).to.equal('/hash-route');
+      expect(router.find('/users/7/friends'))
+        .to.deep.equal(['app.users.profile.friends', { userId: '7' }, {}]);
     });
 
 
-    it('should retrieve the url after the hostname', function () {
+    it('should not find a route that doesn\'t exist', function () {
 
-      var window = {
-        history: {
-          pushState: function () {}
-        },
-        location: mockLocation('http://www.example.com')
-      };
-      var router = routerFactory(window);
-
-      expect(router.getUrl()).to.equal('/');
-
-      window.location.href = 'http://www.example.com/push-route';
-
-      expect(router.getUrl()).to.equal('/push-route');
-    });
-
-  });
-
-
-  describe('.setUrl(routeUrl, options)', function () {
-
-    var location, history, window;
-
-    beforeEach(function () {
-
-      location = mockLocation('http://www.example.com');
-
-      location.replace = sinon.spy();
-
-      history = {
-        pushState: sinon.spy(),
-        replaceState: sinon.spy()
-      };
-      window = {
-        history: history,
-        location: location,
-        addEventListener: sinon.spy(),
-        removeEventListener: sinon.spy()
-      };
-    });
-
-    it('should not replace the history entry', function () {
-
-      var router = routerFactory(window);
-
-      router.setUrl('/foo-route');
-
-      expect(history.replaceState.called).to.equal(false);
-      expect(history.pushState)
-        .to.have.been.calledWithExactly({}, null, '/foo-route');
-    });
-
-
-    it('should replace the history entry', function () {
-
-      var router = routerFactory(window);
-
-      router.setUrl('/foo-route', { replace: true });
-
-      expect(history.replaceState.called).to.equal(true);
-      expect(history.replaceState)
-        .to.have.been.calledWithExactly({}, null, '/foo-route');
-    });
-
-
-    it('should silently change the location hash', function () {
-
-      history.pushState = undefined;
-
-      var router = routerFactory(window);
-
-      router.setUrl('/foo-route');
-
-      expect(location.replace.called).to.equal(false);
-      expect(location.hash).to.equal('#/foo-route');
-      expect(window.removeEventListener.calledOnce).to.equal(true);
-      expect(window.addEventListener.calledOnce).to.equal(true);
-    });
-
-
-    it('should silently replace the location history', function () {
-
-      history.pushState = undefined;
-
-      var router = routerFactory(window);
-
-      router.setUrl('/foo-route', { replace: true });
-
-      expect(location.replace)
-        .to.have.been.calledWithExactly('http://www.example.com/#/foo-route');
-      expect(window.removeEventListener.calledOnce).to.equal(true);
-      expect(window.addEventListener.calledOnce).to.equal(true);
-    });
-
-  });
-
-
-  describe('.listen(onChange)', function () {
-
-    var location, history, window;
-
-    beforeEach(function () {
-
-      location = mockLocation('http://www.example.com');
-
-      location.replace = sinon.spy();
-
-      history = {
-        pushState: sinon.spy(),
-        replaceState: sinon.spy()
-      };
-      window = {
-        history: history,
-        location: location,
-        addEventListener: sinon.spy(),
-        removeEventListener: sinon.spy()
-      };
-    });
-
-    it('should send the initial push route and watch for changes', function () {
-
-      var router = routerFactory(window);
-
-      router.add('foo', ['foo', ':bar'], ['baz']);
-
-      location.href = 'http://www.example.com/foo/42?baz=qux';
-
-      var onChange = sinon.spy();
-
-      router.listen(onChange);
-
-      expect(onChange)
-        .to.have.been
-        .calledWithExactly('foo', { bar: '42' }, { baz: 'qux' });
-      expect(window.addEventListener)
-        .to.have.been.calledWith('popstate');
-    });
-
-
-    it('should send the initial hash route and watch for changes', function () {
-
-      var router = routerFactory(window, { html5: false });
-
-      router.add('foo', ['foo', ':bar'], ['baz']);
-
-      location.href = 'http://www.example.com/index.html/#/foo/42?baz=qux';
-
-      var onChange = sinon.spy();
-
-      router.listen(onChange);
-
-      expect(onChange)
-        .to.have.been
-        .calledWithExactly('foo', { bar: '42' }, { baz: 'qux' });
-      expect(window.addEventListener)
-        .to.have.been.calledWith('hashchange');
+      expect(router.find('/some/crazy/garbage')).to.equal(null);
     });
 
   });

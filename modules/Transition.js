@@ -21,6 +21,7 @@ Transition.prototype.canceled = false;
 Transition.prototype.succeeded = false;
 Transition.prototype.error = null;
 Transition.prototype.handled = null;
+Transition.prototype.resolved = null;
 
 
 Transition.prototype.setError = function (err) {
@@ -56,6 +57,12 @@ Transition.prototype.isCanceled = function isCanceled() {
 };
 
 
+Transition.prototype.isSuccessful = function isSuccessful() {
+
+  return this.succeeded;
+};
+
+
 Transition.prototype.cancel = function () {
 
   this.canceled = true;
@@ -68,6 +75,21 @@ Transition.prototype.finish = function () {
 
   this.succeeded = true;
   this.machine.init(this.toState, this.toParams, this.toQuery);
+};
+
+
+Transition.prototype.cleanup = function () {
+
+  this.fromState
+    .getBranch()
+    .filter(function (state) {
+
+      return !this.toState.contains(state);
+    }, this)
+    .forEach(function (exiting) {
+
+      exiting.sleep();
+    });
 };
 
 

@@ -34,8 +34,8 @@ describe('stateMachine', function () {
 
     views = viewTree(document, BaseComponent);
     resolves = resolveService(Promise);
-    registry = stateRegistry(views, resolves);
-    machine = stateMachine(events, registry, resolves, views);
+    registry = stateRegistry(views);
+    machine = stateMachine(events, registry, resolves);
   });
 
 
@@ -66,51 +66,59 @@ describe('stateMachine', function () {
       initialParams = {};
       initialQuery = {};
 
-      appState = registry
-        .add('app', {
-          path: '/'
-        });
+      var states = [
 
-      fooState = registry
-        .add('app.foo', {
-          path: 'foo/:fooParam',
-          resolve: {
-            fooResolve: sinon.spy()
-          }
-        });
+        appState = registry
+          .add('app', {
+            path: '/'
+          }),
 
-      barState = registry
-        .add('app.foo.bar', {
-          path: 'bar?barQuery',
-          resolve: {
-            barResolve: sinon.spy(function (params) {
+        fooState = registry
+          .add('app.foo', {
+            path: 'foo/:fooParam',
+            resolve: {
+              fooResolve: sinon.spy()
+            }
+          }),
 
-              return params.fooParam;
-            })
-          }
-        });
+        barState = registry
+          .add('app.foo.bar', {
+            path: 'bar?barQuery',
+            resolve: {
+              barResolve: sinon.spy(function (params) {
 
-      bazState = registry
-        .add('app.foo.bar.baz', {
-          path: '/baz/:bazParam',
-          resolve: {
-            bazResolve: ['barResolve@app.foo.bar', sinon.spy()]
-          }
-        });
+                return params.fooParam;
+              })
+            }
+          }),
 
-      quxState = registry
-        .add('qux', {
-          path: '/qux'
-        });
+        bazState = registry
+          .add('app.foo.bar.baz', {
+            path: '/baz/:bazParam',
+            resolve: {
+              bazResolve: ['barResolve@app.foo.bar', sinon.spy()]
+            }
+          }),
 
-      quuxState = registry
-        .add('quux', {
-          parent: 'qux',
-          path: '/:quuxParam',
-          resolve: {
-            quuxResolve: sinon.spy()
-          }
-        });
+        quxState = registry
+          .add('qux', {
+            path: '/qux'
+          }),
+
+        quuxState = registry
+          .add('quux', {
+            parent: 'qux',
+            path: '/:quuxParam',
+            resolve: {
+              quuxResolve: sinon.spy()
+            }
+          })
+      ];
+
+      states.forEach(function (state) {
+
+        resolves.addResolvesTo(state);
+      });
 
     });
 

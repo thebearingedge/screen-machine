@@ -181,6 +181,16 @@ describe('router', function () {
       expect(router.find('/some/crazy/garbage')).to.equal(null);
     });
 
+
+    it('should find a sole index route', function () {
+
+      var router = routerFactory();
+
+      router.add('index', '/');
+
+      expect(router.find('/')).to.deep.equal(['index', {}, {}]);
+    });
+
   });
 
 });

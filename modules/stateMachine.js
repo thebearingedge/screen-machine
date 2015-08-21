@@ -7,7 +7,7 @@ var Transition = require('./Transition');
 module.exports = stateMachine;
 
 
-function stateMachine(events, registry, resolves, views) {
+function stateMachine(events, registry, resolves) {
 
   var Promise = resolves.Promise;
 
@@ -39,7 +39,6 @@ function stateMachine(events, registry, resolves, views) {
       var toState = typeof stateOrName === 'string'
         ? registry.states[stateOrName]
         : stateOrName;
-      var fromState = this.$state.current;
       var fromParams = this.$state.params;
       var fromQuery = this.$state.query;
       var resolveCache = resolves.getCache();

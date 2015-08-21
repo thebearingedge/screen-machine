@@ -31,6 +31,16 @@ function urlWatcher(window, options) {
     },
 
 
+    getLink: function () {
+
+      var url = this.get();
+
+      return windowEvent === 'popstate'
+        ? url
+        : '/#' + url;
+    },
+
+
     watch: function watch() {
 
       window.addEventListener(windowEvent, this.listener);

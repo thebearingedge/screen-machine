@@ -5,7 +5,7 @@
 /* global -Promise */
 var document = require('global/document');
 var riot = global.riot = require('riot');
-var screenMachine = require('../../../ScreenMachine');
+var screenMachine = require('../../../screenMachine');
 var riotComponent = require('../../../riotComponent');
 var EventEmitter = require('events').EventEmitter;
 var Promise = require('native-promise-only');
@@ -18,8 +18,11 @@ var config = {
   promises: Promise,
   events: {
     emitter: emitter,
-    trigger: 'emit'
-  }
+    trigger: 'emit',
+    on: 'addListener',
+    off: 'removeListener'
+  },
+  html5: false
 };
 
 var machine = global.machine = screenMachine(config);

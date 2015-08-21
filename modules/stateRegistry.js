@@ -7,7 +7,7 @@ var State = require('./State');
 module.exports = stateRegistry;
 
 
-function stateRegistry(viewTree, resolveService) {
+function stateRegistry(viewTree) {
 
   var registry = {
 
@@ -46,9 +46,6 @@ function stateRegistry(viewTree, resolveService) {
       }
 
       this.states[state.name] = state.inheritFrom(parentState || this.$root);
-
-      viewTree.processState(state);
-      resolveService.addResolvesTo(state);
 
       return this.flushQueueFor(state);
     },

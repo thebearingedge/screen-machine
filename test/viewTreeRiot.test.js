@@ -2,13 +2,8 @@
 'use strict';
 
 var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
 var expect = chai.expect;
 var document = require('jsdom').jsdom();
-
-chai.use(sinonChai);
-
 var riot = require('riot');
 var riotComponent = require('../riotComponent');
 var viewTree = require('../modules/viewTree');
@@ -36,30 +31,32 @@ describe('Riot Component Composition', function () {
 
     views.mountRoot();
 
+    var states = [
+
       registry.add('home', {
         component: 'home',
         resolve: {
           user: function () {}
         }
-      });
+      }),
 
       registry.add('home.messages', {
         component: 'messages',
         resolve: {
           messages: function () {}
         }
-      });
+      }),
 
       registry.add('home.albums', {
         component: 'albums',
         resolve: {
           albums: function () {}
         }
-      });
+      }),
 
       registry.add('profile', {
         component: 'profile'
-      });
+      }),
 
       registry.add('timeline', {
         views: {
@@ -73,7 +70,7 @@ describe('Riot Component Composition', function () {
         resolve: {
           stories: function () {}
         }
-      });
+      }),
 
       registry.add('home.about', {
         views: {
@@ -84,7 +81,7 @@ describe('Riot Component Composition', function () {
             component: 'modal'
           }
         }
-      });
+      }),
 
       registry.add('home.about.contact', {
         views: {
@@ -92,7 +89,16 @@ describe('Riot Component Composition', function () {
             component: 'contact'
           }
         }
-      });
+      })
+
+    ];
+
+    states.forEach(function (state) {
+
+      views.processState(state);
+      resolves.addResolvesTo(state);
+    });
+
   });
 
 

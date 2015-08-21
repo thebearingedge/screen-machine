@@ -1,105 +1,4 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-
-'use strict';
-
-var urlWatcher = require('./modules/urlWatcher');
-var eventBus = require('./modules/eventBus');
-var viewTree = require('./modules/viewTree');
-var resolveService = require('./modules/resolveService');
-var router = require('./modules/router');
-var stateRegistry = require('./modules/stateRegistry');
-var stateMachine = require('./modules/stateMachine');
-
-
-module.exports = screenMachine;
-
-
-function screenMachine(config) {
-
-  var document = config.document;
-  var window = document.defaultView;
-  var Promise = config.promises;
-  var url = urlWatcher(window, { html5: config.html5 });
-  var routes = router();
-  var Component = config.components(document, routes);
-  var views = viewTree(document, Component);
-  var resolves = resolveService(Promise);
-  var registry = stateRegistry(views, resolves, routes);
-  var events = eventBus(config.events);
-  var machine = stateMachine(events, registry, resolves, views);
-
-  return {
-
-    state: function state() {
-
-      var registered = registry.add.apply(registry, arguments);
-
-      if (typeof registered.path !== undefined) {
-
-        routes.add(registered.name, registered.path);
-      }
-
-      return this;
-    },
-
-    start: function start() {
-
-      machine.init(registry.$root, {});
-      views.mountRoot();
-      url.subscribe(this.fromUrl.bind(this));
-
-      return this;
-    },
-
-    fromUrl: function fromUrl(url) {
-
-      var args = routes.find(url);
-
-      if (!args) {
-
-        events.notify('routeNotFound', url);
-      }
-      if (args) {
-
-        args.push({ routeChange: true });
-
-        return this.transitionTo.apply(this, args);
-      }
-    },
-
-    transitionTo: function transitionTo(stateOrName, params, query, options) {
-
-      options || (options = {});
-
-      return machine.transitionTo.apply(machine, arguments)
-        .then(function (transition) {
-
-          if (transition.isCanceled()) return;
-
-          var state = transition.toState;
-          var components = state.getAllComponents();
-          var resolved = transition.resolved;
-
-          views.compose(components, resolved, params, query);
-
-          if (!options.routeChange) {
-
-            url.push(routes.href(state.name, params, query));
-          }
-
-          transition.cleanup();
-        });
-    },
-
-    go: function go() {
-
-      return this.transitionTo.apply(null, arguments);
-    }
-  };
-}
-
-
-},{"./modules/eventBus":18,"./modules/resolveService":20,"./modules/router":22,"./modules/stateMachine":23,"./modules/stateRegistry":24,"./modules/urlWatcher":26,"./modules/viewTree":27}],2:[function(require,module,exports){
 /*!
   * domready (c) Dustin Diaz 2014 - License MIT
   */
@@ -131,7 +30,7 @@ function screenMachine(config) {
 
 });
 
-},{}],3:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 (function (global){
 var topLevel = typeof global !== 'undefined' ? global :
     typeof window !== 'undefined' ? window : {}
@@ -150,7 +49,7 @@ if (typeof document !== 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":30}],4:[function(require,module,exports){
+},{"min-document":30}],3:[function(require,module,exports){
 (function (global){
 /*! Native Promise Only
     v0.8.1 (c) Kyle Simpson
@@ -527,7 +426,7 @@ if (typeof document !== 'undefined') {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 /* Riot v2.2.4, @license MIT, (c) 2015 Muut Inc. + contributors */
 
 ;(function(window, undefined) {
@@ -1899,7 +1798,7 @@ riot.mountTo = riot.mount
 
 })(typeof window != 'undefined' ? window : void 0);
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 
 'use strict';
 
@@ -1917,7 +1816,7 @@ module.exports = function (machine) {
       cacheable: false
     });
 };
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 
 'use strict';
 
@@ -1946,8 +1845,8 @@ module.exports = function (machine) {
     });
 };
 
-},{}],8:[function(require,module,exports){
-riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The current date is { today }</p>', function(opts) {
+},{}],7:[function(require,module,exports){
+riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The current date is { today }</p> <br> <sm-link to="viewLibs">Libraries</sm-link>', function(opts) {
     
     this.today = opts.today;
 
@@ -1968,15 +1867,21 @@ riot.tag('libraries-landing', '<p>This is the "Libraries" landing page.</p>', fu
 
 
 });
-riot.tag('libraries', '<h2>This is the view libraries page</h2> <input type="text"> <sm-view></sm-view>', function(opts) {
+riot.tag('libraries', '<h2>This is the view libraries page</h2>  <ul> <li style="display: inline"> <sm-link to="viewLibs">none</sm-link> </li> <li each="{ libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ this }">{ libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
 
 
+    this.libs = [
+      { libName: 'riot' },
+      { libName: 'react' },
+      { libName: 'ractive' }
+    ];
+  
 });
 riot.tag('library-description', '<h3>Have you heard of { opts.params.libName }?</h3> <p>{ opts.content }</p>', function(opts) {
 
 
 });
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 (function (global){
 
 'use strict';
@@ -1985,7 +1890,7 @@ riot.tag('library-description', '<h3>Have you heard of { opts.params.libName }?<
 /* global -Promise */
 var document = require('global/document');
 var riot = global.riot = require('riot');
-var screenMachine = require('../../../ScreenMachine');
+var screenMachine = require('../../../screenMachine');
 var riotComponent = require('../../../riotComponent');
 var EventEmitter = require('events').EventEmitter;
 var Promise = require('native-promise-only');
@@ -1998,8 +1903,11 @@ var config = {
   promises: Promise,
   events: {
     emitter: emitter,
-    trigger: 'emit'
-  }
+    trigger: 'emit',
+    on: 'addListener',
+    off: 'removeListener'
+  },
+  html5: false
 };
 
 var machine = global.machine = screenMachine(config);
@@ -2019,7 +1927,7 @@ domready(function () {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../../../ScreenMachine":1,"../../../riotComponent":29,"./screens/home":6,"./screens/viewLibs":7,"./tags":8,"domready":2,"events":31,"global/document":3,"native-promise-only":4,"riot":5}],10:[function(require,module,exports){
+},{"../../../riotComponent":28,"../../../screenMachine":29,"./screens/home":5,"./screens/viewLibs":6,"./tags":7,"domready":1,"events":31,"global/document":2,"native-promise-only":3,"riot":4}],9:[function(require,module,exports){
 
 'use strict';
 
@@ -2068,7 +1976,7 @@ BaseComponent.prototype.load = function () {
   return this;
 };
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 
 'use strict';
 
@@ -2118,7 +2026,7 @@ DependentResolve.prototype.clearCache = function () {
   this.cache.unset(this.id);
 };
 
-},{}],12:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 
 'use strict';
 
@@ -2245,7 +2153,7 @@ ResolveTask.prototype.commit = function () {
   return this;
 };
 
-},{}],13:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 
 'use strict';
 
@@ -2351,8 +2259,6 @@ Route.prototype.addChild = function (route) {
 
 Route.prototype.generate = function (params) {
 
-  if (this.path === '/') return '/';
-
   var child = this;
   var allSegments = [];
 
@@ -2378,7 +2284,7 @@ Route.prototype.generate = function (params) {
   function collectSegment(segment) { allSegments.unshift(segment); }
 };
 
-},{"./routeSegment":21}],14:[function(require,module,exports){
+},{"./routeSegment":20}],13:[function(require,module,exports){
 
 'use strict';
 
@@ -2409,7 +2315,7 @@ SimpleResolve.prototype.clearCache = function () {
   this.cache.unset(this.id);
 };
 
-},{}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 
 'use strict';
 
@@ -2688,7 +2594,7 @@ State.prototype.shouldResolve = function (resolved) {
     });
 };
 
-},{"xtend/mutable":28}],16:[function(require,module,exports){
+},{"xtend/mutable":27}],15:[function(require,module,exports){
 
 'use strict';
 
@@ -2795,7 +2701,7 @@ Transition.prototype.retry = function () {
   return this.redirect(this.toState, this.toParams, this.toQuery);
 };
 
-},{}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 
 'use strict';
 
@@ -2997,7 +2903,7 @@ View.prototype.cleanUp = function () {
   return this;
 };
 
-},{}],18:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 
 'use strict';
 
@@ -3009,18 +2915,30 @@ function eventBus(events) {
 
   var emitter = events.emitter;
   var trigger = events.trigger;
+  var on = events.on;
+  var off = events.off;
 
   return {
 
     notify: function notify() {
 
       emitter[trigger].apply(emitter, arguments);
+    },
+
+    subscribe: function subscribe() {
+
+      emitter[on].apply(emitter, arguments);
+    },
+
+    unsubscribe: function unsubscribe() {
+
+      emitter[off].apply(emitter, arguments);
     }
 
   };
 }
 
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 
 'use strict';
 
@@ -3078,7 +2996,7 @@ function resolveCache(options) {
   return instance;
 }
 
-},{"xtend/mutable":28}],20:[function(require,module,exports){
+},{"xtend/mutable":27}],19:[function(require,module,exports){
 
 'use strict';
 
@@ -3244,7 +3162,7 @@ function resolveService(Promise) {
   };
 }
 
-},{"./DependentResolve":11,"./ResolveTask":12,"./SimpleResolve":14,"./resolveCache":19}],21:[function(require,module,exports){
+},{"./DependentResolve":10,"./ResolveTask":11,"./SimpleResolve":13,"./resolveCache":18}],20:[function(require,module,exports){
 
 'use strict';
 
@@ -3323,7 +3241,7 @@ Segment.prototype.interpolate = function interpolate(params) {
   }
 };
 
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 
 'use strict';
 
@@ -3332,9 +3250,18 @@ var Route = require('./Route');
 var urlTools = require('./urlTools');
 
 
-module.exports = function routerFactory() {
+module.exports = function routerFactory(options) {
+
+  options || (options = {});
+
+  var html5 = options.html5 === false
+    ? false
+    : true;
 
   return {
+
+    html5: html5,
+
 
     root: null,
 
@@ -3458,7 +3385,17 @@ module.exports = function routerFactory() {
     },
 
 
-    href: function (name, params, query, fragment) {
+    href: function () {
+
+      var url = this.toUrl.apply(this, arguments);
+
+      return this.html5
+        ? url
+        : '/#' + url;
+    },
+
+
+    toUrl: function (name, params, query, fragment) {
 
       var pathname = this.routes[name].generate(params);
 
@@ -3523,7 +3460,7 @@ module.exports = function routerFactory() {
   };
 };
 
-},{"./Route":13,"./urlTools":25,"xtend/mutable":28}],23:[function(require,module,exports){
+},{"./Route":12,"./urlTools":24,"xtend/mutable":27}],22:[function(require,module,exports){
 
 'use strict';
 
@@ -3533,7 +3470,7 @@ var Transition = require('./Transition');
 module.exports = stateMachine;
 
 
-function stateMachine(events, registry, resolves, views) {
+function stateMachine(events, registry, resolves) {
 
   var Promise = resolves.Promise;
 
@@ -3565,7 +3502,6 @@ function stateMachine(events, registry, resolves, views) {
       var toState = typeof stateOrName === 'string'
         ? registry.states[stateOrName]
         : stateOrName;
-      var fromState = this.$state.current;
       var fromParams = this.$state.params;
       var fromQuery = this.$state.query;
       var resolveCache = resolves.getCache();
@@ -3639,7 +3575,7 @@ function stateMachine(events, registry, resolves, views) {
   };
 }
 
-},{"./Transition":16}],24:[function(require,module,exports){
+},{"./Transition":15}],23:[function(require,module,exports){
 
 'use strict';
 
@@ -3649,7 +3585,7 @@ var State = require('./State');
 module.exports = stateRegistry;
 
 
-function stateRegistry(viewTree, resolveService) {
+function stateRegistry(viewTree) {
 
   var registry = {
 
@@ -3689,9 +3625,6 @@ function stateRegistry(viewTree, resolveService) {
 
       this.states[state.name] = state.inheritFrom(parentState || this.$root);
 
-      viewTree.processState(state);
-      resolveService.addResolvesTo(state);
-
       return this.flushQueueFor(state);
     },
 
@@ -3727,7 +3660,7 @@ function stateRegistry(viewTree, resolveService) {
   return registry;
 }
 
-},{"./State":15}],25:[function(require,module,exports){
+},{"./State":14}],24:[function(require,module,exports){
 
 'use strict';
 
@@ -3822,7 +3755,7 @@ module.exports = {
 
 };
 
-},{}],26:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 
 'use strict';
 
@@ -3853,6 +3786,16 @@ function urlWatcher(window, options) {
 
       this.watch();
       onChange.call(null, this.get());
+    },
+
+
+    getLink: function () {
+
+      var url = this.get();
+
+      return windowEvent === 'popstate'
+        ? url
+        : '/#' + url;
     },
 
 
@@ -3920,7 +3863,7 @@ function urlWatcher(window, options) {
   return watcher;
 }
 
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 
 'use strict';
 
@@ -4091,7 +4034,7 @@ function viewTree(document, Component) {
 
   };
 }
-},{"./View":17}],28:[function(require,module,exports){
+},{"./View":16}],27:[function(require,module,exports){
 module.exports = extend
 
 function extend(target) {
@@ -4108,7 +4051,7 @@ function extend(target) {
     return target
 }
 
-},{}],29:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 
 'use strict';
 
@@ -4121,7 +4064,33 @@ module.exports = riotComponent;
 
 function riotComponent(riot) {
 
-  return function component(document) {
+  return function component(document, url, events, router) {
+
+    riot.tag('sm-link', '<a href="{ href }" class="{ active: active }"><yield/></a>', function (opts) {
+
+      var routeName = opts.to;
+      var params = opts.params || {};
+      var query = opts.query || {};
+      var hash = opts.hash || '';
+
+      this.href = router.href(routeName, params, query, hash);
+      this.active = this.href === url.getLink();
+
+      this.matchUrl = function () {
+
+        this.active = this.href === url.getLink();
+        this.update();
+
+      }.bind(this);
+
+      events.subscribe('routeChange', this.matchUrl);
+
+      this.on('unmount', function () {
+
+        events.unsubscribe('routeChange', this.matchUrl);
+      });
+
+    });
 
     function RiotComponent(componentName, viewKey, state) {
 
@@ -4209,7 +4178,122 @@ function riotComponent(riot) {
 
 }
 
-},{"./modules/BaseComponent":10,"xtend/mutable":28}],30:[function(require,module,exports){
+},{"./modules/BaseComponent":9,"xtend/mutable":27}],29:[function(require,module,exports){
+
+'use strict';
+
+var urlWatcher = require('./modules/urlWatcher');
+var eventBus = require('./modules/eventBus');
+var viewTree = require('./modules/viewTree');
+var resolveService = require('./modules/resolveService');
+var router = require('./modules/router');
+var stateRegistry = require('./modules/stateRegistry');
+var stateMachine = require('./modules/stateMachine');
+
+
+module.exports = screenMachine;
+
+
+function screenMachine(config) {
+
+  var document = config.document;
+  var window = document.defaultView;
+  var Promise = config.promises;
+  var url = urlWatcher(window, { html5: config.html5 });
+  var events = eventBus(config.events);
+  var routes = router({ html5: config.html5 });
+  var Component = config.components(document, url, events, routes);
+  var views = viewTree(document, Component);
+  var resolves = resolveService(Promise);
+  var registry = stateRegistry(views, resolves, routes);
+  var machine = stateMachine(events, registry, resolves);
+
+  return {
+
+    state: function state() {
+
+      var registered = registry.add.apply(registry, arguments);
+
+      if (registered.path) {
+
+        routes.add(registered.name, registered.path);
+      }
+
+      if (registered.resolve) {
+
+        resolves.addResolvesTo(registered);
+      }
+
+      views.processState(registered);
+
+      return this;
+    },
+
+
+    start: function start() {
+
+      machine.init(registry.$root, {});
+      views.mountRoot();
+      url.subscribe(this.fromUrl.bind(this));
+
+      return this;
+    },
+
+
+    fromUrl: function fromUrl(url) {
+
+      events.notify('routeChange');
+
+      var args = routes.find(url);
+
+      if (!args) {
+
+        events.notify('routeNotFound');
+      }
+      if (args) {
+
+        args.push({ routeChange: true });
+
+        return this.transitionTo.apply(this, args);
+      }
+    },
+
+
+    transitionTo: function transitionTo(stateOrName, params, query, options) {
+
+      options || (options = {});
+
+      return machine.transitionTo.apply(machine, arguments)
+        .then(function (transition) {
+
+          if (transition.isCanceled()) return;
+
+          var state = transition.toState;
+          var components = state.getAllComponents();
+          var resolved = transition.resolved;
+
+          views.compose(components, resolved, params, query);
+
+          if (!options.routeChange) {
+
+            url.push(routes.toUrl(state.name, params, query));
+            events.notify('routeChange');
+          }
+
+          transition.cleanup();
+        });
+    },
+
+
+    go: function go() {
+
+      return this.transitionTo.apply(null, arguments);
+    }
+  };
+}
+
+
+},{"./modules/eventBus":17,"./modules/resolveService":19,"./modules/router":21,"./modules/stateMachine":22,"./modules/stateRegistry":23,"./modules/urlWatcher":25,"./modules/viewTree":26}],30:[function(require,module,exports){
 
 },{}],31:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
@@ -4514,4 +4598,4 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}]},{},[9]);
+},{}]},{},[8]);

@@ -6,9 +6,18 @@ var Route = require('./Route');
 var urlTools = require('./urlTools');
 
 
-module.exports = function routerFactory() {
+module.exports = function routerFactory(options) {
+
+  options || (options = {});
+
+  var html5 = options.html5 === false
+    ? false
+    : true;
 
   return {
+
+    html5: html5,
+
 
     root: null,
 
@@ -132,7 +141,17 @@ module.exports = function routerFactory() {
     },
 
 
-    href: function (name, params, query, fragment) {
+    href: function () {
+
+      var url = this.toUrl.apply(this, arguments);
+
+      return this.html5
+        ? url
+        : '/#' + url;
+    },
+
+
+    toUrl: function (name, params, query, fragment) {
 
       var pathname = this.routes[name].generate(params);
 

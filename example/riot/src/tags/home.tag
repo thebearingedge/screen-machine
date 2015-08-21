@@ -2,6 +2,8 @@
 
   <h2>Welcome to the Riot Screen Machine Demo</h2>
   <p>The current date is { today }</p>
+  <br>
+  <sm-link to='viewLibs'>Libraries</sm-link>
 
   <script>
     /* globals opts:true */

@@ -103,8 +103,6 @@ Route.prototype.addChild = function (route) {
 
 Route.prototype.generate = function (params) {
 
-  if (this.path === '/') return '/';
-
   var child = this;
   var allSegments = [];
 

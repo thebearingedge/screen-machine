@@ -19,13 +19,13 @@ function screenMachine(config) {
   var window = document.defaultView;
   var Promise = config.promises;
   var url = urlWatcher(window, { html5: config.html5 });
-  var routes = router();
-  var Component = config.components(document, routes);
+  var events = eventBus(config.events);
+  var routes = router({ html5: config.html5 });
+  var Component = config.components(document, url, events, routes);
   var views = viewTree(document, Component);
   var resolves = resolveService(Promise);
   var registry = stateRegistry(views, resolves, routes);
-  var events = eventBus(config.events);
-  var machine = stateMachine(events, registry, resolves, views);
+  var machine = stateMachine(events, registry, resolves);
 
   return {
 
@@ -33,13 +33,21 @@ function screenMachine(config) {
 
       var registered = registry.add.apply(registry, arguments);
 
-      if (typeof registered.path !== undefined) {
+      if (registered.path) {
 
         routes.add(registered.name, registered.path);
       }
 
+      if (registered.resolve) {
+
+        resolves.addResolvesTo(registered);
+      }
+
+      views.processState(registered);
+
       return this;
     },
+
 
     start: function start() {
 
@@ -50,13 +58,16 @@ function screenMachine(config) {
       return this;
     },
 
+
     fromUrl: function fromUrl(url) {
+
+      events.notify('routeChange');
 
       var args = routes.find(url);
 
       if (!args) {
 
-        events.notify('routeNotFound', url);
+        events.notify('routeNotFound');
       }
       if (args) {
 
@@ -65,6 +76,7 @@ function screenMachine(config) {
         return this.transitionTo.apply(this, args);
       }
     },
+
 
     transitionTo: function transitionTo(stateOrName, params, query, options) {
 
@@ -83,12 +95,14 @@ function screenMachine(config) {
 
           if (!options.routeChange) {
 
-            url.push(routes.href(state.name, params, query));
+            url.push(routes.toUrl(state.name, params, query));
+            events.notify('routeChange');
           }
 
           transition.cleanup();
         });
     },
+
 
     go: function go() {
 

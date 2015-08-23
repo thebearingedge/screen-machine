@@ -8,10 +8,9 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-var BaseComponent = require('../modules/BaseComponent');
+var Promise = require('native-promise-only');
 var eventBus = require('../modules/EventBus');
-var viewTree = require('../modules/viewTree');
-var resolveService = require('../modules/resolveService');
+var resolveFactory = require('../modules/resolveFactory');
 var stateRegistry = require('../modules/stateRegistry');
 
 
@@ -20,22 +19,100 @@ var stateMachine = require('../modules/stateMachine');
 
 describe('stateMachine', function () {
 
-  var document;
-  var views, resolves, registry, events, machine;
-
+  var resolves, registry, events, machine;
+  var rootState, appState, fooState, barState, bazState, quxState, quuxState;
+  var initialParams, initialQuery;
 
   beforeEach(function () {
 
-    document = {};
     events = eventBus({
       emitter: { emit: function () {} },
       trigger: 'emit'
     });
 
-    views = viewTree(document, BaseComponent);
-    resolves = resolveService(Promise);
-    registry = stateRegistry(views);
-    machine = stateMachine(events, registry, resolves);
+    resolves = resolveFactory(Promise);
+    registry = stateRegistry();
+    machine = stateMachine(events, registry, Promise);
+
+    rootState = registry.$root;
+    rootState.beforeEnter = sinon.spy();
+    rootState.beforeUpdate = sinon.spy();
+    rootState.beforeExit = sinon.spy();
+
+    initialParams = {};
+    initialQuery = {};
+
+    var states = [
+
+      appState = registry
+        .add('app', {
+          path: '/',
+          beforeExit: sinon.spy(),
+          beforeUpdate: sinon.spy(),
+          beforeEnter: sinon.spy(),
+        }),
+
+      fooState = registry
+        .add('app.foo', {
+          path: 'foo/:fooParam',
+          resolve: {
+            fooResolve: sinon.spy()
+          },
+          beforeExit: sinon.spy(),
+          beforeUpdate: sinon.spy(),
+          beforeEnter: sinon.spy(),
+        }),
+
+      barState = registry
+        .add('app.foo.bar', {
+          path: 'bar?barQuery',
+          resolve: {
+            barResolve: sinon.spy(function (params) {
+
+              return params.fooParam;
+            })
+          },
+          beforeExit: sinon.spy(),
+          beforeUpdate: sinon.spy(),
+          beforeEnter: sinon.spy(),
+        }),
+
+      bazState = registry
+        .add('app.foo.bar.baz', {
+          path: '/baz/:bazParam',
+          resolve: {
+            bazResolve: ['barResolve@app.foo.bar', sinon.spy()]
+          },
+          beforeExit: sinon.spy(),
+          beforeUpdate: sinon.spy(),
+          beforeEnter: sinon.spy(),
+        }),
+
+      quxState = registry
+        .add('qux', {
+          path: '/qux',
+          beforeExit: sinon.spy(),
+          beforeUpdate: sinon.spy(),
+          beforeEnter: sinon.spy(),
+        }),
+
+      quuxState = registry
+        .add('quux', {
+          parent: 'qux',
+          path: '/:quuxParam',
+          resolve: {
+            quuxResolve: sinon.spy()
+          },
+          beforeExit: sinon.spy(),
+          beforeUpdate: sinon.spy(),
+          beforeEnter: sinon.spy(),
+        })
+    ];
+
+    states.forEach(function (state) {
+
+      resolves.addTo(state);
+    });
   });
 
 
@@ -44,84 +121,154 @@ describe('stateMachine', function () {
     it('should initialize', function () {
 
       var rootState = registry.$root;
-      var startParams = {};
+      var params = {};
+      var query = {};
 
-      machine.init(rootState, startParams);
+      machine.init(rootState, params, query);
 
       expect(machine.$state.current).to.equal(rootState);
-      expect(machine.$state.params).to.equal(startParams);
+      expect(machine.$state.params).to.equal(params);
+      expect(machine.$state.query).to.equal(query);
+      expect(machine.transition).to.equal(null);
+    });
+
+  });
+
+
+  describe('.createTransition(state, params, query, options)', function () {
+
+    it('should create a transition from "root" to "app"', function () {
+
+      var params = {};
+      var query = {};
+
+      machine.init(registry.$root, initialParams, initialQuery);
+
+      var transition = machine.createTransition(appState, params, query);
+
+      expect(transition._tasks.length).to.equal(0);
+      expect(transition._exiting.length).to.equal(0);
+
+      expect(rootState.beforeEnter.called).to.equal(false);
+      expect(rootState.beforeUpdate.called).to.equal(false);
+      expect(rootState.beforeExit.called).to.equal(false);
+
+      expect(appState.beforeEnter.calledOnce).to.equal(true);
+      expect(appState.beforeUpdate.called).to.equal(false);
+      expect(appState.beforeExit.called).to.equal(false);
+    });
+
+
+    it('should create a transition from "root" to "foo"', function () {
+
+      var params = { fooParam: '42' };
+      var query = {};
+
+      machine.init(registry.$root, initialParams, initialQuery);
+
+      var transition = machine.createTransition(fooState, params, query);
+
+      expect(transition._tasks.length).to.equal(1);
+      expect(transition._exiting.length).to.equal(0);
+
+      expect(rootState.beforeEnter.called).to.equal(false);
+      expect(rootState.beforeUpdate.called).to.equal(false);
+      expect(rootState.beforeExit.called).to.equal(false);
+
+      expect(appState.beforeEnter.calledOnce).to.equal(true);
+      expect(appState.beforeUpdate.called).to.equal(false);
+      expect(appState.beforeExit.called).to.equal(false);
+
+      expect(fooState.beforeEnter.calledOnce).to.equal(true);
+      expect(fooState.beforeUpdate.called).to.equal(false);
+      expect(fooState.beforeExit.called).to.equal(false);
+    });
+
+
+    it('should create a transition from "root" to "baz"', function () {
+
+      var params = { fooParam: '42', bazParam: '7' };
+      var query = { barQuery: 'q' };
+
+      machine.init(rootState, initialParams, initialQuery);
+
+      var transition = machine.createTransition(bazState, params, query);
+
+      expect(transition._tasks.length).to.equal(3);
+      expect(transition._exiting.length).to.equal(0);
+
+      expect(rootState.beforeEnter.called).to.equal(false);
+      expect(rootState.beforeUpdate.called).to.equal(false);
+      expect(rootState.beforeExit.called).to.equal(false);
+
+      expect(appState.beforeEnter.calledOnce).to.equal(true);
+      expect(fooState.beforeEnter.calledOnce).to.equal(true);
+      expect(barState.beforeEnter.calledOnce).to.equal(true);
+      expect(bazState.beforeEnter.calledOnce).to.equal(true);
+    });
+
+
+    it('should create a transition from "baz" to "app"', function () {
+
+      machine.init(bazState, {}, {});
+
+      var transition = machine.createTransition(appState, {}, {});
+
+      expect(transition._tasks.length).to.equal(0);
+      expect(transition._exiting.length).to.equal(3);
+
+      expect(appState.beforeEnter.called).to.equal(false);
+      expect(appState.beforeUpdate.called).to.equal(false);
+      expect(appState.beforeExit.calledOnce).to.equal(false);
+
+      expect(fooState.beforeEnter.called).to.equal(false);
+      expect(fooState.beforeUpdate.called).to.equal(false);
+      expect(fooState.beforeExit.calledOnce).to.equal(true);
+
+      expect(barState.beforeEnter.called).to.equal(false);
+      expect(barState.beforeUpdate.called).to.equal(false);
+      expect(barState.beforeExit.calledOnce).to.equal(true);
+
+      expect(bazState.beforeEnter.called).to.equal(false);
+      expect(bazState.beforeUpdate.called).to.equal(false);
+      expect(bazState.beforeExit.calledOnce).to.equal(true);
+    });
+
+
+    it('should create a transition from "baz" to "qux"', function () {
+
+      machine.init(bazState, {}, {});
+
+      var transition = machine.createTransition(quxState, {}, {});
+
+      expect(transition._tasks.length).to.equal(0);
+      expect(transition._exiting.length).to.equal(4);
+
+      expect(appState.beforeEnter.called).to.equal(false);
+      expect(appState.beforeUpdate.called).to.equal(false);
+      expect(appState.beforeExit.calledOnce).to.equal(true);
+
+      expect(fooState.beforeEnter.called).to.equal(false);
+      expect(fooState.beforeUpdate.called).to.equal(false);
+      expect(fooState.beforeExit.calledOnce).to.equal(true);
+
+      expect(barState.beforeEnter.called).to.equal(false);
+      expect(barState.beforeUpdate.called).to.equal(false);
+      expect(barState.beforeExit.calledOnce).to.equal(true);
+
+      expect(bazState.beforeEnter.called).to.equal(false);
+      expect(bazState.beforeUpdate.called).to.equal(false);
+      expect(bazState.beforeExit.calledOnce).to.equal(true);
+
+      expect(quxState.beforeEnter.calledOnce).to.equal(true);
+      expect(quxState.beforeUpdate.called).to.equal(false);
+      expect(quxState.beforeExit.called).to.equal(false);
     });
 
   });
 
 
   describe('.transitionTo(stateOrName, params, query, options)', function () {
-
-    var rootState, appState, fooState, barState, bazState, quxState, quuxState;
-    var initialParams, initialQuery;
-
-    beforeEach(function () {
-
-      rootState = registry.$root;
-      initialParams = {};
-      initialQuery = {};
-
-      var states = [
-
-        appState = registry
-          .add('app', {
-            path: '/'
-          }),
-
-        fooState = registry
-          .add('app.foo', {
-            path: 'foo/:fooParam',
-            resolve: {
-              fooResolve: sinon.spy()
-            }
-          }),
-
-        barState = registry
-          .add('app.foo.bar', {
-            path: 'bar?barQuery',
-            resolve: {
-              barResolve: sinon.spy(function (params) {
-
-                return params.fooParam;
-              })
-            }
-          }),
-
-        bazState = registry
-          .add('app.foo.bar.baz', {
-            path: '/baz/:bazParam',
-            resolve: {
-              bazResolve: ['barResolve@app.foo.bar', sinon.spy()]
-            }
-          }),
-
-        quxState = registry
-          .add('qux', {
-            path: '/qux'
-          }),
-
-        quuxState = registry
-          .add('quux', {
-            parent: 'qux',
-            path: '/:quuxParam',
-            resolve: {
-              quuxResolve: sinon.spy()
-            }
-          })
-      ];
-
-      states.forEach(function (state) {
-
-        resolves.addResolvesTo(state);
-      });
-
-    });
-
 
     it('should transition from "root" to "app"', function (done) {
 
@@ -161,7 +308,104 @@ describe('stateMachine', function () {
     });
 
 
-    it('should rethrow any unhandeled resolve error', function () {
+
+    it('should transition from "root" to "foo"', function (done) {
+
+      machine.init(rootState, initialParams, initialQuery);
+
+      var params = { fooParam: '42' };
+      var query = {};
+
+      return machine.transitionTo(fooState, params, query)
+        .then(function () {
+
+          expect(fooState.resolve.fooResolve.called).to.equal(true);
+          expect(machine.$state.current).to.equal(fooState);
+          expect(machine.$state.params).to.equal(params);
+          expect(machine.$state.query).to.equal(query);
+          return done();
+        });
+    });
+
+
+    it('should transition from "root" to "bar"', function (done) {
+
+      machine.init(rootState, initialParams, initialQuery);
+
+      var params = { fooParam: '42' };
+      var query = { barQuery: '7' };
+
+      return machine.transitionTo(barState, params, query)
+        .then(function () {
+
+          expect(fooState.resolve.fooResolve.called).to.equal(true);
+          expect(barState.resolve.barResolve.called).to.equal(true);
+          expect(machine.$state.current).to.equal(barState);
+          expect(machine.$state.params).to.equal(params);
+          expect(machine.$state.query).to.equal(query);
+          return done();
+        });
+    });
+
+
+    it('should transition from "foo" to "bar"', function (done) {
+
+      machine.init(fooState, { fooParam: '42' }, {});
+      machine.cache.set('fooResolve@app.foo', '42');
+
+      var params = { fooParam: '42' };
+      var query = { barQuery: '7' };
+
+      return machine
+        .transitionTo(barState, params, query)
+        .then(function () {
+
+          expect(fooState.resolve.fooResolve.called).to.equal(false);
+          expect(barState.resolve.barResolve.called).to.equal(true);
+          expect(machine.$state.current).to.equal(barState);
+          expect(machine.$state.params).to.equal(params);
+          expect(machine.$state.query).to.equal(query);
+          return done();
+        });
+    });
+
+
+    it('should transition from "foo" to "baz"', function () {
+
+      machine.init(fooState, { fooParam: '42' }, {});
+
+      var params = { fooParam: '42', bazParam: '50' };
+      var query = { barQuery: '7' };
+
+      return machine.transitionTo(bazState, params, query);
+
+    });
+
+
+    it('should transition from "baz" to "quux"', function (done) {
+
+      machine.init(
+        bazState, { fooParam: '42', bazParam: '24' }, { barQuery: '7' }
+      );
+
+      var params = { quuxParam: 'fin' };
+      var query = {};
+
+      return machine
+        .transitionTo(quuxState, params, query)
+        .then(function () {
+
+          expect(fooState.resolve.fooResolve.called).to.equal(false);
+          expect(quuxState.resolve.quuxResolve.calledOnce).to.equal(true);
+          expect(machine.$state.current).to.equal(quuxState);
+          expect(machine.$state.params).to.equal(params);
+          expect(machine.$state.query).to.equal(query);
+          return done();
+        });
+    });
+
+
+    it('should rethrow any unhandled resolve error', function () {
 
       machine.init(rootState, initialParams, initialQuery);
 
@@ -180,7 +424,7 @@ describe('stateMachine', function () {
     });
 
 
-    it('should not rethrow a handled resolve error', function () {
+    it('should not reject a handled resolve error', function () {
 
       machine.init(rootState, initialParams, initialQuery);
 
@@ -207,106 +451,9 @@ describe('stateMachine', function () {
     });
 
 
-    it('should transition from "root" to "foo"', function (done) {
+    it('should not run resolves if canceled by hook', function (done) {
 
-      machine.init(rootState, initialParams, initialQuery);
-
-      var params = { fooParam: '42' };
-      var query = {};
-
-      return machine
-        .transitionTo(fooState, params, query)
-        .then(function () {
-
-          expect(fooState.resolve.fooResolve)
-            .to.have.been.calledWithExactly({ fooParam: '42' }, query);
-          expect(machine.$state.current).to.equal(fooState);
-          expect(machine.$state.params).to.equal(params);
-          expect(machine.$state.query).to.equal(query);
-          return done();
-        });
-    });
-
-
-    it('should transition from "foo" to "bar"', function (done) {
-
-      machine.init(fooState, { fooParam: '42' }, {});
-
-      var params = { fooParam: '42' };
-      var query = { barquery: '7' };
-
-      return machine
-        .transitionTo(barState, params, query)
-        .then(function () {
-
-          expect(fooState.resolve.fooResolve.called).to.equal(false);
-          expect(barState.resolve.barResolve)
-            .to.have.been.calledWithExactly(params, query);
-          expect(machine.$state.current).to.equal(barState);
-          expect(machine.$state.params).to.equal(params);
-          expect(machine.$state.query).to.equal(query);
-          return done();
-        });
-    });
-
-
-    it('should transition from "foo" to "baz"', function (done) {
-
-      machine.init(fooState, { fooParam: '42' });
-
-      var params = { fooParam: '42', bazParam: '50' };
-      var query = { barQuery: '7' };
-
-      return machine
-        .transitionTo(bazState, params, query)
-        .then(function () {
-
-          expect(fooState.resolve.fooResolve.called).to.equal(false);
-          expect(barState.resolve.barResolve)
-            .to.have.been
-            .calledWithExactly({ fooParam: '42' }, { barQuery: '7' });
-          expect(bazState.resolve.bazResolve[1])
-            .to.have.been
-            .calledWithExactly(
-              '42', { fooParam: '42', bazParam: '50' }, { barQuery: '7' }
-            );
-          expect(machine.$state.current).to.equal(bazState);
-          expect(machine.$state.params).to.equal(params);
-          expect(machine.$state.query).to.equal(query);
-          return done();
-        });
-    });
-
-
-    it('should transition from "baz" to "quux"', function (done) {
-
-      machine.init(
-        bazState, { fooParam: '42', bazParam: '24' }, { barQuery: '7' }
-      );
-
-      var params = { quuxParam: 'fin' };
-      var query = {};
-
-      return machine
-        .transitionTo(quuxState, params, query)
-        .then(function () {
-
-          expect(fooState.resolve.fooResolve.called).to.equal(false);
-          expect(quuxState.resolve.quuxResolve)
-            .to.have.been.calledWithExactly({ quuxParam: 'fin' }, query);
-          expect(machine.$state.current).to.equal(quuxState);
-          expect(machine.$state.params).to.equal(params);
-          expect(machine.$state.query).to.equal(query);
-          return done();
-        });
-    });
-
-
-    it('should not run resolves if immediately canceled', function (done) {
-
-      sinon.spy(resolves, 'runTasks');
-
-      events.notify = function (event, transition) {
+      appState.beforeEnter = function (transition) {
 
         transition.cancel();
       };
@@ -317,7 +464,7 @@ describe('stateMachine', function () {
         .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
         .then(function () {
 
-          expect(resolves.runTasks.called).to.equal(false);
+          expect(fooState.resolve.fooResolve.called).to.equal(false);
           expect(machine.$state.current).to.equal(rootState);
           expect(machine.$state.params).to.deep.equal({});
           expect(machine.$state.query).to.deep.equal({});
@@ -326,21 +473,20 @@ describe('stateMachine', function () {
     });
 
 
-    it('should not compose views if transition is canceled', function (done) {
+    it('should not run resolves if canceled by listener', function (done) {
+
+      events.notify = function (eventName, transition) {
+
+        transition.cancel();
+      };
 
       machine.init(rootState, {}, {});
 
-      sinon.spy(views, 'compose');
-
-      var transitionPromise = machine
-        .transitionTo(fooState, { fooParam: '42' }, {});
-
-      machine.$state.transition.cancel();
-
-      return transitionPromise
+      return machine
+        .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
         .then(function () {
 
-          expect(views.compose.called).to.equal(false);
+          expect(fooState.resolve.fooResolve.called).to.equal(false);
           expect(machine.$state.current).to.equal(rootState);
           expect(machine.$state.params).to.deep.equal({});
           expect(machine.$state.query).to.deep.equal({});

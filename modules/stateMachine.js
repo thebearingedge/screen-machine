@@ -3,98 +3,116 @@
 
 var Transition = require('./Transition');
 
-
 module.exports = stateMachine;
 
 
-function stateMachine(events, registry, resolves) {
-
-  var Promise = resolves.Promise;
+function stateMachine(events, registry, Promise) {
 
   return {
 
     $state: {
       current: null,
       params: null,
-      query: null,
-      transition: null
+      query: null
     },
 
 
-    init: function init(state, params, query) {
+    transition: null,
+
+
+    init: function (state, params, query) {
 
       this.$state.current = state;
       this.$state.params = params;
       this.$state.query = query;
-      this.$state.transition = null;
+      this.transition = null;
 
       return this;
     },
 
 
-    transitionTo: function (stateOrName, toParams, toQuery, options) {
+    createTransition: function (stateOrName, params, query, options) {
 
       options || (options = {});
 
       var toState = typeof stateOrName === 'string'
         ? registry.states[stateOrName]
         : stateOrName;
+
+      var fromState = this.$state.current;
       var fromParams = this.$state.params;
       var fromQuery = this.$state.query;
-      var resolveCache = resolves.getCache();
-      var transition = new Transition(this, toState, toParams, toQuery);
+      var cache = this.cache;
 
-      this.$state.transition = transition;
+      var fromBranch = fromState.getBranch();
+      var toBranch = toState.getBranch();
 
-      events.notify('stateChangeStart', transition);
+      var exiting = fromBranch.filter(exitingFrom(toState));
+      var entering, updating;
+      var toUpdate = shouldUpdate(fromParams, fromQuery, params, query, cache);
+
+      var pivotState = exiting[0]
+        ? exiting[0].getParent()
+        : null;
+
+      if (pivotState) {
+
+        entering = toBranch.slice(toBranch.indexOf(pivotState) + 1);
+        updating = toBranch
+          .slice(0, entering.indexOf(pivotState) + 1)
+          .filter(toUpdate);
+      }
+      else {
+
+        entering = toBranch.slice(toBranch.indexOf(fromState) + 1);
+        updating = fromBranch.filter(toUpdate);
+      }
+
+      var transition = new Transition(this, toState, params, query, options);
+      var resolves = entering
+        .concat(updating)
+        .reduce(collectResolves, []);
+
+      transition.prepare(resolves, cache, exiting, Promise);
+      this.transition = transition;
+
+      exiting.reverse().forEach(callHook('beforeExit', transition));
+      updating.forEach(callHook('beforeUpdate', transition));
+      entering.forEach(callHook('beforeEnter', transition));
+
+      return transition;
+    },
+
+
+    transitionTo: function () {
+
+      var deferred = new Deferred();
+      var transition = this.createTransition.apply(this, arguments);
 
       if (transition.isCanceled()) {
 
         events.notify('stateChangeCanceled', transition);
+        deferred.resolve(transition);
+        return deferred.promise;
+      }
+      else {
 
-        return Promise.resolve(transition);
+        events.notify('stateChangeStart', transition);
       }
 
-      var tasks = toState
-        .getBranch()
-        .filter(function (state) {
-
-          return state.isStale(fromParams, toParams, fromQuery, toQuery) ||
-                 state.shouldResolve(resolveCache.$store);
-        })
-        .reduce(function (resolves, state) {
-
-          return resolves.concat(state.getResolves());
-        }, [])
-        .map(function (resolve) {
-
-          return resolves.createTask(resolve, toParams, toQuery, resolveCache);
-        });
-
-      return resolves
-        .runTasks(tasks, resolveCache, transition)
-        .then(function (completed) {
+      transition
+        .attempt()
+        .then(function () {
 
           if (transition.isCanceled()) {
 
             events.notify('stateChangeCanceled', transition);
-
-            return Promise.resolve(transition);
+            return deferred.resolve(transition);
           }
 
-          completed
-            .forEach(function (task) {
-
-              task.commit();
-            });
-
-          transition.resolved = resolveCache.$store;
-          transition.finish();
-          events.notify('stateChangeSuccess', transition);
-
-          return Promise.resolve(transition);
-
-        }.bind(this))
+          transition._finish();
+          return deferred.resolve(transition);
+        })
         .catch(function (err) {
 
           transition.setError(err);
@@ -102,12 +120,83 @@ function stateMachine(events, registry, resolves) {
 
           if (transition.isHandled()) {
 
-            return Promise.resolve(transition);
+            return deferred.resolve(transition);
           }
 
-          throw err;
+          return deferred.reject(err);
         });
+
+      return deferred.promise;
+    },
+
+    cache: {
+
+      $store: {},
+
+      get: function get(resolveId) {
+
+        return this.$store[resolveId];
+      },
+
+      set: function set(resolveId, result) {
+
+        this.$store[resolveId] = result;
+      },
+
+      unset: function unset(resolveId) {
+
+        delete this.$store[resolveId];
+      }
     }
 
+  };
+}
+
+
+function Deferred() {
+
+  this.promise = new Promise(function (resolve, reject) {
+
+    this._resolve = resolve;
+    this._reject = reject;
+  }.bind(this));
+
+  this.resolve = function (result) { this._resolve(result); };
+  this.reject = function (reason) { this._reject(reason); };
+}
+
+
+function shouldUpdate(fromParams, fromQuery, params, query, cache) {
+
+  return function toUpdate(activeState) {
+
+    return activeState.isStale(fromParams, fromQuery, params, query) ||
+           activeState.shouldResolve(cache);
+  };
+}
+
+function exitingFrom(destination) {
+
+  return function isExiting(activeState) {
+
+    return !destination.contains(activeState);
+  };
+}
+
+
+function collectResolves(resolves, state) {
+
+  return resolves.concat(state.getResolves());
+}
+
+
+function callHook(hook, transition) {
+
+  return function callTransitionHook(state) {
+
+    if (typeof state[hook] === 'function') {
+
+      state[hook].call(state, transition);
+    }
   };
 }

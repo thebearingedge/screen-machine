@@ -1,10 +1,11 @@
 
 'use strict';
 
+var assign = require('object-assign');
 var urlWatcher = require('./modules/urlWatcher');
 var eventBus = require('./modules/eventBus');
 var viewTree = require('./modules/viewTree');
-var resolveService = require('./modules/resolveService');
+var resolveFactory = require('./modules/resolveFactory');
 var router = require('./modules/router');
 var stateRegistry = require('./modules/stateRegistry');
 var stateMachine = require('./modules/stateMachine');
@@ -23,9 +24,9 @@ function screenMachine(config) {
   var routes = router({ html5: config.html5 });
   var Component = config.components(document, url, events, routes);
   var views = viewTree(document, Component);
-  var resolves = resolveService(Promise);
-  var registry = stateRegistry(views, resolves, routes);
-  var machine = stateMachine(events, registry, resolves);
+  var resolves = resolveFactory(Promise);
+  var registry = stateRegistry();
+  var machine = stateMachine(events, registry, Promise);
 
   return {
 
@@ -40,7 +41,7 @@ function screenMachine(config) {
 
       if (registered.resolve) {
 
-        resolves.addResolvesTo(registered);
+        resolves.addTo(registered);
       }
 
       views.processState(registered);
@@ -53,15 +54,13 @@ function screenMachine(config) {
 
       machine.init(registry.$root, {});
       views.mountRoot();
-      url.subscribe(this.fromUrl.bind(this));
+      url.subscribe(this._watchUrl.bind(this));
 
       return this;
     },
 
 
-    fromUrl: function fromUrl(url) {
-
-      events.notify('routeChange');
+    _watchUrl: function _watchUrl(url) {
 
       var args = routes.find(url);
 
@@ -69,7 +68,9 @@ function screenMachine(config) {
 
         events.notify('routeNotFound');
       }
-      if (args) {
+      else {
+
+        events.notify('routeChange');
 
         args.push({ routeChange: true });
 
@@ -85,11 +86,14 @@ function screenMachine(config) {
       return machine.transitionTo.apply(machine, arguments)
         .then(function (transition) {
 
-          if (transition.isCanceled()) return;
+          if (transition.isCanceled()) {
+
+            return transition;
+          }
 
           var state = transition.toState;
           var components = state.getAllComponents();
-          var resolved = transition.resolved;
+          var resolved = assign({}, machine.cache.$store);
 
           views.compose(components, resolved, params, query);
 
@@ -99,7 +103,7 @@ function screenMachine(config) {
             events.notify('routeChange');
           }
 
-          transition.cleanup();
+          return transition._cleanup();
         });
     },
 

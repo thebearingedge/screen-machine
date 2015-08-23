@@ -1810,6 +1810,7 @@ module.exports = function (machine) {
       component: 'home',
       resolve: {
         today: function () {
+
           return new Date();
         }
       },
@@ -1823,8 +1824,19 @@ module.exports = function (machine) {
 module.exports = function (machine) {
 
   machine
+
     .state('viewLibs', {
       path: 'view-libraries',
+      resolve: {
+        libs: function () {
+          console.log('fetching libs...');
+          return [
+            { libName: 'riot' },
+            { libName: 'react' },
+            { libName: 'ractive' }
+          ];
+        }
+      },
       views: {
         '@': { // <- render into root View
           component: 'libraries'
@@ -1834,13 +1846,22 @@ module.exports = function (machine) {
         }
       }
     })
+
     .state('viewLibs.library', {
       path: ':libName',
       component: 'library-description', // <- render into 'libraries' component
       resolve: {
-        content: function (params) {
-          return params.libName + ' is super-cool';
-        }
+        content: ['libs@viewLibs', function (libs, params) {
+          console.log('fetching description for ' + params.libName + '...');
+
+          var lib = libs
+            .filter(function (lib) {
+
+              return lib.libName === params.libName;
+            })[0];
+
+          return lib.libName + ' is super-cool.';
+        }]
       }
     });
 };
@@ -1863,19 +1884,12 @@ riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The curren
 
   
 });
-riot.tag('libraries-landing', '<p>This is the "Libraries" landing page.</p>', function(opts) {
-
+riot.tag('libraries-landing', '<p>This is the "Libraries" landing page.</p> <sm-link to="home">home</sm-link>', function(opts) {
 
 });
-riot.tag('libraries', '<h2>This is the view libraries page</h2>  <ul> <li style="display: inline"> <sm-link to="viewLibs">none</sm-link> </li> <li each="{ libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ this }">{ libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
+riot.tag('libraries', '<h2>This is the view libraries page</h2> <ul> <li style="display: inline"> <sm-link to="viewLibs">none</sm-link> </li> <li each="{ opts.libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ this }">{ libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
 
 
-    this.libs = [
-      { libName: 'riot' },
-      { libName: 'react' },
-      { libName: 'ractive' }
-    ];
-  
 });
 riot.tag('library-description', '<h3>Have you heard of { opts.params.libName }?</h3> <p>{ opts.content }</p>', function(opts) {
 
@@ -1893,14 +1907,13 @@ var riot = global.riot = require('riot');
 var screenMachine = require('../../../screenMachine');
 var riotComponent = require('../../../riotComponent');
 var EventEmitter = require('events').EventEmitter;
-var Promise = require('native-promise-only');
+var NativePromise = require('native-promise-only');
 var emitter = new EventEmitter();
-
 
 var config = {
   components: riotComponent(riot),
   document: document,
-  promises: Promise,
+  promises: NativePromise,
   events: {
     emitter: emitter,
     trigger: 'emit',
@@ -1980,180 +1993,154 @@ BaseComponent.prototype.load = function () {
 
 'use strict';
 
-module.exports = DependentResolve;
+var assign = require('object-assign');
+
+module.exports = BaseResolve;
 
 
-function DependentResolve(resolveKey, state, cache) {
-
-  var resolveDef = state.resolve[resolveKey];
-  var invokableIndex = resolveDef.length - 1;
+function BaseResolve(resolveKey, state, Promise) {
 
   this.key = resolveKey;
   this.id = resolveKey + '@' + state.name;
-  this.state = state;
-  this.cache = cache;
-  this.invokable = resolveDef[invokableIndex];
-  this.injectables = resolveDef
-    .slice(0, invokableIndex)
-    .map(function (injectable) {
-
-      return injectable.indexOf('@') > -1
-        ? injectable
-        : injectable + '@' + state.name;
-    });
+  this.Promise = Promise;
   this.cacheable = state.cacheable === false
     ? false
     : true;
 }
 
 
-DependentResolve.prototype.execute = function (params, query, dependencies) {
+BaseResolve.prototype.clear = function () {
 
-  var args = this
-    .injectables
-    .map(function (injectableId) {
+  if (this.cacheable) {
 
-      return dependencies[injectableId];
-    })
-    .concat(params, query);
-
-  return this.invokable.apply(null, args);
-};
-
-
-DependentResolve.prototype.clearCache = function () {
-
-  this.cache.unset(this.id);
-};
-
-},{}],11:[function(require,module,exports){
-
-'use strict';
-
-
-module.exports = ResolveTask;
-
-
-function ResolveTask(resolve, params, query, resolveCache, Promise) {
-
-  this.resolve = resolve;
-  this.id = resolve.id;
-  this.params = params;
-  this.query = query;
-  this.cache = resolveCache;
-  this.Promise = Promise;
-  this.waitingFor = resolve.injectables
-    ? resolve.injectables.slice()
-    : [];
-}
-
-
-ResolveTask.prototype.dependencies = undefined;
-
-
-ResolveTask.prototype.isWaitingFor = function (dependencyId) {
-
-  return this.waitingFor.indexOf(dependencyId) > -1;
-};
-
-
-ResolveTask.prototype.setDependency = function (dependencyId, result) {
-
-  this.dependencies || (this.dependencies = {});
-  this.dependencies[dependencyId] = result;
-  this.waitingFor.splice(this.waitingFor.indexOf(dependencyId), 1);
-
-  return this;
-};
-
-
-ResolveTask.prototype.isReady = function () {
-
-  return !this.waitingFor.length;
-};
-
-
-ResolveTask.prototype.run = function (transition, queue, complete, wait) {
-
-  if (transition.isCanceled()) {
-
-    return this.Promise.resolve();
+    this.cache.unset(this.id);
   }
+};
 
-  queue.splice(queue.indexOf(this), 1);
 
-  return this
-    .exec()
-    .then(function (result) {
+BaseResolve.prototype.createTask = function (params, query, transition, cache) {
 
-      this.result = result;
-      complete.push(this);
+  this.cache = cache;
 
-      if (complete.length === wait) {
 
-        return this.Promise.resolve();
+  return assign({}, this.taskDelegate, {
+    id: this.id,
+    resolve: this,
+    cache: cache,
+    params: params,
+    query: query,
+    Promise: this.Promise,
+    waitingFor: this.injectables
+      ? this.injectables.slice()
+      : [],
+    transition: transition
+  });
+};
+
+
+BaseResolve.prototype.taskDelegate = {
+
+  isWaitingFor: function (dependencyId) {
+
+    return this.waitingFor.indexOf(dependencyId) > -1;
+  },
+
+
+  isReady: function () {
+
+    return !this.waitingFor.length;
+  },
+
+
+  setDependency: function (dependencyId, result) {
+
+    this.dependencies || (this.dependencies = {});
+    this.dependencies[dependencyId] = result;
+    this.waitingFor.splice(this.waitingFor.indexOf(dependencyId), 1);
+    return this;
+  },
+
+
+  perform: function () {
+
+    return new this.Promise(function (resolve, reject) {
+
+      var resultOrPromise;
+
+      try {
+        resultOrPromise = this
+          .resolve
+          .execute(this.params, this.query, this.transition, this.dependencies);
+      }
+      catch (e) {
+
+        return reject(e);
       }
 
-      return this.runNext(transition, queue, complete, wait);
+      return resolve(resultOrPromise);
     }.bind(this));
-};
+  },
 
 
-ResolveTask.prototype.runNext = function (transition, queue, complete, wait) {
+  runSelf: function (transition, queue, completed, wait) {
 
-  var nextTasks = queue
-    .filter(function (queued) {
+    var Promise = this.Promise;
 
-      return queued.isWaitingFor(this.id);
-    }, this)
-    .map(function (dependent) {
+    if (transition.isCanceled()) {
 
-      return dependent.setDependency(this.id, this.result);
-    }, this)
-    .filter(function (maybeReady) {
-
-      return maybeReady.isReady();
-    })
-    .map(function (ready) {
-
-      return ready.run(transition, queue, complete, wait);
-    });
-
-  return this.Promise.all(nextTasks);
-};
-
-
-ResolveTask.prototype.exec = function () {
-
-  return new this.Promise(function (resolve, reject) {
-
-    var resultOrPromise;
-
-    try {
-
-      resultOrPromise = this
-        .resolve
-        .execute(this.params, this.query, this.dependencies);
+      return Promise.resolve();
     }
 
-    catch (e) {
+    queue.splice(queue.indexOf(this), 1);
 
-      reject(e);
-    }
+    return this
+      .perform()
+      .then(function (result) {
 
-    resolve(resultOrPromise);
-  }.bind(this));
+        this.result = result;
+        completed.push(this);
+
+        if (completed.length === wait) {
+
+          return Promise.resolve();
+        }
+
+        return this.runDependents(transition, queue, completed, wait);
+      }.bind(this));
+  },
+
+
+  runDependents: function (transition, queue, completed, wait) {
+
+    var nextTasks = queue
+      .filter(function (queued) {
+
+        return queued.isWaitingFor(this.id);
+      }, this)
+      .map(function (dependent) {
+
+        return dependent.setDependency(this.id, this.result);
+      }, this)
+      .filter(function (maybeReady) {
+
+        return maybeReady.isReady();
+      })
+      .map(function (ready) {
+
+        return ready.runSelf(transition, queue, completed, wait);
+      });
+
+    return this.Promise.all(nextTasks);
+  },
+
+
+  commit: function () {
+    this.cache.set(this.id, this.result);
+  }
+
 };
 
-
-ResolveTask.prototype.commit = function () {
-
-  this.cache.set(this.id, this.result);
-
-  return this;
-};
-
-},{}],12:[function(require,module,exports){
+},{"object-assign":26}],11:[function(require,module,exports){
 
 'use strict';
 
@@ -2243,7 +2230,6 @@ Route.prototype.match = function (unmatched) {
   }
 
   unmatched.splice(0, toMatch);
-
   return matched;
 };
 
@@ -2284,38 +2270,7 @@ Route.prototype.generate = function (params) {
   function collectSegment(segment) { allSegments.unshift(segment); }
 };
 
-},{"./routeSegment":20}],13:[function(require,module,exports){
-
-'use strict';
-
-module.exports = SimpleResolve;
-
-
-function SimpleResolve(resolveKey, state, cache) {
-
-  this.key = resolveKey;
-  this.id = resolveKey + '@' + state.name;
-  this.state = state;
-  this.cache = cache;
-  this.invokable = state.resolve[resolveKey];
-  this.cacheable = state.cacheable === false
-    ? false
-    : true;
-}
-
-
-SimpleResolve.prototype.execute = function (params, query) {
-
-  return this.invokable.call(null, params, query);
-};
-
-
-SimpleResolve.prototype.clearCache = function () {
-
-  this.cache.unset(this.id);
-};
-
-},{}],14:[function(require,module,exports){
+},{"./routeSegment":19}],12:[function(require,module,exports){
 
 'use strict';
 
@@ -2421,7 +2376,6 @@ State.prototype.inheritFrom = function (parentNode) {
   this.$querySegments = parentNode.$querySegments.concat(this.$querySegments);
   this.$paramKeys = parentNode.$paramKeys.concat(this.$paramKeys);
   this.$parent = parentNode;
-
   return this;
 };
 
@@ -2456,7 +2410,6 @@ State.prototype.addResolve = function (resolve) {
 
   this.$resolves || (this.$resolves = []);
   this.$resolves.push(resolve);
-
   return this;
 };
 
@@ -2466,19 +2419,6 @@ State.prototype.getResolves = function () {
   return this.$resolves
     ? this.$resolves.slice()
     : [];
-};
-
-
-State.prototype.getResolveResults = function (resolveCache) {
-
-  return this
-    .$resolves
-    .reduce(function (results, resolve) {
-
-      results[resolve.key] = resolveCache.get(resolve.id);
-
-      return results;
-    }, {});
 };
 
 
@@ -2495,7 +2435,7 @@ State.prototype.filterParams = function (params) {
 };
 
 
-State.prototype.isStale = function (oldParams, newParams, oldQuery, newQuery) {
+State.prototype.isStale = function (oldParams, oldQuery, newParams, newQuery) {
 
   var staleParams = this
     .$paramKeys
@@ -2524,12 +2464,11 @@ State.prototype.sleep = function () {
     });
   }
 
-
   if (this.$resolves) {
 
     this.$resolves.forEach(function (resolve) {
 
-      resolve.clearCache();
+      resolve.clear();
     });
   }
 
@@ -2541,7 +2480,6 @@ State.prototype.addView = function (view) {
 
   this.$views || (this.$views = []);
   this.$views.push(view);
-
   return this;
 };
 
@@ -2558,7 +2496,6 @@ State.prototype.addComponent = function (component) {
 
   this.$components || (this.$components = []);
   this.$components.push(component);
-
   return this;
 };
 
@@ -2583,18 +2520,20 @@ State.prototype.getAllComponents = function () {
 };
 
 
-State.prototype.shouldResolve = function (resolved) {
+State.prototype.shouldResolve = function (cache) {
 
-  if (!this.cacheable) return true;
+  if (!this.$resolves) return false;
 
-  return this.$resolves && this.$resolves.length &&
-    this.$resolves.some(function (resolve) {
+  if (this.cacheable === false) return true;
 
-      return !(resolve.id in resolved);
+  return this.$resolves.some(function (resolve) {
+
+      return !(resolve.id in cache.$store);
     });
 };
 
-},{"xtend/mutable":27}],15:[function(require,module,exports){
+
+},{"xtend/mutable":27}],13:[function(require,module,exports){
 
 'use strict';
 
@@ -2602,9 +2541,11 @@ State.prototype.shouldResolve = function (resolved) {
 module.exports = Transition;
 
 
-function Transition(machine, toState, toParams, toQuery) {
+function Transition(machine, toState, toParams, toQuery, options) {
 
-  this.machine = machine;
+  options || (options = {});
+
+  this._machine = machine;
   this.toState = toState;
   this.toParams = toParams;
   this.toQuery = toQuery;
@@ -2614,85 +2555,86 @@ function Transition(machine, toState, toParams, toQuery) {
 }
 
 
-Transition.prototype.canceled = false;
-Transition.prototype.succeeded = false;
 Transition.prototype.error = null;
-Transition.prototype.handled = null;
-Transition.prototype.resolved = null;
+Transition.prototype._canceled = false;
+Transition.prototype._succeeded = false;
+Transition.prototype._handled = null;
+Transition.prototype._tasks = null;
 
 
 Transition.prototype.setError = function (err) {
 
-  this.canceled = true;
-  this.handled = false;
+  this._canceled = true;
+  this._handled = false;
   this.error = err;
+  return this;
 };
 
 
 Transition.prototype.errorHandled = function () {
 
-  this.handled = true;
+  this._handled = true;
+  return this;
 };
 
 
 Transition.prototype.isHandled = function () {
 
-  return this.handled;
+  return this._handled;
 };
 
 
-Transition.prototype.isCanceled = function isCanceled() {
+Transition.prototype.isCanceled = function () {
 
-  if (this.succeeded) return false;
+  if (this._succeeded) return false;
 
-  if (!this.canceled && this !== this.machine.$state.transition) {
+  if (!this._canceled && this !== this._machine.transition) {
 
-    this.canceled = true;
+    this._canceled = true;
   }
 
-  return this.canceled;
+  return this._canceled;
 };
 
 
-Transition.prototype.isSuccessful = function isSuccessful() {
+Transition.prototype.isSuccessful = function () {
 
-  return this.succeeded;
+  return this._succeeded;
 };
 
 
 Transition.prototype.cancel = function () {
 
-  this.canceled = true;
+  this._canceled = true;
 
   return this;
 };
 
 
-Transition.prototype.finish = function () {
+Transition.prototype._finish = function () {
 
-  this.succeeded = true;
-  this.machine.init(this.toState, this.toParams, this.toQuery);
+  this._succeeded = true;
+  this._machine.init(this.toState, this.toParams, this.toQuery);
+  this._tasks.forEach(function (task) { return task.commit(); });
 };
 
 
-Transition.prototype.cleanup = function () {
+Transition.prototype._cleanup = function () {
 
-  this.fromState
-    .getBranch()
-    .filter(function (state) {
+  this
+    ._exiting
+    .forEach(function (exited) {
 
-      return !this.toState.contains(state);
-    }, this)
-    .forEach(function (exiting) {
-
-      exiting.sleep();
+      exited.sleep();
     });
+
+  return this;
 };
 
 
 Transition.prototype.redirect = function () {
 
-  return this.machine.transitionTo.apply(this.machine, arguments);
+  return this._machine.transitionTo.apply(this._machine, arguments);
 };
 
 
@@ -2701,10 +2643,114 @@ Transition.prototype.retry = function () {
   return this.redirect(this.toState, this.toParams, this.toQuery);
 };
 
-},{}],16:[function(require,module,exports){
+
+Transition.prototype.prepare = function (resolves, cache, exiting, Promise) {
+
+  var tasks = this._tasks = resolves
+    .map(function (resolve) {
+
+      return resolve.createTask(this.toParams, this.toQuery, this, cache);
+    }, this);
+  this._exiting = exiting;
+  this._Promise = Promise;
+
+  if (!tasks.length) return this;
+
+  var graph = tasks
+    .reduce(function (graph, task) {
+
+      graph[task.id] = task.waitingFor;
+
+      return graph;
+    }, {});
+
+  tasks
+    .filter(function (task) {
+
+      return !task.isReady();
+    })
+    .forEach(function (notReady) {
+
+      notReady
+        .waitingFor
+        .filter(function (dependency) {
+
+          return !(dependency in graph);
+        })
+        .forEach(function (absent) {
+
+          var cached = cache.get(absent);
+
+          notReady.setDependency(absent, cached);
+        });
+    });
+
+  var VISITING = 1;
+  var OK = 2;
+  var visited = {};
+  var stack = [];
+  var taskId;
+
+  for (taskId in graph) {
+
+    visit(taskId);
+  }
+
+  return this;
+
+
+  function visit(taskId) {
+
+    if (visited[taskId] === OK) return;
+
+    stack.push(taskId);
+
+    if (visited[taskId] === VISITING) {
+
+      stack.splice(0, stack.indexOf(taskId));
+      throw new Error('Cyclic resolve dependency: ' + stack.join(' -> '));
+    }
+
+    visited[taskId] = VISITING;
+    graph[taskId].forEach(visit);
+    stack.pop();
+    visited[taskId] = OK;
+  }
+};
+
+
+Transition.prototype.attempt = function () {
+
+  var Promise = this._Promise;
+  var queue = this._tasks.slice();
+  var wait = queue.length;
+
+  if (!wait) {
+
+    return Promise.resolve(completed);
+  }
+
+  var completed = [];
+  var toRun = queue
+    .filter(function (task) {
+
+      return task.isReady();
+    })
+    .map(function (ready) {
+
+      return ready.runSelf(this, queue, completed, wait);
+    }, this);
+
+  return Promise.all(toRun)
+    .then(function () {
+
+      return this;
+    }.bind(this));
+};
+
+},{}],14:[function(require,module,exports){
 
 'use strict';
-
 
 module.exports = View;
 
@@ -2739,7 +2785,6 @@ View.prototype.attachWithin = function (node) {
   this.content = this.element
     ? this.element.firstElementChild
     : null;
-
   return this;
 };
 
@@ -2748,7 +2793,6 @@ View.prototype.detach = function () {
 
   this.close();
   this.element = null;
-
   return this;
 };
 
@@ -2757,7 +2801,6 @@ View.prototype.addComponent = function (stateName, component) {
 
   component.setView(this);
   this.components[stateName] = component;
-
   return this;
 };
 
@@ -2768,7 +2811,6 @@ View.prototype.addChild = function (view) {
 
   this.children || (this.children = []);
   this.children.push(view);
-
   return this;
 };
 
@@ -2778,7 +2820,6 @@ View.prototype.setContainer = function (component) {
   component.view.addChild(this);
   component.addChildView(this);
   this.container = component;
-
   return this;
 };
 
@@ -2789,7 +2830,6 @@ View.prototype.loadComponent = function (component) {
 
   this.nextComponent = component;
   this.tree.loadedViews.push(this);
-
   return this;
 };
 
@@ -2813,9 +2853,7 @@ View.prototype.unload = function () {
   var loadedViews = this.tree.loadedViews;
 
   loadedViews.splice(loadedViews.indexOf(this), 1);
-
   this.nextComponent = null;
-
   return this;
 };
 
@@ -2838,7 +2876,6 @@ View.prototype.publish = function (resolved, params, query) {
   if (this.shouldUpdate()) {
 
     this.currentComponent.update(resolved, params, query);
-
     return this;
   }
 
@@ -2855,7 +2892,6 @@ View.prototype.publish = function (resolved, params, query) {
   this.lastComponent = this.currentComponent;
   this.currentComponent = this.nextComponent;
   this.nextComponent = null;
-
   return this;
 };
 
@@ -2886,7 +2922,6 @@ View.prototype.close = function () {
   }
 
   this.content = this.currentComponent = null;
-
   return this;
 };
 
@@ -2903,10 +2938,89 @@ View.prototype.cleanUp = function () {
   return this;
 };
 
-},{}],17:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 
 'use strict';
 
+var assign = require('object-assign');
+var BaseResolve = require('./BaseResolve');
+
+module.exports = DependentResolve;
+
+
+function DependentResolve(resolveKey, state, Promise) {
+
+  BaseResolve.call(this, resolveKey, state, Promise);
+
+  var resolveDef = state.resolve[resolveKey];
+  var invokableIndex = resolveDef.length - 1;
+
+  this.invokable = resolveDef[invokableIndex];
+  this.injectables = resolveDef
+    .slice(0, invokableIndex)
+    .map(function (injectable) {
+
+      return injectable.indexOf('@') > -1
+        ? injectable
+        : injectable + '@' + state.name;
+    });
+
+}
+
+
+assign(DependentResolve.prototype, BaseResolve.prototype, {
+
+  constructor: DependentResolve,
+
+
+  execute: function execute(params, query, transition, dependencies) {
+
+    var args = this
+      .injectables
+      .map(function (injectable) {
+
+        return dependencies[injectable];
+      })
+      .concat(params, query, transition);
+
+    return this.invokable.apply(null, args);
+  }
+
+});
+
+},{"./BaseResolve":10,"object-assign":26}],16:[function(require,module,exports){
+
+'use strict';
+
+var assign = require('object-assign');
+var BaseResolve = require('./BaseResolve');
+
+module.exports = SimpleResolve;
+
+
+function SimpleResolve(resolveKey, state, Promise) {
+
+  BaseResolve.call(this, resolveKey, state, Promise);
+
+  this.invokable = state.resolve[resolveKey];
+}
+
+
+assign(SimpleResolve.prototype, BaseResolve.prototype, {
+
+  constructor: SimpleResolve,
+
+
+  execute: function (params, query, transition) {
+
+    return this.invokable.call(null, params, query, transition);
+  }
+
+});
+
+},{"./BaseResolve":10,"object-assign":26}],17:[function(require,module,exports){
+
+'use strict';
 
 module.exports = eventBus;
 
@@ -2942,227 +3056,40 @@ function eventBus(events) {
 
 'use strict';
 
-var xtend = require('xtend/mutable');
+var SimpleResolve = require('./baseSimpleResolve');
+var DependentResolve = require('./baseDependentResolve');
+
+module.exports = resolveFactory;
 
 
-module.exports = resolveCache;
-
-
-var cache = {
-
-  $store: {},
-
-
-  set: function (resolveId, value) {
-
-    this.$store[resolveId] = value;
-  },
-
-
-  unset: function (resolveId) {
-
-    delete this.$store[resolveId];
-  },
-
-
-  get: function (resolveId) {
-
-    return this.$store[resolveId];
-  },
-
-
-  store: function () {
-
-    return xtend({}, this.$store);
-  }
-
-};
-
-
-function resolveCache(options) {
-
-  var instance;
-
-  if (options && options.stateless) {
-
-    instance = xtend({}, cache);
-    instance.$store = {};
-  }
-  else {
-
-    instance = cache;
-  }
-
-  return instance;
-}
-
-},{"xtend/mutable":27}],19:[function(require,module,exports){
-
-'use strict';
-
-var resolveCache = require('./resolveCache');
-var SimpleResolve = require('./SimpleResolve');
-var DependentResolve = require('./DependentResolve');
-var ResolveTask = require('./ResolveTask');
-
-
-module.exports = resolveService;
-
-
-function resolveService(Promise) {
+function resolveFactory(Promise) {
 
   return {
 
-    Promise: Promise,
-
-
-    stateless: false,
-
-
-    getCache: function () {
-
-      return resolveCache({ stateless: this.stateless });
-    },
-
-
     instantiate: function (resolveKey, state) {
 
-      var cache = resolveCache({ stateless: this.stateless });
-
       return Array.isArray(state.resolve[resolveKey])
-        ? new DependentResolve(resolveKey, state, cache)
-        : new SimpleResolve(resolveKey, state, cache);
+        ? new DependentResolve(resolveKey, state, Promise)
+        : new SimpleResolve(resolveKey, state, Promise);
     },
 
 
-    addResolvesTo: function (state) {
+    addTo: function (state) {
 
-      if (state.resolve != null && typeof state.resolve === 'object') {
+      if (typeof state.resolve !== 'object') return;
 
-        Object
-          .keys(state.resolve)
-          .forEach(function (resolveKey) {
+      Object
+        .keys(state.resolve)
+        .forEach(function (resolveKey) {
 
-            var resolve = this.instantiate(resolveKey, state);
-            state.addResolve(resolve);
-          }, this);
-      }
-
-      return this;
-    },
-
-
-    createTask: function (resolve, params, query, resolveCache) {
-
-      var taskParams = resolve.state.filterParams(params);
-
-      return new ResolveTask(resolve, taskParams, query, resolveCache, Promise);
-    },
-
-
-    runTasks: function (tasks, resolveCache, transition) {
-
-      if (!tasks.length) {
-
-        return Promise.all([]);
-      }
-
-      this.prepareTasks(tasks, resolveCache);
-
-      var queue = tasks.slice();
-      var complete = [];
-      var wait = queue.length;
-
-      var runTasks = queue
-        .filter(function (task) {
-
-          return task.isReady();
-        })
-        .map(function (ready) {
-
-          return ready.run(transition, queue, complete, wait);
-        });
-
-      return Promise.all(runTasks)
-        .then(function () {
-
-          return Promise.resolve(complete);
-        });
-    },
-
-
-    prepareTasks: function (tasks, resolveCache) {
-
-      var graph = tasks
-        .reduce(function (graph, task) {
-
-          graph[task.id] = task.waitingFor;
-
-          return graph;
-        }, {});
-
-      tasks
-        .filter(function (task) {
-
-          return !task.isReady();
-        })
-        .forEach(function (dependent) {
-
-          dependent
-            .waitingFor
-            .filter(function (dependency) {
-
-              return !(dependency in graph);
-            })
-            .forEach(function (absent) {
-
-              var cached = resolveCache.get(absent);
-
-              dependent.setDependency(absent, cached);
-            });
-        });
-
-
-      var VISITING = 1;
-      var OK = 2;
-      var visited = {};
-      var stack = [];
-      var taskId;
-
-      for (taskId in graph) {
-
-        visit(taskId);
-      }
-
-      return this;
-
-
-      function visit(taskId) {
-
-        if (visited[taskId] === OK) return;
-
-        stack.push(taskId);
-
-        if (visited[taskId] === VISITING) {
-
-          stack.splice(0, stack.indexOf(taskId));
-
-          throw new Error('Cyclic resolve dependency: ' + stack.join(' -> '));
-        }
-
-        visited[taskId] = VISITING;
-
-        graph[taskId].forEach(visit);
-
-        stack.pop();
-        visited[taskId] = OK;
-      }
+          state.addResolve(this.instantiate(resolveKey, state));
+        }, this);
     }
 
   };
 }
 
-},{"./DependentResolve":10,"./ResolveTask":11,"./SimpleResolve":13,"./resolveCache":18}],20:[function(require,module,exports){
+},{"./baseDependentResolve":15,"./baseSimpleResolve":16}],19:[function(require,module,exports){
 
 'use strict';
 
@@ -3215,7 +3142,6 @@ Segment.prototype.match = function match(string) {
     var result = {};
 
     result[this.key] = string;
-
     return result;
   }
 
@@ -3241,7 +3167,7 @@ Segment.prototype.interpolate = function interpolate(params) {
   }
 };
 
-},{}],21:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 
 'use strict';
 
@@ -3279,7 +3205,6 @@ module.exports = function routerFactory(options) {
       var route = new Route(name, path);
 
       this.register(route);
-
       return route;
     },
 
@@ -3289,7 +3214,6 @@ module.exports = function routerFactory(options) {
       if (route.path === '/') {
 
         this.routes[route.name] = this.root = route;
-
         return this.flushQueueFor(route);
       }
 
@@ -3302,7 +3226,6 @@ module.exports = function routerFactory(options) {
 
         this.routes[route.name] = route;
         this.root.addChild(route);
-
         return this.flushQueueFor(route);
       }
 
@@ -3317,7 +3240,6 @@ module.exports = function routerFactory(options) {
       this.routes[route.name] = route;
       parentRoute || (parentRoute = this.root);
       parentRoute.addChild(route);
-
       return this.flushQueueFor(route);
     },
 
@@ -3460,104 +3382,122 @@ module.exports = function routerFactory(options) {
   };
 };
 
-},{"./Route":12,"./urlTools":24,"xtend/mutable":27}],22:[function(require,module,exports){
+},{"./Route":11,"./urlTools":23,"xtend/mutable":27}],21:[function(require,module,exports){
 
 'use strict';
 
 var Transition = require('./Transition');
 
-
 module.exports = stateMachine;
 
 
-function stateMachine(events, registry, resolves) {
-
-  var Promise = resolves.Promise;
+function stateMachine(events, registry, Promise) {
 
   return {
 
     $state: {
       current: null,
       params: null,
-      query: null,
-      transition: null
+      query: null
     },
 
 
-    init: function init(state, params, query) {
+    transition: null,
+
+
+    init: function (state, params, query) {
 
       this.$state.current = state;
       this.$state.params = params;
       this.$state.query = query;
-      this.$state.transition = null;
+      this.transition = null;
 
       return this;
     },
 
 
-    transitionTo: function (stateOrName, toParams, toQuery, options) {
+    createTransition: function (stateOrName, params, query, options) {
 
       options || (options = {});
 
       var toState = typeof stateOrName === 'string'
         ? registry.states[stateOrName]
         : stateOrName;
+
+      var fromState = this.$state.current;
       var fromParams = this.$state.params;
       var fromQuery = this.$state.query;
-      var resolveCache = resolves.getCache();
-      var transition = new Transition(this, toState, toParams, toQuery);
+      var cache = this.cache;
 
-      this.$state.transition = transition;
+      var fromBranch = fromState.getBranch();
+      var toBranch = toState.getBranch();
 
-      events.notify('stateChangeStart', transition);
+      var exiting = fromBranch.filter(exitingFrom(toState));
+      var entering, updating;
+      var toUpdate = shouldUpdate(fromParams, fromQuery, params, query, cache);
+
+      var pivotState = exiting[0]
+        ? exiting[0].getParent()
+        : null;
+
+      if (pivotState) {
+
+        entering = toBranch.slice(toBranch.indexOf(pivotState) + 1);
+        updating = toBranch
+          .slice(0, entering.indexOf(pivotState) + 1)
+          .filter(toUpdate);
+      }
+      else {
+
+        entering = toBranch.slice(toBranch.indexOf(fromState) + 1);
+        updating = fromBranch.filter(toUpdate);
+      }
+
+      var transition = new Transition(this, toState, params, query, options);
+      var resolves = entering
+        .concat(updating)
+        .reduce(collectResolves, []);
+
+      transition.prepare(resolves, cache, exiting, Promise);
+      this.transition = transition;
+
+      exiting.reverse().forEach(callHook('beforeExit', transition));
+      updating.forEach(callHook('beforeUpdate', transition));
+      entering.forEach(callHook('beforeEnter', transition));
+
+      return transition;
+    },
+
+
+    transitionTo: function () {
+
+      var deferred = new Deferred();
+      var transition = this.createTransition.apply(this, arguments);
 
       if (transition.isCanceled()) {
 
         events.notify('stateChangeCanceled', transition);
+        deferred.resolve(transition);
+        return deferred.promise;
+      }
+      else {
 
-        return Promise.resolve(transition);
+        events.notify('stateChangeStart', transition);
       }
 
-      var tasks = toState
-        .getBranch()
-        .filter(function (state) {
-
-          return state.isStale(fromParams, toParams, fromQuery, toQuery) ||
-                 state.shouldResolve(resolveCache.$store);
-        })
-        .reduce(function (resolves, state) {
-
-          return resolves.concat(state.getResolves());
-        }, [])
-        .map(function (resolve) {
-
-          return resolves.createTask(resolve, toParams, toQuery, resolveCache);
-        });
-
-      return resolves
-        .runTasks(tasks, resolveCache, transition)
-        .then(function (completed) {
+      transition
+        .attempt()
+        .then(function () {
 
           if (transition.isCanceled()) {
 
             events.notify('stateChangeCanceled', transition);
-
-            return Promise.resolve(transition);
+            return deferred.resolve(transition);
           }
 
-          completed
-            .forEach(function (task) {
-
-              task.commit();
-            });
-
-          transition.resolved = resolveCache.$store;
-          transition.finish();
-          events.notify('stateChangeSuccess', transition);
-
-          return Promise.resolve(transition);
-
-        }.bind(this))
+          transition._finish();
+          return deferred.resolve(transition);
+        })
         .catch(function (err) {
 
           transition.setError(err);
@@ -3565,17 +3505,88 @@ function stateMachine(events, registry, resolves) {
 
           if (transition.isHandled()) {
 
-            return Promise.resolve(transition);
+            return deferred.resolve(transition);
           }
 
-          throw err;
+          return deferred.reject(err);
         });
+
+      return deferred.promise;
+    },
+
+    cache: {
+
+      $store: {},
+
+      get: function get(resolveId) {
+
+        return this.$store[resolveId];
+      },
+
+      set: function set(resolveId, result) {
+
+        this.$store[resolveId] = result;
+      },
+
+      unset: function unset(resolveId) {
+
+        delete this.$store[resolveId];
+      }
     }
 
   };
 }
 
-},{"./Transition":15}],23:[function(require,module,exports){
+
+function Deferred() {
+
+  this.promise = new Promise(function (resolve, reject) {
+
+    this._resolve = resolve;
+    this._reject = reject;
+  }.bind(this));
+
+  this.resolve = function (result) { this._resolve(result); };
+  this.reject = function (reason) { this._reject(reason); };
+}
+
+
+function shouldUpdate(fromParams, fromQuery, params, query, cache) {
+
+  return function toUpdate(activeState) {
+
+    return activeState.isStale(fromParams, fromQuery, params, query) ||
+           activeState.shouldResolve(cache);
+  };
+}
+
+function exitingFrom(destination) {
+
+  return function isExiting(activeState) {
+
+    return !destination.contains(activeState);
+  };
+}
+
+
+function collectResolves(resolves, state) {
+
+  return resolves.concat(state.getResolves());
+}
+
+
+function callHook(hook, transition) {
+
+  return function callTransitionHook(state) {
+
+    if (typeof state[hook] === 'function') {
+
+      state[hook].call(state, transition);
+    }
+  };
+}
+
+},{"./Transition":13}],22:[function(require,module,exports){
 
 'use strict';
 
@@ -3585,9 +3596,12 @@ var State = require('./State');
 module.exports = stateRegistry;
 
 
-function stateRegistry(viewTree) {
+function stateRegistry() {
 
-  var registry = {
+  return {
+
+    $root: new State({ name: '' }),
+
 
     states: {},
 
@@ -3608,7 +3622,6 @@ function stateRegistry(viewTree) {
       var state = new State(definition);
 
       this.register(state);
-
       return state;
     },
 
@@ -3624,7 +3637,6 @@ function stateRegistry(viewTree) {
       }
 
       this.states[state.name] = state.inheritFrom(parentState || this.$root);
-
       return this.flushQueueFor(state);
     },
 
@@ -3633,7 +3645,6 @@ function stateRegistry(viewTree) {
 
       this.queues[parentName] || (this.queues[parentName] = []);
       this.queues[parentName].push(state);
-
       return this;
     },
 
@@ -3651,16 +3662,9 @@ function stateRegistry(viewTree) {
     }
 
   };
-
-  var rootState = registry.$root = new State({ name: '' });
-
-  rootState.addView(viewTree.views['@']);
-  rootState.$pathSegments = [];
-
-  return registry;
 }
 
-},{"./State":14}],24:[function(require,module,exports){
+},{"./State":12}],23:[function(require,module,exports){
 
 'use strict';
 
@@ -3755,7 +3759,7 @@ module.exports = {
 
 };
 
-},{}],25:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 
 'use strict';
 
@@ -3772,12 +3776,12 @@ function urlWatcher(window, options) {
     ? 'popstate'
     : 'hashchange';
 
-  var watcher = {
+  return {
 
     listener: null,
 
 
-    subscribe: function subscribe(onChange) {
+    subscribe: function (onChange) {
 
       this.listener = function () {
 
@@ -3799,19 +3803,19 @@ function urlWatcher(window, options) {
     },
 
 
-    watch: function watch() {
+    watch: function () {
 
       window.addEventListener(windowEvent, this.listener);
     },
 
 
-    ignore: function ignore() {
+    ignore: function () {
 
       window.removeEventListener(windowEvent, this.listener);
     },
 
 
-    get: function get() {
+    get: function () {
 
       var url = windowEvent === 'popstate'
         ? location.pathname + location.search + location.hash
@@ -3821,7 +3825,7 @@ function urlWatcher(window, options) {
     },
 
 
-    push: function push(url) {
+    push: function (url) {
 
       if (windowEvent === 'popstate') {
 
@@ -3836,7 +3840,7 @@ function urlWatcher(window, options) {
     },
 
 
-    replace: function replace(url) {
+    replace: function (url) {
 
       if (windowEvent === 'popstate') {
 
@@ -3859,11 +3863,9 @@ function urlWatcher(window, options) {
     }
 
   };
-
-  return watcher;
 }
 
-},{}],26:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 
 'use strict';
 
@@ -3930,7 +3932,6 @@ function viewTree(document, Component) {
     ensureView: function (viewKey, state) {
 
       viewKey || (viewKey = '@' + (state.parent || ''));
-
       return this.views[viewKey] || this.createView(viewKey, state);
     },
 
@@ -3954,7 +3955,6 @@ function viewTree(document, Component) {
         .sort()[0];
 
       view.setContainer(container);
-
       return view;
     },
 
@@ -3965,7 +3965,6 @@ function viewTree(document, Component) {
 
       view.addComponent(state.name, component);
       state.addComponent(component);
-
       return component;
     },
 
@@ -4034,7 +4033,48 @@ function viewTree(document, Component) {
 
   };
 }
-},{"./View":16}],27:[function(require,module,exports){
+},{"./View":14}],26:[function(require,module,exports){
+/* eslint-disable no-unused-vars */
+'use strict';
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+var propIsEnumerable = Object.prototype.propertyIsEnumerable;
+
+function toObject(val) {
+	if (val === null || val === undefined) {
+		throw new TypeError('Object.assign cannot be called with null or undefined');
+	}
+
+	return Object(val);
+}
+
+module.exports = Object.assign || function (target, source) {
+	var from;
+	var to = toObject(target);
+	var symbols;
+
+	for (var s = 1; s < arguments.length; s++) {
+		from = Object(arguments[s]);
+
+		for (var key in from) {
+			if (hasOwnProperty.call(from, key)) {
+				to[key] = from[key];
+			}
+		}
+
+		if (Object.getOwnPropertySymbols) {
+			symbols = Object.getOwnPropertySymbols(from);
+			for (var i = 0; i < symbols.length; i++) {
+				if (propIsEnumerable.call(from, symbols[i])) {
+					to[symbols[i]] = from[symbols[i]];
+				}
+			}
+		}
+	}
+
+	return to;
+};
+
+},{}],27:[function(require,module,exports){
 module.exports = extend
 
 function extend(target) {
@@ -4066,31 +4106,34 @@ function riotComponent(riot) {
 
   return function component(document, url, events, router) {
 
-    riot.tag('sm-link', '<a href="{ href }" class="{ active: active }"><yield/></a>', function (opts) {
+    riot.tag(
+      'sm-link',
+      '<a href="{ href }" class="{ active: active }"><yield/></a>',
+      function (opts) {
 
-      var routeName = opts.to;
-      var params = opts.params || {};
-      var query = opts.query || {};
-      var hash = opts.hash || '';
+        var routeName = opts.to;
+        var params = opts.params || {};
+        var query = opts.query || {};
+        var hash = opts.hash || '';
 
-      this.href = router.href(routeName, params, query, hash);
-      this.active = this.href === url.getLink();
-
-      this.matchUrl = function () {
-
+        this.href = router.href(routeName, params, query, hash);
         this.active = this.href === url.getLink();
-        this.update();
 
-      }.bind(this);
+        this.matchUrl = function () {
 
-      events.subscribe('routeChange', this.matchUrl);
+          this.active = this.href === url.getLink();
+          this.update();
 
-      this.on('unmount', function () {
+        }.bind(this);
 
-        events.unsubscribe('routeChange', this.matchUrl);
-      });
+        events.subscribe('routeChange', this.matchUrl);
 
-    });
+        this.on('unmount', function () {
+
+          events.unsubscribe('routeChange', this.matchUrl);
+        });
+      }
+    );
 
     function RiotComponent(componentName, viewKey, state) {
 
@@ -4175,17 +4218,17 @@ function riotComponent(riot) {
 
     return RiotComponent;
   };
-
 }
 
 },{"./modules/BaseComponent":9,"xtend/mutable":27}],29:[function(require,module,exports){
 
 'use strict';
 
+var assign = require('object-assign');
 var urlWatcher = require('./modules/urlWatcher');
 var eventBus = require('./modules/eventBus');
 var viewTree = require('./modules/viewTree');
-var resolveService = require('./modules/resolveService');
+var resolveFactory = require('./modules/resolveFactory');
 var router = require('./modules/router');
 var stateRegistry = require('./modules/stateRegistry');
 var stateMachine = require('./modules/stateMachine');
@@ -4204,9 +4247,9 @@ function screenMachine(config) {
   var routes = router({ html5: config.html5 });
   var Component = config.components(document, url, events, routes);
   var views = viewTree(document, Component);
-  var resolves = resolveService(Promise);
-  var registry = stateRegistry(views, resolves, routes);
-  var machine = stateMachine(events, registry, resolves);
+  var resolves = resolveFactory(Promise);
+  var registry = stateRegistry();
+  var machine = stateMachine(events, registry, Promise);
 
   return {
 
@@ -4221,7 +4264,7 @@ function screenMachine(config) {
 
       if (registered.resolve) {
 
-        resolves.addResolvesTo(registered);
+        resolves.addTo(registered);
       }
 
       views.processState(registered);
@@ -4234,15 +4277,13 @@ function screenMachine(config) {
 
       machine.init(registry.$root, {});
       views.mountRoot();
-      url.subscribe(this.fromUrl.bind(this));
+      url.subscribe(this._watchUrl.bind(this));
 
       return this;
     },
 
 
-    fromUrl: function fromUrl(url) {
-
-      events.notify('routeChange');
+    _watchUrl: function _watchUrl(url) {
 
       var args = routes.find(url);
 
@@ -4250,7 +4291,9 @@ function screenMachine(config) {
 
         events.notify('routeNotFound');
       }
-      if (args) {
+      else {
+
+        events.notify('routeChange');
 
         args.push({ routeChange: true });
 
@@ -4266,11 +4309,14 @@ function screenMachine(config) {
       return machine.transitionTo.apply(machine, arguments)
         .then(function (transition) {
 
-          if (transition.isCanceled()) return;
+          if (transition.isCanceled()) {
+
+            return transition;
+          }
 
           var state = transition.toState;
           var components = state.getAllComponents();
-          var resolved = transition.resolved;
+          var resolved = assign({}, machine.cache.$store);
 
           views.compose(components, resolved, params, query);
 
@@ -4280,7 +4326,7 @@ function screenMachine(config) {
             events.notify('routeChange');
           }
 
-          transition.cleanup();
+          return transition._cleanup();
         });
     },
 
@@ -4293,7 +4339,7 @@ function screenMachine(config) {
 }
 
 
-},{"./modules/eventBus":17,"./modules/resolveService":19,"./modules/router":21,"./modules/stateMachine":22,"./modules/stateRegistry":23,"./modules/urlWatcher":25,"./modules/viewTree":26}],30:[function(require,module,exports){
+},{"./modules/eventBus":17,"./modules/resolveFactory":18,"./modules/router":20,"./modules/stateMachine":21,"./modules/stateRegistry":22,"./modules/urlWatcher":24,"./modules/viewTree":25,"object-assign":26}],30:[function(require,module,exports){
 
 },{}],31:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.

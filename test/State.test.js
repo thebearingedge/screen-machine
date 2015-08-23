@@ -10,7 +10,6 @@ chai.use(sinonChai);
 
 
 var State = require('../modules/State');
-var resolveCache = require('../modules/resolveCache');
 
 
 describe('State', function () {
@@ -208,34 +207,6 @@ describe('State', function () {
   });
 
 
-  describe('.getResolveResults(cache) => Object', function () {
-
-    it('should aggregate results from its resolves', function () {
-
-      var fooResolve = {
-        id: 'foo@state',
-        key: 'foo'
-      };
-      var bazResolve = {
-        id: 'baz@state',
-        key: 'baz'
-      };
-      var cache = resolveCache({ stateless: true });
-
-      cache.$store = {
-        'foo@state': 'bar',
-        'baz@state': 'qux'
-      };
-
-      state.$resolves = [fooResolve, bazResolve];
-
-      expect(state.getResolveResults(cache))
-        .to.deep.equal({ foo: 'bar', baz: 'qux'});
-    });
-
-  });
-
-
   describe('.filterParams(Object params) => Object', function () {
 
     it('should return params filtered by $paramKeys', function () {
@@ -255,7 +226,7 @@ describe('State', function () {
     it('should reset views, resolves and $paramCache', function () {
 
       var viewLoader = { detach: sinon.spy() };
-      var resolve = { clearCache: sinon.spy() };
+      var resolve = { clear: sinon.spy() };
 
       state.$views = [viewLoader];
       state.$resolves = [resolve];
@@ -263,7 +234,7 @@ describe('State', function () {
       state.sleep();
 
       expect(viewLoader.detach.calledOnce).to.equal(true);
-      expect(resolve.clearCache.calledOnce).to.equal(true);
+      expect(resolve.clear.calledOnce).to.equal(true);
     });
 
   });

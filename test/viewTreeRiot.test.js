@@ -8,7 +8,7 @@ var riot = require('riot');
 var riotComponent = require('../riotComponent');
 var viewTree = require('../modules/viewTree');
 var stateRegistry = require('../modules/stateRegistry');
-var resolveService = require('../modules/resolveService');
+var resolveFactory = require('../modules/resolveFactory');
 var routes = { add: function () {} };
 
 require('./riot-tags/all');
@@ -25,7 +25,7 @@ describe('Riot Component Composition', function () {
     document.body.appendChild(appRoot);
     RiotComponent = riotComponent(riot)(document);
     views = viewTree(document, RiotComponent);
-    resolves = resolveService(Promise);
+    resolves = resolveFactory(Promise);
     registry = stateRegistry(views, resolves, routes);
     rootView = views.views['@'];
 
@@ -96,7 +96,7 @@ describe('Riot Component Composition', function () {
     states.forEach(function (state) {
 
       views.processState(state);
-      resolves.addResolvesTo(state);
+      resolves.addTo(state);
     });
 
   });

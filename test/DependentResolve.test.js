@@ -8,56 +8,51 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-var DependentResolve = require('../modules/DependentResolve');
+var Promise = require('native-promise-only');
 var State = require('../modules/State');
+var DependentResolve = require('../modules/baseDependentResolve');
 
-describe('DependentResolve', function () {
 
-  var resolve, state;
+describe('bDependentResolve', function () {
+
+  var state;
 
   beforeEach(function () {
 
     state = new State({
-      name: 'bar',
+      name: 'child',
       resolve: {
-        foo: ['baz@qux', sinon.spy(function () {})]
+        bar: function () {},
+        baz: ['foo@parent', 'bar', sinon.spy()]
       }
     });
-
-    resolve = new DependentResolve('foo', state);
   });
 
 
-  it('should have an id', function () {
+  it('should have an invokable and list of injectables', function () {
 
-    expect(resolve.id).to.equal('foo@bar');
+    var resolve = new DependentResolve('baz', state, Promise);
+
+    expect(resolve.injectables).to.deep.equal(['foo@parent', 'bar@child']);
+    expect(typeof resolve.invokable).to.equal('function');
+    expect(resolve.invokable).to.equal(state.resolve.baz[2]);
   });
 
 
-  it('should ensure dependency ids', function () {
+  it('should call its invokable with dependencies', function () {
 
-    state.resolve.foo[0] = 'baz';
+    var params = {};
+    var query = {};
+    var transition = {};
+    var dependencies = { 'foo@parent': 'krünk', 'bar@child': 'pöpli' };
 
-    resolve = new DependentResolve('foo', state);
+    var resolve = new DependentResolve('baz', state, Promise);
 
-    expect(resolve.injectables[0]).to.equal('baz@bar');
-  });
+    resolve.execute(params, query, transition, dependencies);
 
-
-  describe('.execute(params, query, dependencies)', function () {
-
-    it('should call its invokable with dependencies and params', function () {
-
-      var params = { foo: 'bar' };
-      var query = { grault: 'garpley' };
-      var dependencies = { 'baz@qux': 42 };
-
-      resolve.execute(params, query, dependencies);
-
-      expect(state.resolve.foo[1])
-        .to.have.been.calledWithExactly(42, params, query);
-    });
-
+    expect(resolve.invokable)
+      .to.have.been
+      .calledWithExactly('krünk', 'pöpli', params, query, transition);
   });
 
 });

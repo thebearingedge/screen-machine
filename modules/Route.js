@@ -87,7 +87,6 @@ Route.prototype.match = function (unmatched) {
   }
 
   unmatched.splice(0, toMatch);
-
   return matched;
 };
 

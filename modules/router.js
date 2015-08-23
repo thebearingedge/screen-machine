@@ -35,7 +35,6 @@ module.exports = function routerFactory(options) {
       var route = new Route(name, path);
 
       this.register(route);
-
       return route;
     },
 
@@ -45,7 +44,6 @@ module.exports = function routerFactory(options) {
       if (route.path === '/') {
 
         this.routes[route.name] = this.root = route;
-
         return this.flushQueueFor(route);
       }
 
@@ -58,7 +56,6 @@ module.exports = function routerFactory(options) {
 
         this.routes[route.name] = route;
         this.root.addChild(route);
-
         return this.flushQueueFor(route);
       }
 
@@ -73,7 +70,6 @@ module.exports = function routerFactory(options) {
       this.routes[route.name] = route;
       parentRoute || (parentRoute = this.root);
       parentRoute.addChild(route);
-
       return this.flushQueueFor(route);
     },
 

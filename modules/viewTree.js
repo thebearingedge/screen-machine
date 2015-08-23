@@ -64,7 +64,6 @@ function viewTree(document, Component) {
     ensureView: function (viewKey, state) {
 
       viewKey || (viewKey = '@' + (state.parent || ''));
-
       return this.views[viewKey] || this.createView(viewKey, state);
     },
 
@@ -88,7 +87,6 @@ function viewTree(document, Component) {
         .sort()[0];
 
       view.setContainer(container);
-
       return view;
     },
 
@@ -99,7 +97,6 @@ function viewTree(document, Component) {
 
       view.addComponent(state.name, component);
       state.addComponent(component);
-
       return component;
     },
 

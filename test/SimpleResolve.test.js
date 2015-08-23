@@ -8,45 +8,48 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-
-var SimpleResolve = require('../modules/SimpleResolve');
+var Promise = require('native-promise-only');
 var State = require('../modules/State');
+var SimpleResolve = require('../modules/baseSimpleResolve');
 
-describe('SimpleResolve', function () {
 
-  var resolve, state;
+describe('bSimpleResolve', function () {
+
+  var state;
 
   beforeEach(function () {
 
     state = new State({
-      name: 'bar',
+      name: 'child',
       resolve: {
-        foo: sinon.spy()
+        bar: sinon.spy(),
       }
     });
-
-    resolve = new SimpleResolve('foo', state);
   });
 
 
-  it('should have an id', function () {
+  it('should have an invokable', function () {
 
-    expect(resolve.id).to.equal('foo@bar');
+    var resolve = new SimpleResolve('bar', state, Promise);
+
+    expect(typeof resolve.invokable).to.equal('function');
+    expect(resolve.invokable).to.equal(state.resolve.bar);
   });
 
 
-  describe('.execute(params, query)', function () {
+  it('should call its invokable with arguments', function () {
 
-    it('should call its state\'s resolve function with params', function () {
+    var params = {};
+    var query = {};
+    var transition = {};
 
-      var params = { foo: 'bar' };
-      var query = { baz: 'qux' };
+    var resolve = new SimpleResolve('bar', state, Promise);
 
-      resolve.execute(params, query);
+    resolve.execute(params, query, transition);
 
-      expect(state.resolve.foo).to.have.been.calledWithExactly(params, query);
-    });
-
+    expect(resolve.invokable)
+      .to.have.been
+      .calledWithExactly(params, query, transition);
   });
 
 });

@@ -8,14 +8,13 @@ var riot = global.riot = require('riot');
 var screenMachine = require('../../../screenMachine');
 var riotComponent = require('../../../riotComponent');
 var EventEmitter = require('events').EventEmitter;
-var Promise = require('native-promise-only');
+var NativePromise = require('native-promise-only');
 var emitter = new EventEmitter();
-
 
 var config = {
   components: riotComponent(riot),
   document: document,
-  promises: Promise,
+  promises: NativePromise,
   events: {
     emitter: emitter,
     trigger: 'emit',

@@ -7,9 +7,12 @@ var State = require('./State');
 module.exports = stateRegistry;
 
 
-function stateRegistry(viewTree) {
+function stateRegistry() {
 
-  var registry = {
+  return {
+
+    $root: new State({ name: '' }),
+
 
     states: {},
 
@@ -30,7 +33,6 @@ function stateRegistry(viewTree) {
       var state = new State(definition);
 
       this.register(state);
-
       return state;
     },
 
@@ -46,7 +48,6 @@ function stateRegistry(viewTree) {
       }
 
       this.states[state.name] = state.inheritFrom(parentState || this.$root);
-
       return this.flushQueueFor(state);
     },
 
@@ -55,7 +56,6 @@ function stateRegistry(viewTree) {
 
       this.queues[parentName] || (this.queues[parentName] = []);
       this.queues[parentName].push(state);
-
       return this;
     },
 
@@ -73,11 +73,4 @@ function stateRegistry(viewTree) {
     }
 
   };
-
-  var rootState = registry.$root = new State({ name: '' });
-
-  rootState.addView(viewTree.views['@']);
-  rootState.$pathSegments = [];
-
-  return registry;
 }

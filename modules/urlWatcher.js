@@ -14,12 +14,12 @@ function urlWatcher(window, options) {
     ? 'popstate'
     : 'hashchange';
 
-  var watcher = {
+  return {
 
     listener: null,
 
 
-    subscribe: function subscribe(onChange) {
+    subscribe: function (onChange) {
 
       this.listener = function () {
 
@@ -41,19 +41,19 @@ function urlWatcher(window, options) {
     },
 
 
-    watch: function watch() {
+    watch: function () {
 
       window.addEventListener(windowEvent, this.listener);
     },
 
 
-    ignore: function ignore() {
+    ignore: function () {
 
       window.removeEventListener(windowEvent, this.listener);
     },
 
 
-    get: function get() {
+    get: function () {
 
       var url = windowEvent === 'popstate'
         ? location.pathname + location.search + location.hash
@@ -63,7 +63,7 @@ function urlWatcher(window, options) {
     },
 
 
-    push: function push(url) {
+    push: function (url) {
 
       if (windowEvent === 'popstate') {
 
@@ -78,7 +78,7 @@ function urlWatcher(window, options) {
     },
 
 
-    replace: function replace(url) {
+    replace: function (url) {
 
       if (windowEvent === 'popstate') {
 
@@ -101,6 +101,4 @@ function urlWatcher(window, options) {
     }
 
   };
-
-  return watcher;
 }

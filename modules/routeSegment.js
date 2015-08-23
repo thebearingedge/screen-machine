@@ -50,7 +50,6 @@ Segment.prototype.match = function match(string) {
     var result = {};
 
     result[this.key] = string;
-
     return result;
   }
 

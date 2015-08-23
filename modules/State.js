@@ -103,7 +103,6 @@ State.prototype.inheritFrom = function (parentNode) {
   this.$querySegments = parentNode.$querySegments.concat(this.$querySegments);
   this.$paramKeys = parentNode.$paramKeys.concat(this.$paramKeys);
   this.$parent = parentNode;
-
   return this;
 };
 
@@ -138,7 +137,6 @@ State.prototype.addResolve = function (resolve) {
 
   this.$resolves || (this.$resolves = []);
   this.$resolves.push(resolve);
-
   return this;
 };
 
@@ -148,19 +146,6 @@ State.prototype.getResolves = function () {
   return this.$resolves
     ? this.$resolves.slice()
     : [];
-};
-
-
-State.prototype.getResolveResults = function (resolveCache) {
-
-  return this
-    .$resolves
-    .reduce(function (results, resolve) {
-
-      results[resolve.key] = resolveCache.get(resolve.id);
-
-      return results;
-    }, {});
 };
 
 
@@ -177,7 +162,7 @@ State.prototype.filterParams = function (params) {
 };
 
 
-State.prototype.isStale = function (oldParams, newParams, oldQuery, newQuery) {
+State.prototype.isStale = function (oldParams, oldQuery, newParams, newQuery) {
 
   var staleParams = this
     .$paramKeys
@@ -206,12 +191,11 @@ State.prototype.sleep = function () {
     });
   }
 
-
   if (this.$resolves) {
 
     this.$resolves.forEach(function (resolve) {
 
-      resolve.clearCache();
+      resolve.clear();
     });
   }
 
@@ -223,7 +207,6 @@ State.prototype.addView = function (view) {
 
   this.$views || (this.$views = []);
   this.$views.push(view);
-
   return this;
 };
 
@@ -240,7 +223,6 @@ State.prototype.addComponent = function (component) {
 
   this.$components || (this.$components = []);
   this.$components.push(component);
-
   return this;
 };
 
@@ -265,13 +247,15 @@ State.prototype.getAllComponents = function () {
 };
 
 
-State.prototype.shouldResolve = function (resolved) {
+State.prototype.shouldResolve = function (cache) {
 
-  if (!this.cacheable) return true;
+  if (!this.$resolves) return false;
 
-  return this.$resolves && this.$resolves.length &&
-    this.$resolves.some(function (resolve) {
+  if (this.cacheable === false) return true;
 
-      return !(resolve.id in resolved);
+  return this.$resolves.some(function (resolve) {
+
+      return !(resolve.id in cache.$store);
     });
 };
+

@@ -9,6 +9,7 @@ module.exports = function (machine) {
       component: 'home',
       resolve: {
         today: function () {
+
           return new Date();
         }
       },

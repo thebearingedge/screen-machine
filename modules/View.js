@@ -1,7 +1,6 @@
 
 'use strict';
 
-
 module.exports = View;
 
 
@@ -35,7 +34,6 @@ View.prototype.attachWithin = function (node) {
   this.content = this.element
     ? this.element.firstElementChild
     : null;
-
   return this;
 };
 
@@ -44,7 +42,6 @@ View.prototype.detach = function () {
 
   this.close();
   this.element = null;
-
   return this;
 };
 
@@ -53,7 +50,6 @@ View.prototype.addComponent = function (stateName, component) {
 
   component.setView(this);
   this.components[stateName] = component;
-
   return this;
 };
 
@@ -64,7 +60,6 @@ View.prototype.addChild = function (view) {
 
   this.children || (this.children = []);
   this.children.push(view);
-
   return this;
 };
 
@@ -74,7 +69,6 @@ View.prototype.setContainer = function (component) {
   component.view.addChild(this);
   component.addChildView(this);
   this.container = component;
-
   return this;
 };
 
@@ -85,7 +79,6 @@ View.prototype.loadComponent = function (component) {
 
   this.nextComponent = component;
   this.tree.loadedViews.push(this);
-
   return this;
 };
 
@@ -109,9 +102,7 @@ View.prototype.unload = function () {
   var loadedViews = this.tree.loadedViews;
 
   loadedViews.splice(loadedViews.indexOf(this), 1);
-
   this.nextComponent = null;
-
   return this;
 };
 
@@ -134,7 +125,6 @@ View.prototype.publish = function (resolved, params, query) {
   if (this.shouldUpdate()) {
 
     this.currentComponent.update(resolved, params, query);
-
     return this;
   }
 
@@ -151,7 +141,6 @@ View.prototype.publish = function (resolved, params, query) {
   this.lastComponent = this.currentComponent;
   this.currentComponent = this.nextComponent;
   this.nextComponent = null;
-
   return this;
 };
 
@@ -182,7 +171,6 @@ View.prototype.close = function () {
   }
 
   this.content = this.currentComponent = null;
-
   return this;
 };
 

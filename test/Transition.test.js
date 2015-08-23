@@ -8,35 +8,26 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-
+var Promise = require('native-promise-only');
+var stateMachine = require('../modules/stateMachine');
+var State = require('../modules/State');
+var SimpleResolve = require('../modules/baseSimpleResolve');
+var DependentResolve = require('../modules/baseDependentResolve');
 var Transition = require('../modules/Transition');
 
 
 describe('Transition', function () {
 
-  var transition, machine, to, toParams, toQuery;
+  var transition, machine, toState, toParams, toQuery;
 
   beforeEach(function () {
 
-    machine = {
-      $state: {
-        current: {
-          getBranch: function () { return []; }
-        },
-        params: {},
-        query: {},
-        transition: null
-      },
-      transitionTo: sinon.spy(),
-      init: sinon.spy(),
-    };
-    to = {
-      getBranch: function () { return []; }
-    };
+    machine = stateMachine({}, Promise);
     toParams = {};
     toQuery = {};
-    transition = new Transition(machine, to, toParams, toQuery);
-    machine.$state.transition = transition;
+    toState = {};
+    transition = new Transition(machine, toState, toParams, toQuery);
+    machine.transition = transition;
   });
 
 
@@ -50,7 +41,7 @@ describe('Transition', function () {
 
     it('should be canceled if it is superceded', function () {
 
-      machine.$state.transition = {};
+      machine.transition = {};
 
       expect(transition.isCanceled()).to.equal(true);
     });
@@ -58,7 +49,7 @@ describe('Transition', function () {
 
     it('should not be canceled if it already finished', function () {
 
-      transition.succeeded = true;
+      transition._succeeded = true;
 
       expect(transition.isCanceled()).to.equal(false);
     });
@@ -66,15 +57,27 @@ describe('Transition', function () {
   });
 
 
-  describe('.finish()', function () {
+  describe('.isSuccessful()', function () {
+
+    it('should not be initially successful', function () {
+
+      expect(transition.isSuccessful()).to.equal(false);
+    });
+
+  });
+
+
+  describe('._finish()', function () {
 
     it('should reinitialize the state machine', function () {
 
-      transition.finish();
+      sinon.spy(machine, 'init');
+      transition.prepare([], [], Promise);
+      transition._finish();
 
-      expect(transition.succeeded).to.equal(true);
+      expect(transition._succeeded).to.equal(true);
       expect(machine.init)
-        .to.have.been.calledWithExactly(to, toParams, toQuery);
+        .to.have.been.calledWithExactly(toState, toParams, toQuery);
     });
 
   });
@@ -83,6 +86,8 @@ describe('Transition', function () {
   describe('.redirect(state, params, query)', function () {
 
     it('should start a new machine transition with args', function () {
+
+      sinon.stub(machine, 'transitionTo');
 
       transition.redirect('foo', { bar: 'baz' }, { qux: 'quux' });
 
@@ -97,10 +102,12 @@ describe('Transition', function () {
 
     it('should start a new machine transition with current args', function () {
 
+      sinon.stub(machine, 'transitionTo');
+
       transition.retry();
 
       expect(machine.transitionTo)
-        .to.have.been.calledWithExactly(to, toParams, toQuery);
+        .to.have.been.calledWithExactly(toState, toParams, toQuery);
     });
 
   });
@@ -126,8 +133,8 @@ describe('Transition', function () {
 
       transition.setError(err);
 
-      expect(transition.canceled).to.equal(true);
-      expect(transition.handled).to.equal(false);
+      expect(transition._canceled).to.equal(true);
+      expect(transition._handled).to.equal(false);
       expect(transition.error).to.equal(err);
     });
 
@@ -138,7 +145,7 @@ describe('Transition', function () {
 
     it('should tell if user claims to have handled the error', function () {
 
-      transition.handled = true;
+      transition._handled = true;
 
       expect(transition.isHandled()).to.equal(true);
     });
@@ -153,7 +160,58 @@ describe('Transition', function () {
       transition.setError({});
       transition.errorHandled();
 
-      expect(transition.handled).to.equal(true);
+      expect(transition._handled).to.equal(true);
+    });
+
+  });
+
+
+  describe('.prepare(resolves, cache, exiting, Promise)', function () {
+
+    var state, cache;
+    var fooResolve, barResolve;
+
+    beforeEach(function () {
+
+      state = new State({
+        name: 'state',
+        resolve: {
+          foo: function () {},
+          bar: ['foo', function () {}]
+        }
+      });
+
+      fooResolve = new SimpleResolve('foo', state, Promise);
+      barResolve = new DependentResolve('bar', state, Promise);
+      cache = machine.cache;
+    });
+
+    it('should pull missing dependencies from the cache', function () {
+
+      var cacheSpy = sinon.spy(cache, 'get');
+
+      transition.prepare([barResolve], cache, [], Promise);
+
+      expect(cacheSpy).to.have.been.calledWithExactly('foo@state');
+    });
+
+
+    it('should NOT THROW if the task dependencies are ACYCLIC', function () {
+
+      expect(transition.prepare([fooResolve, barResolve], cache))
+        .to.not.throw;
+    });
+
+
+    it('should THROW if the task dependencies are CYCLIC', function () {
+
+      fooResolve.injectables = ['bar@state'];
+      var message = 'Cyclic resolve dependency: ' +
+                    'foo@state -> bar@state -> foo@state';
+
+      expect(
+        transition.prepare.bind(transition, [fooResolve, barResolve], cache)
+      ).to.throw(Error, message);
     });
 
   });

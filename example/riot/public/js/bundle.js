@@ -2144,6 +2144,56 @@ BaseResolve.prototype.taskDelegate = {
 
 'use strict';
 
+var assign = require('object-assign');
+var BaseResolve = require('./BaseResolve');
+
+module.exports = DependentResolve;
+
+
+function DependentResolve(resolveKey, state, Promise) {
+
+  BaseResolve.call(this, resolveKey, state, Promise);
+
+  var resolveDef = state.resolve[resolveKey];
+  var invokableIndex = resolveDef.length - 1;
+
+  this.invokable = resolveDef[invokableIndex];
+  this.injectables = resolveDef
+    .slice(0, invokableIndex)
+    .map(function (injectable) {
+
+      return injectable.indexOf('@') > -1
+        ? injectable
+        : injectable + '@' + state.name;
+    });
+
+}
+
+
+assign(DependentResolve.prototype, BaseResolve.prototype, {
+
+  constructor: DependentResolve,
+
+
+  execute: function execute(params, query, transition, dependencies) {
+
+    var args = this
+      .injectables
+      .map(function (injectable) {
+
+        return dependencies[injectable];
+      })
+      .concat(params, query, transition);
+
+    return this.invokable.apply(null, args);
+  }
+
+});
+
+},{"./BaseResolve":10,"object-assign":26}],12:[function(require,module,exports){
+
+'use strict';
+
 var routeSegment = require('./routeSegment');
 
 
@@ -2270,7 +2320,37 @@ Route.prototype.generate = function (params) {
   function collectSegment(segment) { allSegments.unshift(segment); }
 };
 
-},{"./routeSegment":19}],12:[function(require,module,exports){
+},{"./routeSegment":19}],13:[function(require,module,exports){
+
+'use strict';
+
+var assign = require('object-assign');
+var BaseResolve = require('./BaseResolve');
+
+module.exports = SimpleResolve;
+
+
+function SimpleResolve(resolveKey, state, Promise) {
+
+  BaseResolve.call(this, resolveKey, state, Promise);
+
+  this.invokable = state.resolve[resolveKey];
+}
+
+
+assign(SimpleResolve.prototype, BaseResolve.prototype, {
+
+  constructor: SimpleResolve,
+
+
+  execute: function (params, query, transition) {
+
+    return this.invokable.call(null, params, query, transition);
+  }
+
+});
+
+},{"./BaseResolve":10,"object-assign":26}],14:[function(require,module,exports){
 
 'use strict';
 
@@ -2533,7 +2613,7 @@ State.prototype.shouldResolve = function (cache) {
 };
 
 
-},{"xtend/mutable":27}],13:[function(require,module,exports){
+},{"xtend/mutable":27}],15:[function(require,module,exports){
 
 'use strict';
 
@@ -2724,12 +2804,6 @@ Transition.prototype.attempt = function () {
   var Promise = this._Promise;
   var queue = this._tasks.slice();
   var wait = queue.length;
-
-  if (!wait) {
-
-    return Promise.resolve(completed);
-  }
-
   var completed = [];
   var toRun = queue
     .filter(function (task) {
@@ -2748,7 +2822,7 @@ Transition.prototype.attempt = function () {
     }.bind(this));
 };
 
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 
 'use strict';
 
@@ -2938,87 +3012,7 @@ View.prototype.cleanUp = function () {
   return this;
 };
 
-},{}],15:[function(require,module,exports){
-
-'use strict';
-
-var assign = require('object-assign');
-var BaseResolve = require('./BaseResolve');
-
-module.exports = DependentResolve;
-
-
-function DependentResolve(resolveKey, state, Promise) {
-
-  BaseResolve.call(this, resolveKey, state, Promise);
-
-  var resolveDef = state.resolve[resolveKey];
-  var invokableIndex = resolveDef.length - 1;
-
-  this.invokable = resolveDef[invokableIndex];
-  this.injectables = resolveDef
-    .slice(0, invokableIndex)
-    .map(function (injectable) {
-
-      return injectable.indexOf('@') > -1
-        ? injectable
-        : injectable + '@' + state.name;
-    });
-
-}
-
-
-assign(DependentResolve.prototype, BaseResolve.prototype, {
-
-  constructor: DependentResolve,
-
-
-  execute: function execute(params, query, transition, dependencies) {
-
-    var args = this
-      .injectables
-      .map(function (injectable) {
-
-        return dependencies[injectable];
-      })
-      .concat(params, query, transition);
-
-    return this.invokable.apply(null, args);
-  }
-
-});
-
-},{"./BaseResolve":10,"object-assign":26}],16:[function(require,module,exports){
-
-'use strict';
-
-var assign = require('object-assign');
-var BaseResolve = require('./BaseResolve');
-
-module.exports = SimpleResolve;
-
-
-function SimpleResolve(resolveKey, state, Promise) {
-
-  BaseResolve.call(this, resolveKey, state, Promise);
-
-  this.invokable = state.resolve[resolveKey];
-}
-
-
-assign(SimpleResolve.prototype, BaseResolve.prototype, {
-
-  constructor: SimpleResolve,
-
-
-  execute: function (params, query, transition) {
-
-    return this.invokable.call(null, params, query, transition);
-  }
-
-});
-
-},{"./BaseResolve":10,"object-assign":26}],17:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 
 'use strict';
 
@@ -3056,8 +3050,8 @@ function eventBus(events) {
 
 'use strict';
 
-var SimpleResolve = require('./baseSimpleResolve');
-var DependentResolve = require('./baseDependentResolve');
+var SimpleResolve = require('./SimpleResolve');
+var DependentResolve = require('./DependentResolve');
 
 module.exports = resolveFactory;
 
@@ -3089,7 +3083,7 @@ function resolveFactory(Promise) {
   };
 }
 
-},{"./baseDependentResolve":15,"./baseSimpleResolve":16}],19:[function(require,module,exports){
+},{"./DependentResolve":11,"./SimpleResolve":13}],19:[function(require,module,exports){
 
 'use strict';
 
@@ -3382,7 +3376,7 @@ module.exports = function routerFactory(options) {
   };
 };
 
-},{"./Route":11,"./urlTools":23,"xtend/mutable":27}],21:[function(require,module,exports){
+},{"./Route":12,"./urlTools":23,"xtend/mutable":27}],21:[function(require,module,exports){
 
 'use strict';
 
@@ -3586,7 +3580,7 @@ function callHook(hook, transition) {
   };
 }
 
-},{"./Transition":13}],22:[function(require,module,exports){
+},{"./Transition":15}],22:[function(require,module,exports){
 
 'use strict';
 
@@ -3664,7 +3658,7 @@ function stateRegistry() {
   };
 }
 
-},{"./State":12}],23:[function(require,module,exports){
+},{"./State":14}],23:[function(require,module,exports){
 
 'use strict';
 
@@ -4033,7 +4027,7 @@ function viewTree(document, Component) {
 
   };
 }
-},{"./View":14}],26:[function(require,module,exports){
+},{"./View":16}],26:[function(require,module,exports){
 /* eslint-disable no-unused-vars */
 'use strict';
 var hasOwnProperty = Object.prototype.hasOwnProperty;

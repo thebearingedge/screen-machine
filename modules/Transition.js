@@ -188,12 +188,6 @@ Transition.prototype.attempt = function () {
   var Promise = this._Promise;
   var queue = this._tasks.slice();
   var wait = queue.length;
-
-  if (!wait) {
-
-    return Promise.resolve(completed);
-  }
-
   var completed = [];
   var toRun = queue
     .filter(function (task) {

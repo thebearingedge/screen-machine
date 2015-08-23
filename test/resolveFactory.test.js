@@ -7,8 +7,8 @@ var expect = chai.expect;
 
 var Promise = require('native-promise-only');
 var State = require('../modules/State');
-var SimpleResolve = require('../modules/baseSimpleResolve');
-var DependentResolve = require('../modules/baseDependentResolve');
+var SimpleResolve = require('../modules/SimpleResolve');
+var DependentResolve = require('../modules/DependentResolve');
 var resolveFactory = require('../modules/resolveFactory');
 
 

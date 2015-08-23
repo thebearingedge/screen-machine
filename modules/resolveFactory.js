@@ -1,8 +1,8 @@
 
 'use strict';
 
-var SimpleResolve = require('./baseSimpleResolve');
-var DependentResolve = require('./baseDependentResolve');
+var SimpleResolve = require('./SimpleResolve');
+var DependentResolve = require('./DependentResolve');
 
 module.exports = resolveFactory;
 

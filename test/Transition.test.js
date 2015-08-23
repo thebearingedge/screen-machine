@@ -11,8 +11,8 @@ chai.use(sinonChai);
 var Promise = require('native-promise-only');
 var stateMachine = require('../modules/stateMachine');
 var State = require('../modules/State');
-var SimpleResolve = require('../modules/baseSimpleResolve');
-var DependentResolve = require('../modules/baseDependentResolve');
+var SimpleResolve = require('../modules/SimpleResolve');
+var DependentResolve = require('../modules/DependentResolve');
 var Transition = require('../modules/Transition');
 
 

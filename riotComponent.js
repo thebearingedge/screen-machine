@@ -14,7 +14,7 @@ function riotComponent(riot) {
 
     riot.tag(
       'sm-link',
-      '<a href="{ href }" class="{ active: active }"><yield/></a>',
+      '<a href="{ href }" class="{ activeClass }"><yield/></a>',
       function (opts) {
 
         var stateName = opts.to;
@@ -23,14 +23,19 @@ function riotComponent(riot) {
         var hash = opts.hash || '';
 
         this.href = router.href(stateName, params, query, hash);
-        this.active = machine.hasState(stateName, params, query);
 
         this.matchActive = function () {
 
-          this.active = machine.hasState(stateName, params, query);
+          var isActive = machine.hasState(stateName, params, query);
+          // thanks to @prateekbh
+          this.activeClass = isActive
+            ? opts.active
+            : null;
           this.update();
 
         }.bind(this);
+
+        this.matchActive();
 
         events.subscribe('stateChangeSuccess', this.matchActive);
 

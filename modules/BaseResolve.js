@@ -30,18 +30,17 @@ BaseResolve.prototype.createTask = function (params, query, transition, cache) {
 
   this.cache = cache;
 
-
   return assign({}, this.taskDelegate, {
     id: this.id,
     resolve: this,
-    cache: cache,
-    params: params,
-    query: query,
     Promise: this.Promise,
     waitingFor: this.injectables
       ? this.injectables.slice()
       : [],
-    transition: transition
+    params: params,
+    query: query,
+    transition: transition,
+    cache: cache
   });
 };
 
@@ -90,11 +89,11 @@ BaseResolve.prototype.taskDelegate = {
   },
 
 
-  runSelf: function (transition, queue, completed, wait) {
+  runSelf: function (queue, completed, wait) {
 
     var Promise = this.Promise;
 
-    if (transition.isCanceled()) {
+    if (this.transition.isCanceled()) {
 
       return Promise.resolve();
     }
@@ -113,12 +112,12 @@ BaseResolve.prototype.taskDelegate = {
           return Promise.resolve();
         }
 
-        return this.runDependents(transition, queue, completed, wait);
+        return this.runDependents(queue, completed, wait);
       }.bind(this));
   },
 
 
-  runDependents: function (transition, queue, completed, wait) {
+  runDependents: function (queue, completed, wait) {
 
     var nextTasks = queue
       .filter(function (queued) {
@@ -135,7 +134,7 @@ BaseResolve.prototype.taskDelegate = {
       })
       .map(function (ready) {
 
-        return ready.runSelf(transition, queue, completed, wait);
+        return ready.runSelf(queue, completed, wait);
       });
 
     return this.Promise.all(nextTasks);

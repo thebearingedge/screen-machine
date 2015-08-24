@@ -196,7 +196,7 @@ Transition.prototype.attempt = function () {
     })
     .map(function (ready) {
 
-      return ready.runSelf(this, queue, completed, wait);
+      return ready.runSelf(queue, completed, wait);
     }, this);
 
   return Promise.all(toRun)

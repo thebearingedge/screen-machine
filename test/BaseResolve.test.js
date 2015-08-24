@@ -246,7 +246,7 @@ describe('BaseResolve', function () {
 
         it('should run itself and then run dependents', function (done) {
 
-          var transition = { isCanceled: function () { return false; } };
+          transition.isCanceled = function () { return false; };
           var queue = [fooTask, barTask, bazTask];
           var complete = [];
           var wait = 3;
@@ -255,7 +255,7 @@ describe('BaseResolve', function () {
           fooResolve.execute = sinon.stub().returns('ok');
 
           return fooTask
-            .runSelf(transition, queue, complete, wait)
+            .runSelf(queue, complete, wait)
             .then(function () {
               expect(queue).to.deep.equal([barTask, bazTask]);
               expect(complete).to.deep.equal([fooTask]);
@@ -267,7 +267,8 @@ describe('BaseResolve', function () {
 
         it('should not run itself if transition is canceled', function (done) {
 
-          var transition = { isCanceled: function () { return true; } };
+          transition.isCanceled = function () { return true; };
+
           var queue = [fooTask, barTask, bazTask];
           var complete = [];
           var wait = 3;
@@ -288,7 +289,7 @@ describe('BaseResolve', function () {
 
         it('should not run dependents if completed', function (done) {
 
-          var transition = { isCanceled: function () { return false; } };
+          transition.isCanceled = function () { return false; };
           var queue = [fooTask];
           var complete = [];
           var wait = 1;
@@ -297,7 +298,7 @@ describe('BaseResolve', function () {
           fooResolve.execute = sinon.stub();
 
           return fooTask
-            .runSelf(transition, queue, complete, wait)
+            .runSelf(queue, complete, wait)
             .then(function () {
               expect(queue).to.deep.equal([]);
               expect(complete).to.deep.equal([fooTask]);
@@ -312,7 +313,8 @@ describe('BaseResolve', function () {
 
         it('should run all dependents that are now ready', function (done) {
 
-          var transition = { isCanceled: function () { return false; } };
+          transition.isCanceled = function () { return false; };
+
           var queue = [barTask, bazTask];
           var complete = [fooTask];
           var wait = 3;
@@ -324,7 +326,7 @@ describe('BaseResolve', function () {
           bazTask.runSelf = sinon.stub();
 
           return fooTask
-            .runDependents(transition, queue, complete, wait)
+            .runDependents(queue, complete, wait)
             .then(function () {
               expect(barTask.setDependency.calledOnce).to.equal(true);
               expect(bazTask.setDependency.calledOnce).to.equal(true);

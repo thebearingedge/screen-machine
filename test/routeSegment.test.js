@@ -113,10 +113,10 @@ describe('routeSegment', function () {
 
     describe('.interpolate(params)', function () {
 
-      it('should return the params value that matches its key', function () {
+      it('should return an empty string', function () {
 
         expect(splatSegment.interpolate({ foo: 'bar/baz qux' }))
-          .to.equal('bar/baz%20qux');
+          .to.equal('');
       });
 
     });

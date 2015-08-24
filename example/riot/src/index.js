@@ -31,9 +31,11 @@ require('./tags');
 var domready = require('domready');
 var homeScreen = require('./screens/home');
 var viewLibs = require('./screens/viewLibs');
+var notFound = require('./screens/notFound');
 
 homeScreen(machine);
 viewLibs(machine);
+notFound(machine);
 
 domready(function () {
 

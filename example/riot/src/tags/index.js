@@ -18,11 +18,15 @@ riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The curren
 riot.tag('libraries-landing', '<p>This is the "Libraries" landing page.</p> <sm-link to="home">home</sm-link>', function(opts) {
 
 });
-riot.tag('libraries', '<h2>This is the view libraries page</h2> <ul> <li style="display: inline"> <sm-link to="viewLibs">none</sm-link> </li> <li each="{ lib in opts.libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ lib }">{ lib.libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
+riot.tag('libraries', '<h2>This is the view libraries page</h2> <ul> <li style="display: inline"> <sm-link to="viewLibs" active="active">none</sm-link> </li> <li each="{ lib in opts.libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ lib }">{ lib.libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
 
 
 });
 riot.tag('library-description', '<h3>Have you heard of { opts.params.libName }?</h3> <p>{ opts.content }</p>', function(opts) {
+
+
+});
+riot.tag('not-found', '<h4>Aw, Snap. We could not find the page you were looking for :(</h4>', function(opts) {
 
 
 });

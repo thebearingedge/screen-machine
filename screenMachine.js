@@ -10,7 +10,6 @@ var router = require('./modules/router');
 var stateRegistry = require('./modules/stateRegistry');
 var stateMachine = require('./modules/stateMachine');
 
-
 module.exports = screenMachine;
 
 

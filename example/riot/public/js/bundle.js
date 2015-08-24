@@ -49,7 +49,7 @@ if (typeof document !== 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":30}],3:[function(require,module,exports){
+},{"min-document":31}],3:[function(require,module,exports){
 (function (global){
 /*! Native Promise Only
     v0.8.1 (c) Kyle Simpson
@@ -1817,7 +1817,29 @@ module.exports = function (machine) {
       cacheable: false
     });
 };
+
 },{}],6:[function(require,module,exports){
+
+'use strict';
+
+module.exports = function (machine) {
+
+  machine
+    .state('notFound', {
+      path: '/*not-found',
+      component: 'not-found'
+    })
+    .state('viewLibs.library.notFound', {
+      path: '*notFound',
+      views: {
+        '@': {
+          component: 'not-found'
+        }
+      }
+    });
+};
+
+},{}],7:[function(require,module,exports){
 
 'use strict';
 
@@ -1864,7 +1886,7 @@ module.exports = function (machine) {
     });
 };
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The current date is { today }</p> <br> <sm-link to="viewLibs">Libraries</sm-link>', function(opts) {
     
     this.today = opts.today;
@@ -1885,7 +1907,7 @@ riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The curren
 riot.tag('libraries-landing', '<p>This is the "Libraries" landing page.</p> <sm-link to="home">home</sm-link>', function(opts) {
 
 });
-riot.tag('libraries', '<h2>This is the view libraries page</h2> <ul> <li style="display: inline"> <sm-link to="viewLibs">none</sm-link> </li> <li each="{ lib in opts.libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ lib }">{ lib.libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
+riot.tag('libraries', '<h2>This is the view libraries page</h2> <ul> <li style="display: inline"> <sm-link to="viewLibs" active="active">none</sm-link> </li> <li each="{ lib in opts.libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ lib }">{ lib.libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
 
 
 });
@@ -1893,7 +1915,11 @@ riot.tag('library-description', '<h3>Have you heard of { opts.params.libName }?<
 
 
 });
-},{}],8:[function(require,module,exports){
+riot.tag('not-found', '<h4>Aw, Snap. We could not find the page you were looking for :(</h4>', function(opts) {
+
+
+});
+},{}],9:[function(require,module,exports){
 (function (global){
 
 'use strict';
@@ -1928,9 +1954,11 @@ require('./tags');
 var domready = require('domready');
 var homeScreen = require('./screens/home');
 var viewLibs = require('./screens/viewLibs');
+var notFound = require('./screens/notFound');
 
 homeScreen(machine);
 viewLibs(machine);
+notFound(machine);
 
 domready(function () {
 
@@ -1938,7 +1966,7 @@ domready(function () {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../../../riotComponent":28,"../../../screenMachine":29,"./screens/home":5,"./screens/viewLibs":6,"./tags":7,"domready":1,"events":31,"global/document":2,"native-promise-only":3,"riot":4}],9:[function(require,module,exports){
+},{"../../../riotComponent":29,"../../../screenMachine":30,"./screens/home":5,"./screens/notFound":6,"./screens/viewLibs":7,"./tags":8,"domready":1,"events":32,"global/document":2,"native-promise-only":3,"riot":4}],10:[function(require,module,exports){
 
 'use strict';
 
@@ -1987,7 +2015,7 @@ BaseComponent.prototype.load = function () {
   return this;
 };
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 
 'use strict';
 
@@ -2137,7 +2165,7 @@ BaseResolve.prototype.taskDelegate = {
 
 };
 
-},{"object-assign":26}],11:[function(require,module,exports){
+},{"object-assign":27}],12:[function(require,module,exports){
 
 'use strict';
 
@@ -2187,7 +2215,7 @@ assign(DependentResolve.prototype, BaseResolve.prototype, {
 
 });
 
-},{"./BaseResolve":10,"object-assign":26}],12:[function(require,module,exports){
+},{"./BaseResolve":11,"object-assign":27}],13:[function(require,module,exports){
 
 'use strict';
 
@@ -2231,32 +2259,41 @@ Route.prototype.parent = null;
 Route.prototype.children = null;
 
 
-Route.prototype.isAbsolute = function isAbsolute() {
+Route.prototype.isAbsolute = function () {
 
   return this.path[0] === '/';
 };
 
 
+Route.prototype.isSplat = function () {
+
+  return this.path[0] === '*';
+};
+
+
 Route.prototype.match = function (unmatched) {
+
+  var matched = [];
+  var result;
+
+  if (this.isSplat()) {
+
+    var remainder = unmatched.join('/');
+    var key = this.path.slice(1);
+
+    result = {};
+    result[key] = remainder;
+    matched.push(result);
+    unmatched.splice(0);
+    return matched;
+  }
 
   var toMatch = this.segments.length;
   var i = 0;
-  var matched = [];
 
   while (i < toMatch && toMatch <= unmatched.length) {
 
-    var result;
     var segment = this.segments[i];
-
-    if (segment.type === 'splat') {
-
-      var remainder = unmatched.slice(matched.length).join('/');
-      result = segment.match(remainder);
-      matched.push(result);
-      unmatched.splice(0);
-
-      return matched;
-    }
 
     // jshint -W084
     if (result = segment.match(unmatched[i])) {
@@ -2317,7 +2354,7 @@ Route.prototype.generate = function (params) {
   function collectSegment(segment) { allSegments.unshift(segment); }
 };
 
-},{"./routeSegment":19}],13:[function(require,module,exports){
+},{"./routeSegment":20}],14:[function(require,module,exports){
 
 'use strict';
 
@@ -2347,7 +2384,7 @@ assign(SimpleResolve.prototype, BaseResolve.prototype, {
 
 });
 
-},{"./BaseResolve":10,"object-assign":26}],14:[function(require,module,exports){
+},{"./BaseResolve":11,"object-assign":27}],15:[function(require,module,exports){
 
 'use strict';
 
@@ -2610,7 +2647,7 @@ State.prototype.shouldResolve = function (cache) {
 };
 
 
-},{"xtend/mutable":27}],15:[function(require,module,exports){
+},{"xtend/mutable":28}],16:[function(require,module,exports){
 
 'use strict';
 
@@ -2819,7 +2856,7 @@ Transition.prototype.attempt = function () {
     }.bind(this));
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 
 'use strict';
 
@@ -3009,7 +3046,7 @@ View.prototype.cleanUp = function () {
   return this;
 };
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 
 'use strict';
 
@@ -3043,7 +3080,7 @@ function eventBus(events) {
   };
 }
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 
 'use strict';
 
@@ -3080,7 +3117,7 @@ function resolveFactory(Promise) {
   };
 }
 
-},{"./DependentResolve":11,"./SimpleResolve":13}],19:[function(require,module,exports){
+},{"./DependentResolve":12,"./SimpleResolve":14}],20:[function(require,module,exports){
 
 'use strict';
 
@@ -3146,19 +3183,13 @@ Segment.prototype.interpolate = function interpolate(params) {
 
   switch (this.type) {
     case 'dynamic': return encodeURIComponent(params[this.key]);
-    case 'splat': return params[this.key]
-      .split('/')
-      .map(function (string) {
-
-        return encodeURIComponent(string);
-      })
-      .join('/');
+    case 'splat': return '';
     case 'epsilon': return '';
     default: return this.key;
   }
 };
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 
 'use strict';
 
@@ -3366,7 +3397,7 @@ module.exports = function routerFactory(options) {
   };
 };
 
-},{"./Route":12,"./urlTools":23,"xtend/mutable":27}],21:[function(require,module,exports){
+},{"./Route":13,"./urlTools":24,"xtend/mutable":28}],22:[function(require,module,exports){
 
 'use strict';
 
@@ -3588,7 +3619,7 @@ function equalForKeys(partial, complete) {
   });
 }
 
-},{"./Transition":15}],22:[function(require,module,exports){
+},{"./Transition":16}],23:[function(require,module,exports){
 
 'use strict';
 
@@ -3670,7 +3701,7 @@ function stateRegistry() {
   };
 }
 
-},{"./State":14}],23:[function(require,module,exports){
+},{"./State":15}],24:[function(require,module,exports){
 
 'use strict';
 
@@ -3765,7 +3796,7 @@ module.exports = {
 
 };
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 
 'use strict';
 
@@ -3871,7 +3902,7 @@ function urlWatcher(window, options) {
   };
 }
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 
 'use strict';
 
@@ -4039,7 +4070,7 @@ function viewTree(document, Component) {
 
   };
 }
-},{"./View":16}],26:[function(require,module,exports){
+},{"./View":17}],27:[function(require,module,exports){
 /* eslint-disable no-unused-vars */
 'use strict';
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -4080,7 +4111,7 @@ module.exports = Object.assign || function (target, source) {
 	return to;
 };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 module.exports = extend
 
 function extend(target) {
@@ -4097,11 +4128,11 @@ function extend(target) {
     return target
 }
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 
 'use strict';
 
-var xtend = require('xtend/mutable');
+var assign = require('object-assign');
 var BaseComponent = require('./modules/BaseComponent');
 
 
@@ -4125,18 +4156,18 @@ function riotComponent(riot) {
         this.href = router.href(stateName, params, query, hash);
         this.active = machine.hasState(stateName, params, query);
 
-        this.matchState = function () {
+        this.matchActive = function () {
 
           this.active = machine.hasState(stateName, params, query);
           this.update();
 
         }.bind(this);
 
-        events.subscribe('stateChangeSuccess', this.matchState);
+        events.subscribe('stateChangeSuccess', this.matchActive);
 
         this.on('unmount', function () {
 
-          events.unsubscribe('stateChangeSuccess', this.matchState);
+          events.unsubscribe('stateChangeSuccess', this.matchActive);
         });
       }
     );
@@ -4151,7 +4182,7 @@ function riotComponent(riot) {
     }
 
 
-    xtend(RiotComponent.prototype, BaseComponent.prototype, {
+    assign(RiotComponent.prototype, BaseComponent.prototype, {
 
       constructor: RiotComponent,
 
@@ -4226,7 +4257,7 @@ function riotComponent(riot) {
   };
 }
 
-},{"./modules/BaseComponent":9,"xtend/mutable":27}],29:[function(require,module,exports){
+},{"./modules/BaseComponent":10,"object-assign":27}],30:[function(require,module,exports){
 
 'use strict';
 
@@ -4238,7 +4269,6 @@ var resolveFactory = require('./modules/resolveFactory');
 var router = require('./modules/router');
 var stateRegistry = require('./modules/stateRegistry');
 var stateMachine = require('./modules/stateMachine');
-
 
 module.exports = screenMachine;
 
@@ -4348,9 +4378,9 @@ function screenMachine(config) {
 }
 
 
-},{"./modules/eventBus":17,"./modules/resolveFactory":18,"./modules/router":20,"./modules/stateMachine":21,"./modules/stateRegistry":22,"./modules/urlWatcher":24,"./modules/viewTree":25,"object-assign":26}],30:[function(require,module,exports){
+},{"./modules/eventBus":18,"./modules/resolveFactory":19,"./modules/router":21,"./modules/stateMachine":22,"./modules/stateRegistry":23,"./modules/urlWatcher":25,"./modules/viewTree":26,"object-assign":27}],31:[function(require,module,exports){
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -4653,4 +4683,4 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}]},{},[8]);
+},{}]},{},[9]);

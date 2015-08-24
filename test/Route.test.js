@@ -87,14 +87,14 @@ describe('Route', function () {
     });
 
 
-    it('should match the remaining strings with a final splat', function () {
+    it('should match the remaining strings with a splat', function () {
 
       var strings = ['feed', 'stories', '42', 'comments', '70'];
-      var route = new Route('story', 'feed/stories/:storyId/*notFound');
+      var route = new Route('story', '*notFound');
       var matched = route.match(strings);
 
       expect(matched)
-        .to.deep.equal([{}, {}, { storyId: '42' }, { notFound: 'comments/70'}]);
+        .to.deep.equal([{ notFound: 'feed/stories/42/comments/70'}]);
       expect(strings.length).to.equal(0);
     });
 

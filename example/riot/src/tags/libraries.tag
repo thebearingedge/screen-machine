@@ -3,7 +3,7 @@
   <h2>This is the view libraries page</h2>
   <ul>
     <li style='display: inline'>
-      <sm-link to='viewLibs'>none</sm-link>
+      <sm-link to='viewLibs' active='active'>none</sm-link>
     </li>
     <li each='{ lib in opts.libs }' style='display: inline'>
       <sm-link to='viewLibs.library' params='{ lib }'>{ lib.libName }</sm-link>

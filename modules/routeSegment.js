@@ -63,13 +63,7 @@ Segment.prototype.interpolate = function interpolate(params) {
 
   switch (this.type) {
     case 'dynamic': return encodeURIComponent(params[this.key]);
-    case 'splat': return params[this.key]
-      .split('/')
-      .map(function (string) {
-
-        return encodeURIComponent(string);
-      })
-      .join('/');
+    case 'splat': return '';
     case 'epsilon': return '';
     default: return this.key;
   }

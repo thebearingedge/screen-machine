@@ -41,32 +41,41 @@ Route.prototype.parent = null;
 Route.prototype.children = null;
 
 
-Route.prototype.isAbsolute = function isAbsolute() {
+Route.prototype.isAbsolute = function () {
 
   return this.path[0] === '/';
 };
 
 
+Route.prototype.isSplat = function () {
+
+  return this.path[0] === '*';
+};
+
+
 Route.prototype.match = function (unmatched) {
+
+  var matched = [];
+  var result;
+
+  if (this.isSplat()) {
+
+    var remainder = unmatched.join('/');
+    var key = this.path.slice(1);
+
+    result = {};
+    result[key] = remainder;
+    matched.push(result);
+    unmatched.splice(0);
+    return matched;
+  }
 
   var toMatch = this.segments.length;
   var i = 0;
-  var matched = [];
 
   while (i < toMatch && toMatch <= unmatched.length) {
 
-    var result;
     var segment = this.segments[i];
-
-    if (segment.type === 'splat') {
-
-      var remainder = unmatched.slice(matched.length).join('/');
-      result = segment.match(remainder);
-      matched.push(result);
-      unmatched.splice(0);
-
-      return matched;
-    }
 
     // jshint -W084
     if (result = segment.match(unmatched[i])) {

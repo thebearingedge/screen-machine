@@ -1,7 +1,7 @@
 
 'use strict';
 
-var xtend = require('xtend/mutable');
+var assign = require('object-assign');
 var BaseComponent = require('./modules/BaseComponent');
 
 
@@ -25,18 +25,18 @@ function riotComponent(riot) {
         this.href = router.href(stateName, params, query, hash);
         this.active = machine.hasState(stateName, params, query);
 
-        this.matchState = function () {
+        this.matchActive = function () {
 
           this.active = machine.hasState(stateName, params, query);
           this.update();
 
         }.bind(this);
 
-        events.subscribe('stateChangeSuccess', this.matchState);
+        events.subscribe('stateChangeSuccess', this.matchActive);
 
         this.on('unmount', function () {
 
-          events.unsubscribe('stateChangeSuccess', this.matchState);
+          events.unsubscribe('stateChangeSuccess', this.matchActive);
         });
       }
     );
@@ -51,7 +51,7 @@ function riotComponent(riot) {
     }
 
 
-    xtend(RiotComponent.prototype, BaseComponent.prototype, {
+    assign(RiotComponent.prototype, BaseComponent.prototype, {
 
       constructor: RiotComponent,
 

@@ -9,7 +9,6 @@ module.exports = function (machine) {
       path: 'view-libraries',
       resolve: {
         libs: function () {
-          console.log('fetching libs...');
           return [
             { libName: 'riot' },
             { libName: 'react' },
@@ -32,7 +31,6 @@ module.exports = function (machine) {
       component: 'library-description', // <- render into 'libraries' component
       resolve: {
         content: ['libs@viewLibs', function (libs, params) {
-          console.log('fetching description for ' + params.libName + '...');
 
           var lib = libs
             .filter(function (lib) {

@@ -9,12 +9,16 @@ module.exports = stateRegistry;
 
 function stateRegistry() {
 
+  var rootState = new State({ name: '' });
+
   return {
 
-    $root: new State({ name: '' }),
+    $root: rootState,
 
 
-    states: {},
+    states: {
+      '': rootState
+    },
 
 
     queues: {},

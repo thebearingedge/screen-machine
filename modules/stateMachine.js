@@ -31,6 +31,19 @@ function stateMachine(events, registry, Promise) {
     },
 
 
+    hasState: function (stateName, params, query) {
+
+      if (!this.$state.current) return false;
+
+      var state = registry.states[stateName];
+      var hasState = this.$state.current.contains(state);
+      var hasParams = equalForKeys(params || {}, this.$state.params);
+      var hasQuery = equalForKeys(query || {}, this.$state.query);
+
+      return hasState && hasParams && hasQuery;
+    },
+
+
     createTransition: function (stateOrName, params, query, options) {
 
       options || (options = {});
@@ -38,22 +51,18 @@ function stateMachine(events, registry, Promise) {
       var toState = typeof stateOrName === 'string'
         ? registry.states[stateOrName]
         : stateOrName;
-
       var fromState = this.$state.current;
       var fromParams = this.$state.params;
       var fromQuery = this.$state.query;
       var cache = this.cache;
-
       var fromBranch = fromState.getBranch();
       var toBranch = toState.getBranch();
-
       var exiting = fromBranch.filter(exitingFrom(toState));
-      var entering, updating;
-      var toUpdate = shouldUpdate(fromParams, fromQuery, params, query, cache);
-
       var pivotState = exiting[0]
         ? exiting[0].getParent()
         : null;
+      var toUpdate = shouldUpdate(fromParams, fromQuery, params, query, cache);
+      var entering, updating;
 
       if (pivotState) {
 
@@ -165,7 +174,6 @@ function Deferred() {
   this.reject = function (reason) { this._reject(reason); };
 }
 
-
 function shouldUpdate(fromParams, fromQuery, params, query, cache) {
 
   return function toUpdate(activeState) {
@@ -183,12 +191,10 @@ function exitingFrom(destination) {
   };
 }
 
-
 function collectResolves(resolves, state) {
 
   return resolves.concat(state.getResolves());
 }
-
 
 function callHook(hook, transition) {
 
@@ -199,4 +205,16 @@ function callHook(hook, transition) {
       state[hook].call(state, transition);
     }
   };
+}
+
+function equalForKeys(partial, complete) {
+
+  var keys = Object.keys(partial);
+
+  if (!keys.length) return true;
+
+  return keys.every(function (key) {
+
+    return complete[key] === partial[key];
+  });
 }

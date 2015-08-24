@@ -1829,7 +1829,6 @@ module.exports = function (machine) {
       path: 'view-libraries',
       resolve: {
         libs: function () {
-          console.log('fetching libs...');
           return [
             { libName: 'riot' },
             { libName: 'react' },
@@ -1852,7 +1851,6 @@ module.exports = function (machine) {
       component: 'library-description', // <- render into 'libraries' component
       resolve: {
         content: ['libs@viewLibs', function (libs, params) {
-          console.log('fetching description for ' + params.libName + '...');
 
           var lib = libs
             .filter(function (lib) {
@@ -1887,7 +1885,7 @@ riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The curren
 riot.tag('libraries-landing', '<p>This is the "Libraries" landing page.</p> <sm-link to="home">home</sm-link>', function(opts) {
 
 });
-riot.tag('libraries', '<h2>This is the view libraries page</h2> <ul> <li style="display: inline"> <sm-link to="viewLibs">none</sm-link> </li> <li each="{ opts.libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ this }">{ libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
+riot.tag('libraries', '<h2>This is the view libraries page</h2> <ul> <li style="display: inline"> <sm-link to="viewLibs">none</sm-link> </li> <li each="{ lib in opts.libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ lib }">{ lib.libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
 
 
 });
@@ -2022,18 +2020,17 @@ BaseResolve.prototype.createTask = function (params, query, transition, cache) {
 
   this.cache = cache;
 
-
   return assign({}, this.taskDelegate, {
     id: this.id,
     resolve: this,
-    cache: cache,
-    params: params,
-    query: query,
     Promise: this.Promise,
     waitingFor: this.injectables
       ? this.injectables.slice()
       : [],
-    transition: transition
+    params: params,
+    query: query,
+    transition: transition,
+    cache: cache
   });
 };
 
@@ -2812,7 +2809,7 @@ Transition.prototype.attempt = function () {
     })
     .map(function (ready) {
 
-      return ready.runSelf(this, queue, completed, wait);
+      return ready.runSelf(queue, completed, wait);
     }, this);
 
   return Promise.all(toRun)
@@ -3174,14 +3171,7 @@ module.exports = function routerFactory(options) {
 
   options || (options = {});
 
-  var html5 = options.html5 === false
-    ? false
-    : true;
-
   return {
-
-    html5: html5,
-
 
     root: null,
 
@@ -3305,9 +3295,9 @@ module.exports = function routerFactory(options) {
 
       var url = this.toUrl.apply(this, arguments);
 
-      return this.html5
-        ? url
-        : '/#' + url;
+      return options.html5 === false
+        ? '/#' + url
+        : url;
     },
 
 
@@ -3410,6 +3400,19 @@ function stateMachine(events, registry, Promise) {
     },
 
 
+    hasState: function (stateName, params, query) {
+
+      if (!this.$state.current) return false;
+
+      var state = registry.states[stateName];
+      var hasState = this.$state.current.contains(state);
+      var hasParams = equalForKeys(params || {}, this.$state.params);
+      var hasQuery = equalForKeys(query || {}, this.$state.query);
+
+      return hasState && hasParams && hasQuery;
+    },
+
+
     createTransition: function (stateOrName, params, query, options) {
 
       options || (options = {});
@@ -3417,22 +3420,18 @@ function stateMachine(events, registry, Promise) {
       var toState = typeof stateOrName === 'string'
         ? registry.states[stateOrName]
         : stateOrName;
-
       var fromState = this.$state.current;
       var fromParams = this.$state.params;
       var fromQuery = this.$state.query;
       var cache = this.cache;
-
       var fromBranch = fromState.getBranch();
       var toBranch = toState.getBranch();
-
       var exiting = fromBranch.filter(exitingFrom(toState));
-      var entering, updating;
-      var toUpdate = shouldUpdate(fromParams, fromQuery, params, query, cache);
-
       var pivotState = exiting[0]
         ? exiting[0].getParent()
         : null;
+      var toUpdate = shouldUpdate(fromParams, fromQuery, params, query, cache);
+      var entering, updating;
 
       if (pivotState) {
 
@@ -3544,7 +3543,6 @@ function Deferred() {
   this.reject = function (reason) { this._reject(reason); };
 }
 
-
 function shouldUpdate(fromParams, fromQuery, params, query, cache) {
 
   return function toUpdate(activeState) {
@@ -3562,12 +3560,10 @@ function exitingFrom(destination) {
   };
 }
 
-
 function collectResolves(resolves, state) {
 
   return resolves.concat(state.getResolves());
 }
-
 
 function callHook(hook, transition) {
 
@@ -3578,6 +3574,18 @@ function callHook(hook, transition) {
       state[hook].call(state, transition);
     }
   };
+}
+
+function equalForKeys(partial, complete) {
+
+  var keys = Object.keys(partial);
+
+  if (!keys.length) return true;
+
+  return keys.every(function (key) {
+
+    return complete[key] === partial[key];
+  });
 }
 
 },{"./Transition":15}],22:[function(require,module,exports){
@@ -3592,12 +3600,16 @@ module.exports = stateRegistry;
 
 function stateRegistry() {
 
+  var rootState = new State({ name: '' });
+
   return {
 
-    $root: new State({ name: '' }),
+    $root: rootState,
 
 
-    states: {},
+    states: {
+      '': rootState
+    },
 
 
     queues: {},
@@ -4098,33 +4110,33 @@ module.exports = riotComponent;
 
 function riotComponent(riot) {
 
-  return function component(document, url, events, router) {
+  return function component(document, events, machine, router) {
 
     riot.tag(
       'sm-link',
       '<a href="{ href }" class="{ active: active }"><yield/></a>',
       function (opts) {
 
-        var routeName = opts.to;
+        var stateName = opts.to;
         var params = opts.params || {};
         var query = opts.query || {};
         var hash = opts.hash || '';
 
-        this.href = router.href(routeName, params, query, hash);
-        this.active = this.href === url.getLink();
+        this.href = router.href(stateName, params, query, hash);
+        this.active = machine.hasState(stateName, params, query);
 
-        this.matchUrl = function () {
+        this.matchState = function () {
 
-          this.active = this.href === url.getLink();
+          this.active = machine.hasState(stateName, params, query);
           this.update();
 
         }.bind(this);
 
-        events.subscribe('routeChange', this.matchUrl);
+        events.subscribe('stateChangeSuccess', this.matchState);
 
         this.on('unmount', function () {
 
-          events.unsubscribe('routeChange', this.matchUrl);
+          events.unsubscribe('stateChangeSuccess', this.matchState);
         });
       }
     );
@@ -4236,14 +4248,16 @@ function screenMachine(config) {
   var document = config.document;
   var window = document.defaultView;
   var Promise = config.promises;
-  var url = urlWatcher(window, { html5: config.html5 });
+  var html5 = config.html5;
+
   var events = eventBus(config.events);
-  var routes = router({ html5: config.html5 });
-  var Component = config.components(document, url, events, routes);
-  var views = viewTree(document, Component);
-  var resolves = resolveFactory(Promise);
+  var url = urlWatcher(window, { html5: html5 });
+  var routes = router({ html5: html5  });
   var registry = stateRegistry();
+  var resolves = resolveFactory(Promise);
   var machine = stateMachine(events, registry, Promise);
+  var Component = config.components(document, events, machine, routes);
+  var views = viewTree(document, Component);
 
   return {
 
@@ -4320,6 +4334,7 @@ function screenMachine(config) {
             events.notify('routeChange');
           }
 
+          events.notify('stateChangeSuccess', transition);
           return transition._cleanup();
         });
     },

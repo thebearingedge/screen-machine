@@ -19,14 +19,16 @@ function screenMachine(config) {
   var document = config.document;
   var window = document.defaultView;
   var Promise = config.promises;
-  var url = urlWatcher(window, { html5: config.html5 });
+  var html5 = config.html5;
+
   var events = eventBus(config.events);
-  var routes = router({ html5: config.html5 });
-  var Component = config.components(document, url, events, routes);
-  var views = viewTree(document, Component);
-  var resolves = resolveFactory(Promise);
+  var url = urlWatcher(window, { html5: html5 });
+  var routes = router({ html5: html5  });
   var registry = stateRegistry();
+  var resolves = resolveFactory(Promise);
   var machine = stateMachine(events, registry, Promise);
+  var Component = config.components(document, events, machine, routes);
+  var views = viewTree(document, Component);
 
   return {
 
@@ -103,6 +105,7 @@ function screenMachine(config) {
             events.notify('routeChange');
           }
 
+          events.notify('stateChangeSuccess', transition);
           return transition._cleanup();
         });
     },

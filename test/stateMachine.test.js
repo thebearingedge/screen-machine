@@ -135,6 +135,32 @@ describe('stateMachine', function () {
   });
 
 
+  describe('.hasState(stateName, params, query)', function () {
+
+    it('should know whether a state is active', function () {
+
+      expect(machine.hasState('app')).to.equal(false);
+
+      machine.init(
+        bazState, { bazParam: '42', fooParam: '7' }, { barQuery: 'smashing' }
+      );
+
+      var hasRoot = machine.hasState('');
+      var hasFoo = machine.hasState('app.foo', { fooParam: '7' });
+
+      expect(hasRoot).to.equal(true);
+      expect(hasFoo).to.equal(true);
+
+      machine.init(quxState, {}, {});
+
+      var hasQux = machine.hasState('qux');
+
+      expect(hasQux).to.equal(true);
+    });
+
+  });
+
+
   describe('.createTransition(state, params, query, options)', function () {
 
     it('should create a transition from "root" to "app"', function () {

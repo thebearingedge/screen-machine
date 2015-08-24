@@ -10,33 +10,33 @@ module.exports = riotComponent;
 
 function riotComponent(riot) {
 
-  return function component(document, url, events, router) {
+  return function component(document, events, machine, router) {
 
     riot.tag(
       'sm-link',
       '<a href="{ href }" class="{ active: active }"><yield/></a>',
       function (opts) {
 
-        var routeName = opts.to;
+        var stateName = opts.to;
         var params = opts.params || {};
         var query = opts.query || {};
         var hash = opts.hash || '';
 
-        this.href = router.href(routeName, params, query, hash);
-        this.active = this.href === url.getLink();
+        this.href = router.href(stateName, params, query, hash);
+        this.active = machine.hasState(stateName, params, query);
 
-        this.matchUrl = function () {
+        this.matchState = function () {
 
-          this.active = this.href === url.getLink();
+          this.active = machine.hasState(stateName, params, query);
           this.update();
 
         }.bind(this);
 
-        events.subscribe('routeChange', this.matchUrl);
+        events.subscribe('stateChangeSuccess', this.matchState);
 
         this.on('unmount', function () {
 
-          events.unsubscribe('routeChange', this.matchUrl);
+          events.unsubscribe('stateChangeSuccess', this.matchState);
         });
       }
     );

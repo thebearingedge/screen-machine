@@ -10,14 +10,7 @@ module.exports = function routerFactory(options) {
 
   options || (options = {});
 
-  var html5 = options.html5 === false
-    ? false
-    : true;
-
   return {
-
-    html5: html5,
-
 
     root: null,
 
@@ -141,9 +134,9 @@ module.exports = function routerFactory(options) {
 
       var url = this.toUrl.apply(this, arguments);
 
-      return this.html5
-        ? url
-        : '/#' + url;
+      return options.html5 === false
+        ? '/#' + url
+        : url;
     },
 
 

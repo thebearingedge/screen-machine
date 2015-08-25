@@ -8,9 +8,9 @@ function urlWatcher(window, options) {
 
   options || (options = {});
 
-  var history = window.history;
+  var history = window.history || {};
   var location = window.location;
-  var windowEvent = history && history.pushState && (options.html5 !== false)
+  var windowEvent = history.pushState && (options.html5 !== false)
     ? 'popstate'
     : 'hashchange';
 
@@ -28,16 +28,6 @@ function urlWatcher(window, options) {
 
       this.watch();
       onChange.call(null, this.get());
-    },
-
-
-    getLink: function () {
-
-      var url = this.get();
-
-      return windowEvent === 'popstate'
-        ? url
-        : '/#' + url;
     },
 
 

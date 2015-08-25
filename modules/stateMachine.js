@@ -1,6 +1,7 @@
 
 'use strict';
 
+var assign = require('object-assign');
 var Transition = require('./Transition');
 
 module.exports = stateMachine;
@@ -31,16 +32,41 @@ function stateMachine(events, registry, Promise) {
     },
 
 
-    hasState: function (stateName, params, query) {
+    getState: function (stateOrName) {
+
+      return typeof stateOrName === 'string'
+        ? registry.states[stateOrName]
+        : stateOrName;
+    },
+
+
+    hasState: function (stateOrName, params, query) {
 
       if (!this.$state.current) return false;
 
-      var state = registry.states[stateName];
-      var hasState = this.$state.current.contains(state);
-      var hasParams = equalForKeys(params || {}, this.$state.params);
-      var hasQuery = equalForKeys(query || {}, this.$state.query);
+      var state = this.getState(stateOrName);
 
-      return hasState && hasParams && hasQuery;
+      return state &&
+             this.$state.current.contains(state) &&
+             this.hasParams(params, query);
+    },
+
+
+    isInState: function (stateOrName, params, query) {
+
+      if (!this.$state.current) return false;
+
+      var state = this.getState(stateOrName);
+
+      return this.$state.current === state &&
+             this.hasParams(params, query);
+    },
+
+
+    hasParams: function (params, query) {
+
+      return equalForKeys(params || {}, this.$state.params) &&
+             equalForKeys(query || {}, this.$state.query);
     },
 
 
@@ -61,7 +87,7 @@ function stateMachine(events, registry, Promise) {
       var pivotState = exiting[0]
         ? exiting[0].getParent()
         : null;
-      var toUpdate = shouldUpdate(fromParams, fromQuery, params, query, cache);
+      var toUpdate = dirtyFilter(fromParams, fromQuery, params, query, cache);
       var entering, updating;
 
       if (pivotState) {
@@ -82,8 +108,8 @@ function stateMachine(events, registry, Promise) {
         .concat(updating)
         .reduce(collectResolves, []);
 
-      transition.prepare(resolves, cache, exiting, Promise);
       this.transition = transition;
+      transition._prepare(resolves, cache, exiting, Promise);
 
       exiting.reverse().forEach(callHook('beforeExit', transition));
       updating.forEach(callHook('beforeUpdate', transition));
@@ -95,66 +121,53 @@ function stateMachine(events, registry, Promise) {
 
     transitionTo: function () {
 
-      var deferred = new Deferred();
       var transition = this.createTransition.apply(this, arguments);
 
       if (transition.isCanceled()) {
 
-        events.notify('stateChangeCanceled', transition);
-        deferred.resolve(transition);
-        return deferred.promise;
+        return transition._fail('transition canceled');
+      }
+      else if (transition.isSuperseded()) {
+
+        return transition._fail('transition superseded');
       }
       else {
 
         events.notify('stateChangeStart', transition);
       }
 
-      transition
-        .attempt()
-        .then(function () {
-
-          if (transition.isCanceled()) {
-
-            events.notify('stateChangeCanceled', transition);
-            return deferred.resolve(transition);
-          }
-
-          transition._finish();
-          return deferred.resolve(transition);
-        })
+      return transition
+        ._attempt()
         .catch(function (err) {
 
-          transition.setError(err);
-          events.notify('stateChangeError', transition);
+          events.notify('stateChangeError', err);
 
-          if (transition.isHandled()) {
-
-            return deferred.resolve(transition);
-          }
-
-          return deferred.reject(err);
+          throw err;
         });
-
-      return deferred.promise;
     },
 
     cache: {
 
       $store: {},
 
-      get: function get(resolveId) {
+      get: function (resolveId) {
 
         return this.$store[resolveId];
       },
 
-      set: function set(resolveId, result) {
+      set: function (resolveId, result) {
 
         this.$store[resolveId] = result;
       },
 
-      unset: function unset(resolveId) {
+      unset: function (resolveId) {
 
         delete this.$store[resolveId];
+      },
+
+      values: function () {
+
+        return assign({}, this.$store);
       }
     }
 
@@ -162,19 +175,7 @@ function stateMachine(events, registry, Promise) {
 }
 
 
-function Deferred() {
-
-  this.promise = new Promise(function (resolve, reject) {
-
-    this._resolve = resolve;
-    this._reject = reject;
-  }.bind(this));
-
-  this.resolve = function (result) { this._resolve(result); };
-  this.reject = function (reason) { this._reject(reason); };
-}
-
-function shouldUpdate(fromParams, fromQuery, params, query, cache) {
+function dirtyFilter(fromParams, fromQuery, params, query, cache) {
 
   return function toUpdate(activeState) {
 

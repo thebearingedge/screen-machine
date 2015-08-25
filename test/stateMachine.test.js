@@ -305,11 +305,12 @@ describe('stateMachine', function () {
 
       return machine
         .transitionTo(appState, params, query)
-        .then(function () {
-
+        .then(function (transition) {
+          transition._commit();
           expect(machine.$state.current).to.equal(appState);
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
+          transition._cleanup();
           return done();
         });
     });
@@ -324,11 +325,12 @@ describe('stateMachine', function () {
 
       return machine
         .transitionTo('app', params, query)
-        .then(function () {
-
+        .then(function (transition) {
+          transition._commit();
           expect(machine.$state.current).to.equal(appState);
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
+          transition._cleanup();
           return done();
         });
     });
@@ -343,12 +345,13 @@ describe('stateMachine', function () {
       var query = {};
 
       return machine.transitionTo(fooState, params, query)
-        .then(function () {
-
+        .then(function (transition) {
+          transition._commit();
           expect(fooState.resolve.fooResolve.called).to.equal(true);
           expect(machine.$state.current).to.equal(fooState);
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
+          transition._cleanup();
           return done();
         });
     });
@@ -362,13 +365,14 @@ describe('stateMachine', function () {
       var query = { barQuery: '7' };
 
       return machine.transitionTo(barState, params, query)
-        .then(function () {
-
+        .then(function (transition) {
+          transition._commit();
           expect(fooState.resolve.fooResolve.called).to.equal(true);
           expect(barState.resolve.barResolve.called).to.equal(true);
           expect(machine.$state.current).to.equal(barState);
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
+          transition._cleanup();
           return done();
         });
     });
@@ -384,13 +388,14 @@ describe('stateMachine', function () {
 
       return machine
         .transitionTo(barState, params, query)
-        .then(function () {
-
+        .then(function (transition) {
+          transition._commit();
           expect(fooState.resolve.fooResolve.called).to.equal(false);
           expect(barState.resolve.barResolve.called).to.equal(true);
           expect(machine.$state.current).to.equal(barState);
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
+          transition._cleanup();
           return done();
         });
     });
@@ -403,7 +408,8 @@ describe('stateMachine', function () {
       var params = { fooParam: '42', bazParam: '50' };
       var query = { barQuery: '7' };
 
-      return machine.transitionTo(bazState, params, query);
+      return machine
+        .transitionTo(bazState, params, query);
 
     });
 
@@ -419,13 +425,14 @@ describe('stateMachine', function () {
 
       return machine
         .transitionTo(quuxState, params, query)
-        .then(function () {
-
+        .then(function (transition) {
+          transition._commit();
           expect(fooState.resolve.fooResolve.called).to.equal(false);
           expect(quuxState.resolve.quuxResolve.calledOnce).to.equal(true);
           expect(machine.$state.current).to.equal(quuxState);
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
+          transition._cleanup();
           return done();
         });
     });
@@ -442,38 +449,8 @@ describe('stateMachine', function () {
       var params = { fooParam: 'foo' };
       var query = {};
 
-      return Promise
-        .resolve(
-          expect(machine.transitionTo('app.foo', params, query))
-            .to.eventually.be.rejectedWith(Error, 'oops!')
-        );
-    });
-
-
-    it('should not reject a handled resolve error', function () {
-
-      machine.init(rootState, initialParams, initialQuery);
-
-      events.notify = function (eventName, transition) {
-
-        if (eventName === 'stateChangeError') {
-
-          transition.errorHandled();
-        }
-      };
-
-      sinon
-        .stub(registry.states['app.foo'].$resolves[0], 'execute')
-        .throws(new Error('oops!'));
-
-      var params = { fooParam: 'foo' };
-      var query = {};
-
-      return Promise
-        .resolve(
-          expect(machine.transitionTo('app.foo', params, query))
-            .to.eventually.be.fulfilled
-        );
+      return expect(machine.transitionTo('app.foo', params, query))
+            .to.eventually.be.rejectedWith(Error, 'oops!');
     });
 
 
@@ -488,12 +465,28 @@ describe('stateMachine', function () {
 
       return machine
         .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
-        .then(function () {
-
+        .catch(function (err) {
+          expect(err.message).to.equal('transition canceled');
           expect(fooState.resolve.fooResolve.called).to.equal(false);
-          expect(machine.$state.current).to.equal(rootState);
-          expect(machine.$state.params).to.deep.equal({});
-          expect(machine.$state.query).to.deep.equal({});
+          return done();
+        });
+    });
+
+
+    it('should not run resolves if superseded by hook', function (done) {
+
+      appState.beforeEnter = function (transition) {
+
+        transition.redirect('qux', {}, {});
+      };
+
+      machine.init(rootState, {}, {});
+
+      return machine
+        .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
+        .catch(function (err) {
+          expect(err.message).to.equal('transition superseded');
+          expect(fooState.resolve.fooResolve.called).to.equal(false);
           return done();
         });
     });
@@ -501,21 +494,39 @@ describe('stateMachine', function () {
 
     it('should not run resolves if canceled by listener', function (done) {
 
+      machine.init(rootState, {}, {});
+
       events.notify = function (eventName, transition) {
 
-        transition.cancel();
+        eventName === 'stateChangeStart' && transition.cancel();
       };
-
-      machine.init(rootState, {}, {});
 
       return machine
         .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
-        .then(function () {
-
+        .catch(function (err) {
+          expect(err.message).to.equal('transition canceled');
           expect(fooState.resolve.fooResolve.called).to.equal(false);
-          expect(machine.$state.current).to.equal(rootState);
-          expect(machine.$state.params).to.deep.equal({});
-          expect(machine.$state.query).to.deep.equal({});
+          return done();
+        });
+    });
+
+
+    it('should not run resolves if superseded by listener', function (done) {
+
+      machine.init(rootState, {}, {});
+
+      events.notify = function (eventName, transition) {
+
+        eventName === 'stateChangeStart' &&
+        transition.toState.name !== 'qux' &&
+        transition.redirect('qux', {}, {});
+      };
+
+      return machine
+        .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
+        .catch(function (err) {
+          expect(err.message).to.equal('transition superseded');
+          expect(fooState.resolve.fooResolve.called).to.equal(false);
           return done();
         });
     });

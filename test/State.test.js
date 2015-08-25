@@ -277,10 +277,22 @@ describe('State', function () {
 
       expect(state.isStale(oldParams, newParams, oldQuery, newQuery))
         .to.equal(true);
-
-
     });
 
+  });
+
+
+  describe('.shouldResolve(cache)', function () {
+
+    it('should resolve if it has resolves and is not cacheable', function () {
+
+      var cache = { $store: {} };
+
+      state = new State({ name: 'state', cacheable: false });
+      state.$resolves = [];
+
+      expect(state.shouldResolve(cache)).to.equal(true);
+    });
   });
 
 

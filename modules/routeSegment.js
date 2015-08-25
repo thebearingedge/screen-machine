@@ -16,6 +16,7 @@ function Segment(string) {
   var match;
 
   // jshint -W084
+  // thanks to @jmeas
   if (match = string.match(/^:([^\/]+)$/)) {
 
     this.type = 'dynamic';

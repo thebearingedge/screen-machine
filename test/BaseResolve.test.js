@@ -246,7 +246,8 @@ describe('BaseResolve', function () {
 
         it('should run itself and then run dependents', function (done) {
 
-          transition.isCanceled = function () { return false; };
+          transition.isSuperseded = function () { return false; };
+
           var queue = [fooTask, barTask, bazTask];
           var complete = [];
           var wait = 3;
@@ -267,7 +268,8 @@ describe('BaseResolve', function () {
 
         it('should not run itself if transition is canceled', function (done) {
 
-          transition.isCanceled = function () { return true; };
+          transition.isSuperseded = function () { return true; };
+          transition._fail = function () { return Promise.reject(); };
 
           var queue = [fooTask, barTask, bazTask];
           var complete = [];
@@ -278,7 +280,7 @@ describe('BaseResolve', function () {
 
           return fooTask
             .runSelf(transition, queue, complete, wait)
-            .then(function () {
+            .catch(function () {
               expect(queue).to.deep.equal([fooTask, barTask, bazTask]);
               expect(complete).to.deep.equal([]);
               expect(fooResolve.execute.called).to.equal(false);
@@ -289,7 +291,7 @@ describe('BaseResolve', function () {
 
         it('should not run dependents if completed', function (done) {
 
-          transition.isCanceled = function () { return false; };
+          transition.isSuperseded = function () { return false; };
           var queue = [fooTask];
           var complete = [];
           var wait = 1;
@@ -313,7 +315,7 @@ describe('BaseResolve', function () {
 
         it('should run all dependents that are now ready', function (done) {
 
-          transition.isCanceled = function () { return false; };
+          transition.isSuperseded = function () { return false; };
 
           var queue = [barTask, bazTask];
           var complete = [fooTask];

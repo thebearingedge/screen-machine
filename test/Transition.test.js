@@ -31,6 +31,28 @@ describe('Transition', function () {
   });
 
 
+  describe('.cancel()', function () {
+
+    it('should cancel the current transition', function () {
+
+      transition.cancel();
+
+      expect(transition.isCanceled()).to.equal(true);
+    });
+
+
+    it('should not be cancelable if succeeded', function () {
+
+      transition._succeeded = true;
+
+      transition.cancel();
+
+      expect(transition._canceled).to.equal(false);
+    });
+
+  });
+
+
   describe('.isCanceled()', function () {
 
     it('should not be initially canceled', function () {
@@ -39,15 +61,7 @@ describe('Transition', function () {
     });
 
 
-    it('should be canceled if it is superceded', function () {
-
-      machine.transition = {};
-
-      expect(transition.isCanceled()).to.equal(true);
-    });
-
-
-    it('should not be canceled if it already finished', function () {
+    it('should not be canceled if it already succeeded', function () {
 
       transition._succeeded = true;
 
@@ -64,20 +78,12 @@ describe('Transition', function () {
       expect(transition.isSuccessful()).to.equal(false);
     });
 
-  });
 
+    it('should be successful if succeeded and not superceded', function () {
 
-  describe('._finish()', function () {
+      transition._succeeded = true;
 
-    it('should reinitialize the state machine', function () {
-
-      sinon.spy(machine, 'init');
-      transition.prepare([], [], Promise);
-      transition._finish();
-
-      expect(transition._succeeded).to.equal(true);
-      expect(machine.init)
-        .to.have.been.calledWithExactly(toState, toParams, toQuery);
+      expect(transition.isSuccessful()).to.equal(true);
     });
 
   });
@@ -113,60 +119,7 @@ describe('Transition', function () {
   });
 
 
-  describe('.cancel()', function () {
-
-    it('should cancel the current transition', function () {
-
-      transition.cancel();
-
-      expect(transition.isCanceled()).to.equal(true);
-    });
-
-  });
-
-
-  describe('.setError(err)', function () {
-
-    it('should cancel the transition and mark it unhandled', function () {
-
-      var err = new Error();
-
-      transition.setError(err);
-
-      expect(transition._canceled).to.equal(true);
-      expect(transition._handled).to.equal(false);
-      expect(transition.error).to.equal(err);
-    });
-
-  });
-
-
-  describe('.isHandled()', function () {
-
-    it('should tell if user claims to have handled the error', function () {
-
-      transition._handled = true;
-
-      expect(transition.isHandled()).to.equal(true);
-    });
-
-  });
-
-
-  describe('.errorHandled()', function () {
-
-    it('should mark the transition handled', function () {
-
-      transition.setError({});
-      transition.errorHandled();
-
-      expect(transition._handled).to.equal(true);
-    });
-
-  });
-
-
-  describe('.prepare(resolves, cache, exiting, Promise)', function () {
+  describe('._prepare(resolves, cache, exiting, Promise)', function () {
 
     var state, cache;
     var fooResolve, barResolve;
@@ -190,7 +143,7 @@ describe('Transition', function () {
 
       var cacheSpy = sinon.spy(cache, 'get');
 
-      transition.prepare([barResolve], cache, [], Promise);
+      transition._prepare([barResolve], cache, [], Promise);
 
       expect(cacheSpy).to.have.been.calledWithExactly('foo@state');
     });
@@ -198,7 +151,7 @@ describe('Transition', function () {
 
     it('should NOT THROW if the task dependencies are ACYCLIC', function () {
 
-      expect(transition.prepare([fooResolve, barResolve], cache))
+      expect(transition._prepare([fooResolve, barResolve], cache))
         .to.not.throw;
     });
 
@@ -210,7 +163,7 @@ describe('Transition', function () {
                     'foo@state -> bar@state -> foo@state';
 
       expect(
-        transition.prepare.bind(transition, [fooResolve, barResolve], cache)
+        transition._prepare.bind(transition, [fooResolve, barResolve], cache)
       ).to.throw(Error, message);
     });
 

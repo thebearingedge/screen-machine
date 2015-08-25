@@ -19,67 +19,39 @@ function Transition(machine, toState, toParams, toQuery, options) {
 }
 
 
-Transition.prototype.error = null;
 Transition.prototype._canceled = false;
 Transition.prototype._succeeded = false;
-Transition.prototype._handled = null;
 Transition.prototype._tasks = null;
-
-
-Transition.prototype.setError = function (err) {
-
-  this._canceled = true;
-  this._handled = false;
-  this.error = err;
-  return this;
-};
-
-
-Transition.prototype.errorHandled = function () {
-
-  this._handled = true;
-  return this;
-};
-
-
-Transition.prototype.isHandled = function () {
-
-  return this._handled;
-};
 
 
 Transition.prototype.isCanceled = function () {
 
   if (this._succeeded) return false;
 
-  if (!this._canceled && this !== this._machine.transition) {
-
-    this._canceled = true;
-  }
-
   return this._canceled;
+};
+
+
+Transition.prototype.isSuperseded = function () {
+
+  return this !== this._machine.transition;
 };
 
 
 Transition.prototype.isSuccessful = function () {
 
-  return this._succeeded;
+  return this._succeeded && !this.isSuperseded();
 };
 
 
 Transition.prototype.cancel = function () {
 
-  this._canceled = true;
+  if (!this._succeeded) {
+
+    this._canceled = true;
+  }
 
   return this;
-};
-
-
-Transition.prototype._finish = function () {
-
-  this._succeeded = true;
-  this._machine.init(this.toState, this.toParams, this.toQuery);
-  this._tasks.forEach(function (task) { return task.commit(); });
 };
 
 
@@ -108,13 +80,14 @@ Transition.prototype.retry = function () {
 };
 
 
-Transition.prototype.prepare = function (resolves, cache, exiting, Promise) {
+Transition.prototype._prepare = function (resolves, cache, exiting, Promise) {
 
   var tasks = this._tasks = resolves
     .map(function (resolve) {
 
       return resolve.createTask(this.toParams, this.toQuery, this, cache);
     }, this);
+  this._cache = cache;
   this._exiting = exiting;
   this._Promise = Promise;
 
@@ -183,7 +156,17 @@ Transition.prototype.prepare = function (resolves, cache, exiting, Promise) {
 };
 
 
-Transition.prototype.attempt = function () {
+Transition.prototype._attempt = function () {
+
+  if (this.isCanceled()) {
+
+    return this._fail('transition canceled');
+  }
+
+  if (this.isSuperseded()) {
+
+    return this._fail('transition superseded');
+  }
 
   var Promise = this._Promise;
   var queue = this._tasks.slice();
@@ -202,6 +185,33 @@ Transition.prototype.attempt = function () {
   return Promise.all(toRun)
     .then(function () {
 
-      return this;
+      return this._succeed();
     }.bind(this));
+};
+
+
+Transition.prototype._fail = function (reason) {
+
+  return this._Promise.reject(new Error(reason));
+};
+
+
+Transition.prototype._succeed = function () {
+
+  this._succeeded = true;
+
+  return this._Promise.resolve(this);
+};
+
+
+Transition.prototype._commit = function () {
+
+  this._machine.init(this.toState, this.toParams, this.toQuery);
+
+  this._tasks.forEach(function (task) {
+
+    this._cache.set(task.id, task.result);
+  }, this);
+
+  return this;
 };

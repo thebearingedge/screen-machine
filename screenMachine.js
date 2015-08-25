@@ -22,7 +22,7 @@ function screenMachine(config) {
 
   var events = eventBus(config.events);
   var url = urlWatcher(window, { html5: html5 });
-  var routes = router({ html5: html5  });
+  var routes = router({ html5: html5 });
   var registry = stateRegistry();
   var resolves = resolveFactory(Promise);
   var machine = stateMachine(events, registry, Promise);
@@ -40,11 +40,7 @@ function screenMachine(config) {
         routes.add(registered.name, registered.path);
       }
 
-      if (registered.resolve) {
-
-        resolves.addTo(registered);
-      }
-
+      resolves.addTo(registered);
       views.processState(registered);
 
       return this;
@@ -71,8 +67,6 @@ function screenMachine(config) {
       }
       else {
 
-        events.notify('routeChange');
-
         args.push({ routeChange: true });
 
         return this.transitionTo.apply(this, args);
@@ -87,24 +81,26 @@ function screenMachine(config) {
       return machine.transitionTo.apply(machine, arguments)
         .then(function (transition) {
 
-          if (transition.isCanceled()) {
+          if (!transition.isSuccessful()) {
 
             return transition;
           }
 
+          transition._commit();
+
           var state = transition.toState;
           var components = state.getAllComponents();
-          var resolved = assign({}, machine.cache.$store);
+          var resolved = machine.cache.values();
 
           views.compose(components, resolved, params, query);
 
           if (!options.routeChange) {
 
             url.push(routes.toUrl(state.name, params, query));
-            events.notify('routeChange');
           }
 
           events.notify('stateChangeSuccess', transition);
+
           return transition._cleanup();
         });
     },

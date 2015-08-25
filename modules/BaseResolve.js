@@ -19,7 +19,7 @@ function BaseResolve(resolveKey, state, Promise) {
 
 BaseResolve.prototype.clear = function () {
 
-  if (this.cacheable) {
+  if (this.cache && this.cacheable) {
 
     this.cache.unset(this.id);
   }
@@ -93,9 +93,9 @@ BaseResolve.prototype.taskDelegate = {
 
     var Promise = this.Promise;
 
-    if (this.transition.isCanceled()) {
+    if (this.transition.isSuperseded()) {
 
-      return Promise.resolve();
+      return this.transition._fail('transition superseded');
     }
 
     queue.splice(queue.indexOf(this), 1);

@@ -2037,7 +2037,7 @@ function BaseResolve(resolveKey, state, Promise) {
 
 BaseResolve.prototype.clear = function () {
 
-  if (this.cacheable) {
+  if (this.cache && this.cacheable) {
 
     this.cache.unset(this.id);
   }
@@ -2111,9 +2111,9 @@ BaseResolve.prototype.taskDelegate = {
 
     var Promise = this.Promise;
 
-    if (this.transition.isCanceled()) {
+    if (this.transition.isSuperseded()) {
 
-      return Promise.resolve();
+      return this.transition._fail('transition superseded');
     }
 
     queue.splice(queue.indexOf(this), 1);
@@ -2669,67 +2669,39 @@ function Transition(machine, toState, toParams, toQuery, options) {
 }
 
 
-Transition.prototype.error = null;
 Transition.prototype._canceled = false;
 Transition.prototype._succeeded = false;
-Transition.prototype._handled = null;
 Transition.prototype._tasks = null;
-
-
-Transition.prototype.setError = function (err) {
-
-  this._canceled = true;
-  this._handled = false;
-  this.error = err;
-  return this;
-};
-
-
-Transition.prototype.errorHandled = function () {
-
-  this._handled = true;
-  return this;
-};
-
-
-Transition.prototype.isHandled = function () {
-
-  return this._handled;
-};
 
 
 Transition.prototype.isCanceled = function () {
 
   if (this._succeeded) return false;
 
-  if (!this._canceled && this !== this._machine.transition) {
-
-    this._canceled = true;
-  }
-
   return this._canceled;
+};
+
+
+Transition.prototype.isSuperseded = function () {
+
+  return this !== this._machine.transition;
 };
 
 
 Transition.prototype.isSuccessful = function () {
 
-  return this._succeeded;
+  return this._succeeded && !this.isSuperseded();
 };
 
 
 Transition.prototype.cancel = function () {
 
-  this._canceled = true;
+  if (!this._succeeded) {
+
+    this._canceled = true;
+  }
 
   return this;
-};
-
-
-Transition.prototype._finish = function () {
-
-  this._succeeded = true;
-  this._machine.init(this.toState, this.toParams, this.toQuery);
-  this._tasks.forEach(function (task) { return task.commit(); });
 };
 
 
@@ -2758,13 +2730,14 @@ Transition.prototype.retry = function () {
 };
 
 
-Transition.prototype.prepare = function (resolves, cache, exiting, Promise) {
+Transition.prototype._prepare = function (resolves, cache, exiting, Promise) {
 
   var tasks = this._tasks = resolves
     .map(function (resolve) {
 
       return resolve.createTask(this.toParams, this.toQuery, this, cache);
     }, this);
+  this._cache = cache;
   this._exiting = exiting;
   this._Promise = Promise;
 
@@ -2833,7 +2806,17 @@ Transition.prototype.prepare = function (resolves, cache, exiting, Promise) {
 };
 
 
-Transition.prototype.attempt = function () {
+Transition.prototype._attempt = function () {
+
+  if (this.isCanceled()) {
+
+    return this._fail('transition canceled');
+  }
+
+  if (this.isSuperseded()) {
+
+    return this._fail('transition superseded');
+  }
 
   var Promise = this._Promise;
   var queue = this._tasks.slice();
@@ -2852,8 +2835,35 @@ Transition.prototype.attempt = function () {
   return Promise.all(toRun)
     .then(function () {
 
-      return this;
+      return this._succeed();
     }.bind(this));
+};
+
+
+Transition.prototype._fail = function (reason) {
+
+  return this._Promise.reject(new Error(reason));
+};
+
+
+Transition.prototype._succeed = function () {
+
+  this._succeeded = true;
+
+  return this._Promise.resolve(this);
+};
+
+
+Transition.prototype._commit = function () {
+
+  this._machine.init(this.toState, this.toParams, this.toQuery);
+
+  this._tasks.forEach(function (task) {
+
+    this._cache.set(task.id, task.result);
+  }, this);
+
+  return this;
 };
 
 },{}],17:[function(require,module,exports){
@@ -3136,6 +3146,7 @@ function Segment(string) {
   var match;
 
   // jshint -W084
+  // thanks to @jmeas
   if (match = string.match(/^:([^\/]+)$/)) {
 
     this.type = 'dynamic';
@@ -3401,6 +3412,7 @@ module.exports = function routerFactory(options) {
 
 'use strict';
 
+var assign = require('object-assign');
 var Transition = require('./Transition');
 
 module.exports = stateMachine;
@@ -3431,16 +3443,41 @@ function stateMachine(events, registry, Promise) {
     },
 
 
-    hasState: function (stateName, params, query) {
+    getState: function (stateOrName) {
+
+      return typeof stateOrName === 'string'
+        ? registry.states[stateOrName]
+        : stateOrName;
+    },
+
+
+    hasState: function (stateOrName, params, query) {
 
       if (!this.$state.current) return false;
 
-      var state = registry.states[stateName];
-      var hasState = this.$state.current.contains(state);
-      var hasParams = equalForKeys(params || {}, this.$state.params);
-      var hasQuery = equalForKeys(query || {}, this.$state.query);
+      var state = this.getState(stateOrName);
 
-      return hasState && hasParams && hasQuery;
+      return state &&
+             this.$state.current.contains(state) &&
+             this.hasParams(params, query);
+    },
+
+
+    isInState: function (stateOrName, params, query) {
+
+      if (!this.$state.current) return false;
+
+      var state = this.getState(stateOrName);
+
+      return this.$state.current === state &&
+             this.hasParams(params, query);
+    },
+
+
+    hasParams: function (params, query) {
+
+      return equalForKeys(params || {}, this.$state.params) &&
+             equalForKeys(query || {}, this.$state.query);
     },
 
 
@@ -3461,7 +3498,7 @@ function stateMachine(events, registry, Promise) {
       var pivotState = exiting[0]
         ? exiting[0].getParent()
         : null;
-      var toUpdate = shouldUpdate(fromParams, fromQuery, params, query, cache);
+      var toUpdate = dirtyFilter(fromParams, fromQuery, params, query, cache);
       var entering, updating;
 
       if (pivotState) {
@@ -3482,8 +3519,8 @@ function stateMachine(events, registry, Promise) {
         .concat(updating)
         .reduce(collectResolves, []);
 
-      transition.prepare(resolves, cache, exiting, Promise);
       this.transition = transition;
+      transition._prepare(resolves, cache, exiting, Promise);
 
       exiting.reverse().forEach(callHook('beforeExit', transition));
       updating.forEach(callHook('beforeUpdate', transition));
@@ -3495,66 +3532,53 @@ function stateMachine(events, registry, Promise) {
 
     transitionTo: function () {
 
-      var deferred = new Deferred();
       var transition = this.createTransition.apply(this, arguments);
 
       if (transition.isCanceled()) {
 
-        events.notify('stateChangeCanceled', transition);
-        deferred.resolve(transition);
-        return deferred.promise;
+        return transition._fail('transition canceled');
+      }
+      else if (transition.isSuperseded()) {
+
+        return transition._fail('transition superseded');
       }
       else {
 
         events.notify('stateChangeStart', transition);
       }
 
-      transition
-        .attempt()
-        .then(function () {
-
-          if (transition.isCanceled()) {
-
-            events.notify('stateChangeCanceled', transition);
-            return deferred.resolve(transition);
-          }
-
-          transition._finish();
-          return deferred.resolve(transition);
-        })
+      return transition
+        ._attempt()
         .catch(function (err) {
 
-          transition.setError(err);
-          events.notify('stateChangeError', transition);
+          events.notify('stateChangeError', err);
 
-          if (transition.isHandled()) {
-
-            return deferred.resolve(transition);
-          }
-
-          return deferred.reject(err);
+          throw err;
         });
-
-      return deferred.promise;
     },
 
     cache: {
 
       $store: {},
 
-      get: function get(resolveId) {
+      get: function (resolveId) {
 
         return this.$store[resolveId];
       },
 
-      set: function set(resolveId, result) {
+      set: function (resolveId, result) {
 
         this.$store[resolveId] = result;
       },
 
-      unset: function unset(resolveId) {
+      unset: function (resolveId) {
 
         delete this.$store[resolveId];
+      },
+
+      values: function () {
+
+        return assign({}, this.$store);
       }
     }
 
@@ -3562,19 +3586,7 @@ function stateMachine(events, registry, Promise) {
 }
 
 
-function Deferred() {
-
-  this.promise = new Promise(function (resolve, reject) {
-
-    this._resolve = resolve;
-    this._reject = reject;
-  }.bind(this));
-
-  this.resolve = function (result) { this._resolve(result); };
-  this.reject = function (reason) { this._reject(reason); };
-}
-
-function shouldUpdate(fromParams, fromQuery, params, query, cache) {
+function dirtyFilter(fromParams, fromQuery, params, query, cache) {
 
   return function toUpdate(activeState) {
 
@@ -3619,7 +3631,7 @@ function equalForKeys(partial, complete) {
   });
 }
 
-},{"./Transition":16}],23:[function(require,module,exports){
+},{"./Transition":16,"object-assign":27}],23:[function(require,module,exports){
 
 'use strict';
 
@@ -3807,9 +3819,9 @@ function urlWatcher(window, options) {
 
   options || (options = {});
 
-  var history = window.history;
+  var history = window.history || {};
   var location = window.location;
-  var windowEvent = history && history.pushState && (options.html5 !== false)
+  var windowEvent = history.pushState && (options.html5 !== false)
     ? 'popstate'
     : 'hashchange';
 
@@ -3827,16 +3839,6 @@ function urlWatcher(window, options) {
 
       this.watch();
       onChange.call(null, this.get());
-    },
-
-
-    getLink: function () {
-
-      var url = this.get();
-
-      return windowEvent === 'popstate'
-        ? url
-        : '/#' + url;
     },
 
 
@@ -4287,7 +4289,7 @@ function screenMachine(config) {
 
   var events = eventBus(config.events);
   var url = urlWatcher(window, { html5: html5 });
-  var routes = router({ html5: html5  });
+  var routes = router({ html5: html5 });
   var registry = stateRegistry();
   var resolves = resolveFactory(Promise);
   var machine = stateMachine(events, registry, Promise);
@@ -4305,11 +4307,7 @@ function screenMachine(config) {
         routes.add(registered.name, registered.path);
       }
 
-      if (registered.resolve) {
-
-        resolves.addTo(registered);
-      }
-
+      resolves.addTo(registered);
       views.processState(registered);
 
       return this;
@@ -4336,8 +4334,6 @@ function screenMachine(config) {
       }
       else {
 
-        events.notify('routeChange');
-
         args.push({ routeChange: true });
 
         return this.transitionTo.apply(this, args);
@@ -4352,24 +4348,26 @@ function screenMachine(config) {
       return machine.transitionTo.apply(machine, arguments)
         .then(function (transition) {
 
-          if (transition.isCanceled()) {
+          if (!transition.isSuccessful()) {
 
             return transition;
           }
 
+          transition._commit();
+
           var state = transition.toState;
           var components = state.getAllComponents();
-          var resolved = assign({}, machine.cache.$store);
+          var resolved = machine.cache.values();
 
           views.compose(components, resolved, params, query);
 
           if (!options.routeChange) {
 
             url.push(routes.toUrl(state.name, params, query));
-            events.notify('routeChange');
           }
 
           events.notify('stateChangeSuccess', transition);
+
           return transition._cleanup();
         });
     },

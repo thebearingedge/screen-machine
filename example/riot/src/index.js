@@ -20,8 +20,7 @@ var config = {
     trigger: 'emit',
     on: 'addListener',
     off: 'removeListener'
-  },
-  html5: false
+  }
 };
 
 var machine = global.machine = screenMachine(config);

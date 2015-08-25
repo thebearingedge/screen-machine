@@ -49,7 +49,7 @@ if (typeof document !== 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":31}],3:[function(require,module,exports){
+},{"min-document":30}],3:[function(require,module,exports){
 (function (global){
 /*! Native Promise Only
     v0.8.1 (c) Kyle Simpson
@@ -1906,6 +1906,7 @@ riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The curren
 });
 riot.tag('libraries-landing', '<p>This is the "Libraries" landing page.</p> <sm-link to="home">home</sm-link>', function(opts) {
 
+
 });
 riot.tag('libraries', '<h2>This is the view libraries page</h2> <ul> <li style="display: inline"> <sm-link to="viewLibs" active="active">none</sm-link> </li> <li each="{ lib in opts.libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ lib }" active="active">{ lib.libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
 
@@ -1943,13 +1944,12 @@ var config = {
     trigger: 'emit',
     on: 'addListener',
     off: 'removeListener'
-  },
-  html5: false
+  }
 };
 
 var machine = global.machine = screenMachine(config);
 
-require('./tags');
+require('./tags/all');
 
 var domready = require('domready');
 var homeScreen = require('./screens/home');
@@ -1966,7 +1966,7 @@ domready(function () {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../../../riotComponent":29,"../../../screenMachine":30,"./screens/home":5,"./screens/notFound":6,"./screens/viewLibs":7,"./tags":8,"domready":1,"events":32,"global/document":2,"native-promise-only":3,"riot":4}],10:[function(require,module,exports){
+},{"../../../riotComponent":28,"../../../screenMachine":29,"./screens/home":5,"./screens/notFound":6,"./screens/viewLibs":7,"./tags/all":8,"domready":1,"events":31,"global/document":2,"native-promise-only":3,"riot":4}],10:[function(require,module,exports){
 
 'use strict';
 
@@ -1987,7 +1987,6 @@ BaseComponent.prototype.node = null;
 BaseComponent.prototype.setView = function (view) {
 
   this.view = view;
-
   return this;
 };
 
@@ -1995,7 +1994,6 @@ BaseComponent.prototype.setView = function (view) {
 BaseComponent.prototype.addChildView = function (view) {
 
   this.childViews.push(view);
-
   return this;
 };
 
@@ -2011,7 +2009,6 @@ BaseComponent.prototype.shouldRender = function () {
 BaseComponent.prototype.load = function () {
 
   this.view.loadComponent(this);
-
   return this;
 };
 
@@ -2111,8 +2108,14 @@ BaseResolve.prototype.taskDelegate = {
 
     var Promise = this.Promise;
 
+    if (queue.indexOf(this) < 0) {
+
+      return Promise.resolve();
+    }
+
     if (this.transition.isSuperseded()) {
 
+      queue.splice(0);
       return this.transition._fail('transition superseded');
     }
 
@@ -2160,6 +2163,7 @@ BaseResolve.prototype.taskDelegate = {
 
 
   commit: function () {
+
     this.cache.set(this.id, this.result);
   }
 
@@ -2388,8 +2392,7 @@ assign(SimpleResolve.prototype, BaseResolve.prototype, {
 
 'use strict';
 
-var xtend = require('xtend/mutable');
-
+var assign = require('object-assign');
 
 module.exports = State;
 
@@ -2404,7 +2407,7 @@ function State(definition) {
   this.$ancestors = {};
   this.$includes = {};
 
-  xtend(this, definition);
+  assign(this, definition);
 
   this.$includes[this.name] = true;
   this.$ancestors[this.name] = this;
@@ -2478,10 +2481,10 @@ State.prototype.$pathSegments = null;
 
 State.prototype.inheritFrom = function (parentNode) {
 
-  this.data = xtend({}, parentNode.data, this.data || {});
+  this.data = assign({}, parentNode.data, this.data || {});
 
-  xtend(this.$includes, parentNode.$includes);
-  xtend(this.$ancestors, parentNode.$ancestors);
+  assign(this.$includes, parentNode.$includes);
+  assign(this.$ancestors, parentNode.$ancestors);
 
   this.$branch = parentNode
     .getBranch()
@@ -2647,10 +2650,9 @@ State.prototype.shouldResolve = function (cache) {
 };
 
 
-},{"xtend/mutable":28}],16:[function(require,module,exports){
+},{"object-assign":27}],16:[function(require,module,exports){
 
 'use strict';
-
 
 module.exports = Transition;
 
@@ -2677,7 +2679,6 @@ Transition.prototype._tasks = null;
 Transition.prototype.isCanceled = function () {
 
   if (this._succeeded) return false;
-
   return this._canceled;
 };
 
@@ -2818,7 +2819,6 @@ Transition.prototype._attempt = function () {
     return this._fail('transition superseded');
   }
 
-  var Promise = this._Promise;
   var queue = this._tasks.slice();
   var wait = queue.length;
   var completed = [];
@@ -2832,11 +2832,8 @@ Transition.prototype._attempt = function () {
       return ready.runSelf(queue, completed, wait);
     }, this);
 
-  return Promise.all(toRun)
-    .then(function () {
-
-      return this._succeed();
-    }.bind(this));
+  return this._Promise.all(toRun)
+    .then(this._succeed.bind(this));
 };
 
 
@@ -3204,14 +3201,12 @@ Segment.prototype.interpolate = function interpolate(params) {
 
 'use strict';
 
-var xtend = require('xtend/mutable');
+var assign = require('object-assign');
 var Route = require('./Route');
 var urlTools = require('./urlTools');
 
 
-module.exports = function routerFactory(options) {
-
-  options || (options = {});
+module.exports = function routerFactory() {
 
   return {
 
@@ -3335,11 +3330,7 @@ module.exports = function routerFactory(options) {
 
     href: function () {
 
-      var url = this.toUrl.apply(this, arguments);
-
-      return options.html5 === false
-        ? '/#' + url
-        : url;
+      return this.toUrl.apply(this, arguments);
     },
 
 
@@ -3360,7 +3351,7 @@ module.exports = function routerFactory(options) {
         }, [])
         .reduce(function (params, result) {
 
-          return xtend(params, result);
+          return assign(params, result);
         }, {});
     },
 
@@ -3408,7 +3399,7 @@ module.exports = function routerFactory(options) {
   };
 };
 
-},{"./Route":13,"./urlTools":24,"xtend/mutable":28}],22:[function(require,module,exports){
+},{"./Route":13,"./urlTools":24,"object-assign":27}],22:[function(require,module,exports){
 
 'use strict';
 
@@ -3438,7 +3429,6 @@ function stateMachine(events, registry, Promise) {
       this.$state.params = params;
       this.$state.query = query;
       this.transition = null;
-
       return this;
     },
 
@@ -3525,7 +3515,6 @@ function stateMachine(events, registry, Promise) {
       exiting.reverse().forEach(callHook('beforeExit', transition));
       updating.forEach(callHook('beforeUpdate', transition));
       entering.forEach(callHook('beforeEnter', transition));
-
       return transition;
     },
 
@@ -3542,17 +3531,14 @@ function stateMachine(events, registry, Promise) {
 
         return transition._fail('transition superseded');
       }
-      else {
 
-        events.notify('stateChangeStart', transition);
-      }
+      events.notify('stateChangeStart', transition);
 
       return transition
         ._attempt()
         .catch(function (err) {
 
           events.notify('stateChangeError', err);
-
           throw err;
         });
     },
@@ -3574,12 +3560,13 @@ function stateMachine(events, registry, Promise) {
       unset: function (resolveId) {
 
         delete this.$store[resolveId];
-      },
-
-      values: function () {
-
-        return assign({}, this.$store);
       }
+
+    },
+
+    getResolved: function () {
+
+      return assign({}, this.cache.$store);
     }
 
   };
@@ -3636,7 +3623,6 @@ function equalForKeys(partial, complete) {
 'use strict';
 
 var State = require('./State');
-
 
 module.exports = stateRegistry;
 
@@ -3716,7 +3702,6 @@ function stateRegistry() {
 },{"./State":15}],24:[function(require,module,exports){
 
 'use strict';
-
 
 module.exports = {
 
@@ -3909,7 +3894,6 @@ function urlWatcher(window, options) {
 'use strict';
 
 var View = require('./View');
-
 
 module.exports = viewTree;
 
@@ -4114,29 +4098,11 @@ module.exports = Object.assign || function (target, source) {
 };
 
 },{}],28:[function(require,module,exports){
-module.exports = extend
-
-function extend(target) {
-    for (var i = 1; i < arguments.length; i++) {
-        var source = arguments[i]
-
-        for (var key in source) {
-            if (source.hasOwnProperty(key)) {
-                target[key] = source[key]
-            }
-        }
-    }
-
-    return target
-}
-
-},{}],29:[function(require,module,exports){
 
 'use strict';
 
 var assign = require('object-assign');
 var BaseComponent = require('./modules/BaseComponent');
-
 
 module.exports = riotComponent;
 
@@ -4264,11 +4230,10 @@ function riotComponent(riot) {
   };
 }
 
-},{"./modules/BaseComponent":10,"object-assign":27}],30:[function(require,module,exports){
+},{"./modules/BaseComponent":10,"object-assign":27}],29:[function(require,module,exports){
 
 'use strict';
 
-var assign = require('object-assign');
 var urlWatcher = require('./modules/urlWatcher');
 var eventBus = require('./modules/eventBus');
 var viewTree = require('./modules/viewTree');
@@ -4289,7 +4254,7 @@ function screenMachine(config) {
 
   var events = eventBus(config.events);
   var url = urlWatcher(window, { html5: html5 });
-  var routes = router({ html5: html5 });
+  var routes = router();
   var registry = stateRegistry();
   var resolves = resolveFactory(Promise);
   var machine = stateMachine(events, registry, Promise);
@@ -4319,6 +4284,7 @@ function screenMachine(config) {
       machine.init(registry.$root, {});
       views.mountRoot();
       url.subscribe(this._watchUrl.bind(this));
+      window.addEventListener('click', this._catchLinks.bind(this));
 
       return this;
     },
@@ -4326,18 +4292,59 @@ function screenMachine(config) {
 
     _watchUrl: function _watchUrl(url) {
 
+      return this._navigateTo(url, { routeChange: true });
+    },
+
+
+    _navigateTo: function (url, options) {
+
+      options || (options = {});
+
       var args = routes.find(url);
 
       if (!args) {
 
-        events.notify('routeNotFound');
+        events.notify('routeNotFound', url);
       }
       else {
 
-        args.push({ routeChange: true });
+        args.push(options);
 
         return this.transitionTo.apply(this, args);
       }
+    },
+
+
+    _catchLinks: function (evt) {
+
+      var ignore = evt.altKey ||
+                   evt.ctrlKey ||
+                   evt.metaKey ||
+                   evt.shiftKey ||
+                   evt.defaultPrevented;
+
+      if (ignore) return true;
+
+      var anchor = null;
+
+      for (var node = evt.target; node.parentNode; node = node.parentNode) {
+
+        if (node.nodeName === 'A') {
+
+          anchor = node;
+          break;
+        }
+      }
+
+      if (!anchor) return true;
+
+      var href = anchor.getAttribute('href');
+      var isAbolute = href.match(/^([a-z]+:\/\/|\/\/)/);
+
+      if (isAbolute) return true;
+
+      evt.preventDefault();
+      return this._navigateTo(href);
     },
 
 
@@ -4357,7 +4364,7 @@ function screenMachine(config) {
 
           var state = transition.toState;
           var components = state.getAllComponents();
-          var resolved = machine.cache.values();
+          var resolved = machine.getResolved();
 
           views.compose(components, resolved, params, query);
 
@@ -4380,10 +4387,9 @@ function screenMachine(config) {
   };
 }
 
+},{"./modules/eventBus":18,"./modules/resolveFactory":19,"./modules/router":21,"./modules/stateMachine":22,"./modules/stateRegistry":23,"./modules/urlWatcher":25,"./modules/viewTree":26}],30:[function(require,module,exports){
 
-},{"./modules/eventBus":18,"./modules/resolveFactory":19,"./modules/router":21,"./modules/stateMachine":22,"./modules/stateRegistry":23,"./modules/urlWatcher":25,"./modules/viewTree":26,"object-assign":27}],31:[function(require,module,exports){
-
-},{}],32:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a

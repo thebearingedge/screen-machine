@@ -180,10 +180,7 @@ Transition.prototype._attempt = function () {
     }, this);
 
   return this._Promise.all(toRun)
-    .then(function () {
-
-      return this._succeed();
-    }.bind(this));
+    .then(this._succeed.bind(this));
 };
 
 

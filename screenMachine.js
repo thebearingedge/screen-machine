@@ -1,7 +1,6 @@
 
 'use strict';
 
-var assign = require('object-assign');
 var urlWatcher = require('./modules/urlWatcher');
 var eventBus = require('./modules/eventBus');
 var viewTree = require('./modules/viewTree');
@@ -22,7 +21,7 @@ function screenMachine(config) {
 
   var events = eventBus(config.events);
   var url = urlWatcher(window, { html5: html5 });
-  var routes = router({ html5: html5 });
+  var routes = router();
   var registry = stateRegistry();
   var resolves = resolveFactory(Promise);
   var machine = stateMachine(events, registry, Promise);
@@ -52,6 +51,7 @@ function screenMachine(config) {
       machine.init(registry.$root, {});
       views.mountRoot();
       url.subscribe(this._watchUrl.bind(this));
+      window.addEventListener('click', this._catchLinks.bind(this));
 
       return this;
     },
@@ -59,18 +59,59 @@ function screenMachine(config) {
 
     _watchUrl: function _watchUrl(url) {
 
+      return this._navigateTo(url, { routeChange: true });
+    },
+
+
+    _navigateTo: function (url, options) {
+
+      options || (options = {});
+
       var args = routes.find(url);
 
       if (!args) {
 
-        events.notify('routeNotFound');
+        events.notify('routeNotFound', url);
       }
       else {
 
-        args.push({ routeChange: true });
+        args.push(options);
 
         return this.transitionTo.apply(this, args);
       }
+    },
+
+
+    _catchLinks: function (evt) {
+
+      var ignore = evt.altKey ||
+                   evt.ctrlKey ||
+                   evt.metaKey ||
+                   evt.shiftKey ||
+                   evt.defaultPrevented;
+
+      if (ignore) return true;
+
+      var anchor = null;
+
+      for (var node = evt.target; node.parentNode; node = node.parentNode) {
+
+        if (node.nodeName === 'A') {
+
+          anchor = node;
+          break;
+        }
+      }
+
+      if (!anchor) return true;
+
+      var href = anchor.getAttribute('href');
+      var isAbolute = href.match(/^([a-z]+:\/\/|\/\/)/);
+
+      if (isAbolute) return true;
+
+      evt.preventDefault();
+      return this._navigateTo(href);
     },
 
 
@@ -90,7 +131,7 @@ function screenMachine(config) {
 
           var state = transition.toState;
           var components = state.getAllComponents();
-          var resolved = machine.cache.values();
+          var resolved = machine.getResolved();
 
           views.compose(components, resolved, params, query);
 
@@ -112,4 +153,3 @@ function screenMachine(config) {
     }
   };
 }
-

@@ -266,7 +266,7 @@ describe('BaseResolve', function () {
             });
         });
 
-        it('should not run itself if transition is canceled', function (done) {
+        it('should empty the queue if transition is canceled', function (done) {
 
           transition.isSuperseded = function () { return true; };
           transition._fail = function () { return Promise.reject(); };
@@ -279,15 +279,38 @@ describe('BaseResolve', function () {
           fooResolve.execute = sinon.spy();
 
           return fooTask
-            .runSelf(transition, queue, complete, wait)
+            .runSelf(queue, complete, wait)
             .catch(function () {
-              expect(queue).to.deep.equal([fooTask, barTask, bazTask]);
+              expect(queue).to.deep.equal([]);
               expect(complete).to.deep.equal([]);
               expect(fooResolve.execute.called).to.equal(false);
               expect(fooTask.runDependents.called).to.equal(false);
               return done();
             });
         });
+
+
+        it('should not run itself if it is not in the queue', function (done) {
+
+          transition.isSuperseded = function () { return true; };
+          transition._fail = function () { return Promise.reject(); };
+
+          var queue = [];
+          var complete = [];
+          var wait = 3;
+
+          sinon.stub(fooTask, 'runDependents');
+          fooResolve.execute = sinon.spy();
+
+          return fooTask
+            .runSelf(queue, complete, wait)
+            .then(function () {
+              expect(fooResolve.execute.called).to.equal(false);
+              expect(fooTask.runDependents.called).to.equal(false);
+              return done();
+            });
+        });
+
 
         it('should not run dependents if completed', function (done) {
 

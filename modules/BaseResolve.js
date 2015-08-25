@@ -93,8 +93,14 @@ BaseResolve.prototype.taskDelegate = {
 
     var Promise = this.Promise;
 
+    if (queue.indexOf(this) < 0) {
+
+      return Promise.resolve();
+    }
+
     if (this.transition.isSuperseded()) {
 
+      queue.splice(0);
       return this.transition._fail('transition superseded');
     }
 

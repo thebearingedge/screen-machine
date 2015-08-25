@@ -1,14 +1,12 @@
 
 'use strict';
 
-var xtend = require('xtend/mutable');
+var assign = require('object-assign');
 var Route = require('./Route');
 var urlTools = require('./urlTools');
 
 
-module.exports = function routerFactory(options) {
-
-  options || (options = {});
+module.exports = function routerFactory() {
 
   return {
 
@@ -132,11 +130,7 @@ module.exports = function routerFactory(options) {
 
     href: function () {
 
-      var url = this.toUrl.apply(this, arguments);
-
-      return options.html5 === false
-        ? '/#' + url
-        : url;
+      return this.toUrl.apply(this, arguments);
     },
 
 
@@ -157,7 +151,7 @@ module.exports = function routerFactory(options) {
         }, [])
         .reduce(function (params, result) {
 
-          return xtend(params, result);
+          return assign(params, result);
         }, {});
     },
 

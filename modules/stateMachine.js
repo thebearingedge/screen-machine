@@ -158,12 +158,13 @@ function stateMachine(events, registry, Promise) {
       unset: function (resolveId) {
 
         delete this.$store[resolveId];
-      },
-
-      values: function () {
-
-        return assign({}, this.$store);
       }
+
+    },
+
+    getResolved: function () {
+
+      return assign({}, this.cache.$store);
     }
 
   };

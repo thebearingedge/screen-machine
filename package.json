@@ -28,7 +28,7 @@
     "mocha": "^2.2.5",
     "mock-location": "^0.1.0",
     "native-promise-only": "^0.8.1",
-    "riot": "^2.2.2",
+    "riot": "^2.2.4",
     "sinon": "^1.15.3",
     "sinon-chai": "^2.8.0"
   },

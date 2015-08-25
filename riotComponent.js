@@ -4,7 +4,6 @@
 var assign = require('object-assign');
 var BaseComponent = require('./modules/BaseComponent');
 
-
 module.exports = riotComponent;
 
 

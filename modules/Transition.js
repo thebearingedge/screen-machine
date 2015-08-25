@@ -1,7 +1,6 @@
 
 'use strict';
 
-
 module.exports = Transition;
 
 
@@ -27,7 +26,6 @@ Transition.prototype._tasks = null;
 Transition.prototype.isCanceled = function () {
 
   if (this._succeeded) return false;
-
   return this._canceled;
 };
 
@@ -168,7 +166,6 @@ Transition.prototype._attempt = function () {
     return this._fail('transition superseded');
   }
 
-  var Promise = this._Promise;
   var queue = this._tasks.slice();
   var wait = queue.length;
   var completed = [];
@@ -182,7 +179,7 @@ Transition.prototype._attempt = function () {
       return ready.runSelf(queue, completed, wait);
     }, this);
 
-  return Promise.all(toRun)
+  return this._Promise.all(toRun)
     .then(function () {
 
       return this._succeed();

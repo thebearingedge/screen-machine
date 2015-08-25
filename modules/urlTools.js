@@ -1,7 +1,6 @@
 
 'use strict';
 
-
 module.exports = {
 
   toParts: function toParts(encodedUrl) {

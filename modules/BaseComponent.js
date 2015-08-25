@@ -18,7 +18,6 @@ BaseComponent.prototype.node = null;
 BaseComponent.prototype.setView = function (view) {
 
   this.view = view;
-
   return this;
 };
 
@@ -26,7 +25,6 @@ BaseComponent.prototype.setView = function (view) {
 BaseComponent.prototype.addChildView = function (view) {
 
   this.childViews.push(view);
-
   return this;
 };
 
@@ -42,6 +40,5 @@ BaseComponent.prototype.shouldRender = function () {
 BaseComponent.prototype.load = function () {
 
   this.view.loadComponent(this);
-
   return this;
 };

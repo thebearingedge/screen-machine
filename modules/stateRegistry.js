@@ -3,7 +3,6 @@
 
 var State = require('./State');
 
-
 module.exports = stateRegistry;
 
 

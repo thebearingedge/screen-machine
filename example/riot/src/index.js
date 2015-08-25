@@ -26,7 +26,7 @@ var config = {
 
 var machine = global.machine = screenMachine(config);
 
-require('./tags');
+require('./tags/all');
 
 var domready = require('domready');
 var homeScreen = require('./screens/home');

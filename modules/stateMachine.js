@@ -27,7 +27,6 @@ function stateMachine(events, registry, Promise) {
       this.$state.params = params;
       this.$state.query = query;
       this.transition = null;
-
       return this;
     },
 
@@ -114,7 +113,6 @@ function stateMachine(events, registry, Promise) {
       exiting.reverse().forEach(callHook('beforeExit', transition));
       updating.forEach(callHook('beforeUpdate', transition));
       entering.forEach(callHook('beforeEnter', transition));
-
       return transition;
     },
 
@@ -131,17 +129,14 @@ function stateMachine(events, registry, Promise) {
 
         return transition._fail('transition superseded');
       }
-      else {
 
-        events.notify('stateChangeStart', transition);
-      }
+      events.notify('stateChangeStart', transition);
 
       return transition
         ._attempt()
         .catch(function (err) {
 
           events.notify('stateChangeError', err);
-
           throw err;
         });
     },

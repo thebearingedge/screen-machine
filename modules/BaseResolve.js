@@ -142,6 +142,7 @@ BaseResolve.prototype.taskDelegate = {
 
 
   commit: function () {
+
     this.cache.set(this.id, this.result);
   }
 

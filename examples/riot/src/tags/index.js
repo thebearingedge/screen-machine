@@ -15,11 +15,11 @@ riot.tag('home', '<h2>Welcome to the Riot Screen Machine Demo</h2> <p>The curren
 
   
 });
-riot.tag('libraries-landing', '<p>This is the "Libraries" landing page.</p> <sm-link to="home">home</sm-link>', function(opts) {
+riot.tag('libraries-landing', '<p>This is the "Libraries" landing page.</p>', function(opts) {
 
 
 });
-riot.tag('libraries', '<h2>This is the view libraries page</h2> <ul> <li style="display: inline"> <sm-link to="viewLibs" active="active">none</sm-link> </li> <li each="{ lib in opts.libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ lib }" active="active">{ lib.libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
+riot.tag('libraries', '<ul> <li style="display: inline"> <sm-link to="home" active="active">Home</sm-link> </li> <li style="display: inline"> <sm-link to="viewLibs" active="active">Libraries</sm-link> </li> </ul> <h2>This is the view libraries page</h2> <ul> <li each="{ lib in opts.libs }" style="display: inline"> <sm-link to="viewLibs.library" params="{ lib }" active="active">{ lib.libName }</sm-link> </li> </ul> <sm-view></sm-view>', function(opts) {
 
 
 });

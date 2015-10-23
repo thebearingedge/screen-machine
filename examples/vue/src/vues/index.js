@@ -5,7 +5,7 @@ module.exports = function vues(Vue) {
 
   Vue.component('Home', {
     template: `<div>
-                <h2>Welcome to the Riot Screen Machine Demo</h2>
+                <h2>Welcome to the Vue Screen Machine Demo</h2>
                 <p>The current date is {{ today }}</p>
                 <br>
                 <sm-link to='viewLibs' active='active'>Libraries</sm-link>

@@ -51,8 +51,6 @@ describe('vueComponent', () => {
     view = new View('@', views);
   });
 
-  it('', () => expect(true).to.equal(true));
-
 
   it('should know its ViewModel', () => {
 

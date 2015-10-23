@@ -22,15 +22,18 @@
   "devDependencies": {
     "chai": "^3.0.0",
     "chai-as-promised": "^5.1.0",
+    "glob": "^5.0.15",
     "http-server": "^0.8.0",
     "istanbul": "^0.3.17",
     "jsdom": "^5.6.1",
     "mocha": "^2.2.5",
     "mock-location": "^0.1.0",
     "native-promise-only": "^0.8.1",
+    "require-new": "^1.1.0",
     "riot": "^2.2.4",
     "sinon": "^1.15.3",
-    "sinon-chai": "^2.8.0"
+    "sinon-chai": "^2.8.0",
+    "vue": "^0.12.16"
   },
   "dependencies": {
     "object-assign": "^4.0.1"

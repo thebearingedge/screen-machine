@@ -31,7 +31,7 @@ describe('riotComponent', function () {
 
     views = {
       loadedViews: [],
-      activeViews: {}
+      activeViews: []
     };
 
     view = new View('@', views);
@@ -140,8 +140,6 @@ describe('riotComponent', function () {
 
     it('should attach child views to rendered DOM', function () {
 
-      var dump = document.createElement('div');
-
       state.component = 'parent-tag';
 
       view = new View('nested@', views);
@@ -150,9 +148,8 @@ describe('riotComponent', function () {
 
       component.render();
 
-      dump.appendChild(view.element);
-
-      expect(dump.innerHTML).to.equal('<sm-view name="nested"></sm-view>');
+      expect(view.element.outerHTML)
+        .to.equal('<sm-view name="nested"></sm-view>');
     });
 
   });

@@ -108,11 +108,6 @@ function riotComponent(riot) {
 
       getOpts: function (resolved, params, query) {
 
-        var opts = {
-          params: params,
-          query: query
-        };
-
         return this
           .state
           .getResolves()
@@ -121,7 +116,7 @@ function riotComponent(riot) {
             opts[resolve.key] = resolved[resolve.id];
 
             return opts;
-          }, opts);
+          }, { params, query });
       }
 
     });

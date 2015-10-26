@@ -70,7 +70,7 @@ describe('vueComponent', () => {
 
   describe('', () => {
 
-    beforeEach(function () {
+    beforeEach(() => {
       state = new State({
         name: 'app',
         component: 'SimpleVue'
@@ -78,27 +78,27 @@ describe('vueComponent', () => {
       component = new VueComponent('', '', state);
     });
 
-    describe('.setView(view)', function () {
+    describe('.setView(view)', () => {
 
-      it('should know which view it loads into', function () {
+      it('should know which view it loads into', () => {
         component.setView(view);
         expect(component.view).to.equal(view);
       });
 
     });
 
-    describe('.addChildView(view)', function () {
+    describe('.addChildView(view)', () => {
 
-      it('should store child views', function () {
+      it('should store child views', () => {
         component.addChildView(view);
         expect(component.childViews[0]).to.equal(view);
       });
 
     });
 
-    describe('.load()', function () {
+    describe('.load()', () => {
 
-      it('should load into its view', function () {
+      it('should load into its view', () => {
         component.view = view;
         component.load();
         expect(view.nextComponent).to.equal(component);
@@ -106,9 +106,9 @@ describe('vueComponent', () => {
 
     });
 
-    describe('.shouldRender()', function () {
+    describe('.shouldRender()', () => {
 
-      it('should know whether to render', function () {
+      it('should know whether to render', () => {
         component.view = view;
         expect(component.shouldRender()).to.equal(false);
         component.load();
@@ -117,9 +117,9 @@ describe('vueComponent', () => {
 
     });
 
-    describe('.render()', function () {
+    describe('.render()', () => {
 
-      it('should render a riot tag', function () {
+      it('should render a riot tag', () => {
         state.$resolves = [{ id: 'place@app', key: 'place' }];
         component.render({ 'place@app': 'Santa Ana' });
         expect(component.node.outerHTML).to.equal(
@@ -128,7 +128,7 @@ describe('vueComponent', () => {
       });
 
 
-      it('should attach child views to rendered DOM', function () {
+      it('should attach child views to rendered DOM', () => {
         state.component = 'ParentVue';
         view = new View('nested@', views);
         component = new VueComponent('', '', state);
@@ -140,9 +140,9 @@ describe('vueComponent', () => {
 
     });
 
-    describe('.update(resolved)', function () {
+    describe('.update(resolved)', () => {
 
-      it('should update its node\'s content', function () {
+      it('should update its node\'s content', () => {
         state.$resolves = [{ id: 'place@app', key: 'place' }];
         component.render({ 'place@app': '' });
         expect(component.node.outerHTML).to.equal(
@@ -158,9 +158,9 @@ describe('vueComponent', () => {
     });
 
 
-    describe('.destroy()', function () {
+    describe('.destroy()', () => {
 
-      it('should destory its vm and release its dom node', function () {
+      it('should destory its vm and release its dom node', () => {
         component.render();
         sinon.spy(component.vm, '$destroy');
         var vm = component.vm;
@@ -174,7 +174,7 @@ describe('vueComponent', () => {
       });
 
 
-      it('should detach its child views', function () {
+      it('should detach its child views', () => {
         state.component = 'ParentVue';
         state.$resolves = [{ id: '@app', key: '' }];
         view = new View('nested@', views);

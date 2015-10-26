@@ -42,15 +42,14 @@ function vueComponent(Vue) {
         return { href, activeClass: null };
       },
       created() {
-        this.matchActive = () => {
+        this._matchActive = () => {
           const isActive = machine.hasState(this.to, this.params, this.query);
           this.activeClass = isActive ? this.active : '';
         };
-        this.matchActive();
-        events.subscribe('stateChangeSuccess', this.matchActive);
+        events.subscribe('stateChangeSuccess', this._matchActive);
       },
       destroyed() {
-        events.unsubscribe('stateChangeSuccess', this.matchActive);
+        events.unsubscribe('stateChangeSuccess', this._matchActive);
       }
     });
 

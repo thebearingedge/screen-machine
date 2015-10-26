@@ -1,8 +1,6 @@
 
 'use strict';
 
-var assign = require('object-assign');
-
 module.exports = BaseResolve;
 
 
@@ -30,7 +28,7 @@ BaseResolve.prototype.createTask = function (params, query, transition, cache) {
 
   this.cache = cache;
 
-  return assign({}, this.taskDelegate, {
+  return Object.assign({}, this.taskDelegate, {
     id: this.id,
     resolve: this,
     Promise: this.Promise,

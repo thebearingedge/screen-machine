@@ -1,7 +1,6 @@
 
 'use strict';
 
-var assign = require('object-assign');
 var Route = require('./Route');
 var urlTools = require('./urlTools');
 
@@ -151,7 +150,7 @@ module.exports = function routerFactory() {
         }, [])
         .reduce(function (params, result) {
 
-          return assign(params, result);
+          return Object.assign(params, result);
         }, {});
     },
 

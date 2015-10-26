@@ -1,7 +1,6 @@
 
 'use strict';
 
-var assign = require('object-assign');
 var Transition = require('./Transition');
 
 module.exports = stateMachine;
@@ -164,7 +163,7 @@ function stateMachine(events, registry, Promise) {
 
     getResolved: function () {
 
-      return assign({}, this.cache.$store);
+      return Object.assign({}, this.cache.$store);
     }
 
   };

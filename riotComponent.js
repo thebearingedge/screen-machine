@@ -1,7 +1,6 @@
 
 'use strict';
 
-var assign = require('object-assign');
 var BaseComponent = require('./modules/BaseComponent');
 
 module.exports = riotComponent;
@@ -55,7 +54,7 @@ function riotComponent(riot) {
     }
 
 
-    assign(RiotComponent.prototype, BaseComponent.prototype, {
+    Object.assign(RiotComponent.prototype, BaseComponent.prototype, {
 
       constructor: RiotComponent,
 

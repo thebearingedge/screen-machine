@@ -1,6 +1,6 @@
 {
   "name": "screen-machine",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Screen Machine",
   "main": "index.js",
   "scripts": {
@@ -34,8 +34,5 @@
     "sinon": "^1.15.3",
     "sinon-chai": "^2.8.0",
     "vue": "^0.12.16"
-  },
-  "dependencies": {
-    "object-assign": "^4.0.1"
   }
 }

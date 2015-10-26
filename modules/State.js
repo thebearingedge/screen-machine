@@ -1,8 +1,6 @@
 
 'use strict';
 
-var assign = require('object-assign');
-
 module.exports = State;
 
 
@@ -16,7 +14,7 @@ function State(definition) {
   this.$ancestors = {};
   this.$includes = {};
 
-  assign(this, definition);
+  Object.assign(this, definition);
 
   this.$includes[this.name] = true;
   this.$ancestors[this.name] = this;
@@ -90,10 +88,10 @@ State.prototype.$pathSegments = null;
 
 State.prototype.inheritFrom = function (parentNode) {
 
-  this.data = assign({}, parentNode.data, this.data || {});
+  this.data = Object.assign({}, parentNode.data, this.data || {});
 
-  assign(this.$includes, parentNode.$includes);
-  assign(this.$ancestors, parentNode.$ancestors);
+  Object.assign(this.$includes, parentNode.$includes);
+  Object.assign(this.$ancestors, parentNode.$ancestors);
 
   this.$branch = parentNode
     .getBranch()

@@ -1,7 +1,6 @@
 
 'use strict';
 
-var assign = require('object-assign');
 var BaseResolve = require('./BaseResolve');
 
 module.exports = DependentResolve;
@@ -27,7 +26,7 @@ function DependentResolve(resolveKey, state, Promise) {
 }
 
 
-assign(DependentResolve.prototype, BaseResolve.prototype, {
+Object.assign(DependentResolve.prototype, BaseResolve.prototype, {
 
   constructor: DependentResolve,
 

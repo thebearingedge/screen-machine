@@ -11,7 +11,7 @@ var expect = chai.expect;
 chai.use(sinonChai);
 
 var State = require('../modules/State');
-var vueComponent = require('../vueComponent');
+import vueComponent from '../vueComponent';
 var View = require('../modules/View');
 var jsdom = require('jsdom').jsdom;
 

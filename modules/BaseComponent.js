@@ -3,6 +3,16 @@
 
 module.exports = BaseComponent;
 
+// export default class BaseComponent {
+
+//   constructor(componentName, viewKey, state) {
+//     this.name = componentName;
+//     this.state = state;
+//     this.childViews = [];
+//   }
+
+// }
+
 
 function BaseComponent(componentName, viewKey, state) {
 

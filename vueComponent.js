@@ -1,11 +1,9 @@
 
 'use strict';
 
-var BaseComponent = require('./modules/BaseComponent');
+import BaseComponent from './modules/BaseComponent';
 
-module.exports = vueComponent;
-
-function vueComponent(Vue) {
+export default function vueComponent(Vue) {
 
   return function component(document, events, machine, router) {
 

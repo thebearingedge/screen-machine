@@ -5,7 +5,7 @@ var chai = require('chai');
 var expect = chai.expect;
 var document = require('jsdom').jsdom();
 var riot = require('riot');
-var riotComponent = require('../riotComponent');
+import riotComponent from '../riotComponent';
 var viewTree = require('../modules/viewTree');
 var stateRegistry = require('../modules/stateRegistry');
 var resolveFactory = require('../modules/resolveFactory');

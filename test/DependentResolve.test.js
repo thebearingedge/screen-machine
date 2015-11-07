@@ -10,7 +10,7 @@ chai.use(sinonChai);
 
 var Promise = require('native-promise-only');
 var State = require('../modules/State');
-var DependentResolve = require('../modules/DependentResolve');
+import DependentResolve from '../modules/DependentResolve';
 
 
 describe('bDependentResolve', function () {

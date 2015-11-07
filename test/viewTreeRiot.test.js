@@ -8,7 +8,7 @@ var riot = require('riot');
 import riotComponent from '../riotComponent';
 var viewTree = require('../modules/viewTree');
 var stateRegistry = require('../modules/stateRegistry');
-var resolveFactory = require('../modules/resolveFactory');
+import resolveFactory from '../modules/resolveFactory';
 var routes = { add: function () {} };
 
 require('./riot-tags/all');
@@ -36,7 +36,7 @@ describe('Riot Component Composition', function () {
       registry.add('home', {
         component: 'home',
         resolve: {
-          user: function () {}
+          user: () => {}
         }
       }),
 

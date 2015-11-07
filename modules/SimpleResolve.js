@@ -1,27 +1,19 @@
 
 'use strict';
 
-var BaseResolve = require('./BaseResolve');
+import BaseResolve from './BaseResolve';
 
-module.exports = SimpleResolve;
+class SimpleResolve extends BaseResolve {
 
+  constructor(resolveKey, state, Promise) {
+    super(resolveKey, state, Promise);
+    this.invokable = state.resolve[resolveKey];
+  }
 
-function SimpleResolve(resolveKey, state, Promise) {
-
-  BaseResolve.call(this, resolveKey, state, Promise);
-
-  this.invokable = state.resolve[resolveKey];
-}
-
-
-Object.assign(SimpleResolve.prototype, BaseResolve.prototype, {
-
-  constructor: SimpleResolve,
-
-
-  execute: function (params, query, transition) {
-
+  execute(params, query, transition) {
     return this.invokable.call(null, params, query, transition);
   }
 
-});
+}
+
+export default SimpleResolve;

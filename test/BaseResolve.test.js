@@ -12,7 +12,7 @@ chai.use(chaiAsPromised);
 
 var Promise = require('native-promise-only');
 var State = require('../modules/State');
-var BaseResolve = require('../modules/BaseResolve');
+import BaseResolve from '../modules/BaseResolve';
 
 describe('BaseResolve', function () {
 

@@ -1,47 +1,32 @@
 
 'use strict';
 
-var BaseResolve = require('./BaseResolve');
+import BaseResolve from './BaseResolve';
 
-module.exports = DependentResolve;
+class DependentResolve extends BaseResolve {
 
+  constructor(resolveKey, state, Promise) {
+    super(resolveKey, state, Promise);
+    const resolveDef = state.resolve[resolveKey];
+    const invokableIndex = resolveDef.length - 1;
+    this.invokable = resolveDef[invokableIndex];
+    this.injectables = resolveDef
+      .slice(0, invokableIndex)
+      .map(injectable => {
+        return injectable.indexOf('@') > -1
+          ? injectable
+          : injectable + '@' + state.name;
+      });
+  }
 
-function DependentResolve(resolveKey, state, Promise) {
-
-  BaseResolve.call(this, resolveKey, state, Promise);
-
-  var resolveDef = state.resolve[resolveKey];
-  var invokableIndex = resolveDef.length - 1;
-
-  this.invokable = resolveDef[invokableIndex];
-  this.injectables = resolveDef
-    .slice(0, invokableIndex)
-    .map(function (injectable) {
-
-      return injectable.indexOf('@') > -1
-        ? injectable
-        : injectable + '@' + state.name;
-    });
+  execute(params, query, transition, dependencies) {
+    const args = this
+      .injectables
+      .map(injectable => dependencies[injectable])
+      .concat(params, query, transition);
+    return this.invokable(...args);
+  }
 
 }
 
-
-Object.assign(DependentResolve.prototype, BaseResolve.prototype, {
-
-  constructor: DependentResolve,
-
-
-  execute: function execute(params, query, transition, dependencies) {
-
-    var args = this
-      .injectables
-      .map(function (injectable) {
-
-        return dependencies[injectable];
-      })
-      .concat(params, query, transition);
-
-    return this.invokable.apply(null, args);
-  }
-
-});
+export default DependentResolve;

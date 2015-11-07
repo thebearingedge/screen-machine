@@ -17,15 +17,15 @@ export default function riotComponent(riot) {
       constructor(opts) {
         const { to, params, query, hash, active } = opts;
         this.href = router.href(to, params, query, hash || '');
-        this.matchActive = () => {
+        const matchActive = () => {
           const isActive = machine.hasState(to, params, query);
           this.activeClass = isActive ? active : null;
           this.update();
         };
-        this.matchActive();
-        events.subscribe('stateChangeSuccess', this.matchActive);
+        matchActive();
+        events.subscribe('stateChangeSuccess', matchActive);
         this.on('unmount', () => {
-          events.unsubscribe('stateChangeSuccess', this.matchActive);
+          events.unsubscribe('stateChangeSuccess', matchActive);
         });
       }
 
@@ -37,9 +37,8 @@ export default function riotComponent(riot) {
 
       constructor(componentName, viewKey, state) {
         super(...arguments);
-        this.tagName = state.views
-          ? state.views[viewKey].component
-          : state.component;
+        const { views, component } = state;
+        this.tagName = views ? views[viewKey].component : component;
         this.tagInstance = null;
       }
 

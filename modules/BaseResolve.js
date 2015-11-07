@@ -1,153 +1,95 @@
 
 'use strict';
 
-module.exports = BaseResolve;
+class BaseResolve {
 
-
-function BaseResolve(resolveKey, state, Promise) {
-
-  this.key = resolveKey;
-  this.id = resolveKey + '@' + state.name;
-  this.Promise = Promise;
-  this.cacheable = state.cacheable === false
-    ? false
-    : true;
-}
-
-
-BaseResolve.prototype.clear = function () {
-
-  if (this.cache && this.cacheable) {
-
-    this.cache.unset(this.id);
+  constructor(resolveKey, state, Promise) {
+    this.key = resolveKey;
+    this.id = resolveKey + '@' + state.name;
+    this.Promise = Promise;
+    this.cacheable = state.cacheable === false ? false : true;
   }
-};
 
+  clear() {
+    const { cache, cacheable, id } = this;
+    if (cache && cacheable ) cache.unset(id);
+  }
 
-BaseResolve.prototype.createTask = function (params, query, transition, cache) {
+  createTask(params, query, transition, cache) {
+    Object.assign(this, { cache });
+    const { id, Promise, injectables = [], taskDelegate } = this;
+    return Object.assign({ resolve: this }, taskDelegate, {
+      id, Promise, params, query, transition, cache
+    }, { waitingFor: injectables.slice() });
+  }
 
-  this.cache = cache;
-
-  return Object.assign({}, this.taskDelegate, {
-    id: this.id,
-    resolve: this,
-    Promise: this.Promise,
-    waitingFor: this.injectables
-      ? this.injectables.slice()
-      : [],
-    params: params,
-    query: query,
-    transition: transition,
-    cache: cache
-  });
-};
+}
 
 
 BaseResolve.prototype.taskDelegate = {
 
   isWaitingFor: function (dependencyId) {
-
     return this.waitingFor.indexOf(dependencyId) > -1;
   },
 
-
-  isReady: function () {
-
+  isReady() {
     return !this.waitingFor.length;
   },
 
-
-  setDependency: function (dependencyId, result) {
-
+  setDependency(dependencyId, result) {
     this.dependencies || (this.dependencies = {});
     this.dependencies[dependencyId] = result;
     this.waitingFor.splice(this.waitingFor.indexOf(dependencyId), 1);
     return this;
   },
 
-
-  perform: function () {
-
-    return new this.Promise(function (resolve, reject) {
-
-      var resultOrPromise;
-
+  perform() {
+    const { Promise, params, query, transition, dependencies } = this;
+    return new Promise((resolve, reject) => {
+      let resultOrPromise;
       try {
-        resultOrPromise = this
-          .resolve
-          .execute(this.params, this.query, this.transition, this.dependencies);
+        resultOrPromise = this.resolve
+          .execute(params, query, transition, dependencies);
       }
       catch (e) {
-
         return reject(e);
       }
-
       return resolve(resultOrPromise);
-    }.bind(this));
+    });
   },
 
-
-  runSelf: function (queue, completed, wait) {
-
-    var Promise = this.Promise;
-
-    if (queue.indexOf(this) < 0) {
-
-      return Promise.resolve();
-    }
-
-    if (this.transition.isSuperseded()) {
-
+  runSelf(queue, completed, wait) {
+    const { Promise, transition } = this;
+    if (queue.indexOf(this) < 0) return Promise.resolve();
+    if (transition.isSuperseded()) {
       queue.splice(0);
-      return this.transition._fail('transition superseded');
+      return transition._fail('transition superseded');
     }
-
     queue.splice(queue.indexOf(this), 1);
-
     return this
       .perform()
-      .then(function (result) {
-
+      .then(result => {
         this.result = result;
         completed.push(this);
-
-        if (completed.length === wait) {
-
-          return Promise.resolve();
-        }
-
+        if (completed.length === wait) return Promise.resolve();
         return this.runDependents(queue, completed, wait);
-      }.bind(this));
-  },
-
-
-  runDependents: function (queue, completed, wait) {
-
-    var nextTasks = queue
-      .filter(function (queued) {
-
-        return queued.isWaitingFor(this.id);
-      }, this)
-      .map(function (dependent) {
-
-        return dependent.setDependency(this.id, this.result);
-      }, this)
-      .filter(function (maybeReady) {
-
-        return maybeReady.isReady();
-      })
-      .map(function (ready) {
-
-        return ready.runSelf(queue, completed, wait);
       });
-
-    return this.Promise.all(nextTasks);
   },
 
+  runDependents(queue, completed, wait) {
+    const { id, result, Promise } = this;
+    const nextTasks = queue
+      .filter(queued => queued.isWaitingFor(id))
+      .map(dependent => dependent.setDependency(id, result))
+      .filter(maybeReady => maybeReady.isReady())
+      .map(ready => ready.runSelf(queue, completed, wait));
+    return Promise.all(nextTasks);
+  },
 
-  commit: function () {
-
+  commit() {
     this.cache.set(this.id, this.result);
   }
 
 };
+
+export default BaseResolve;

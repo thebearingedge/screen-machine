@@ -12,7 +12,7 @@ chai.use(sinonChai);
 var State = require('../modules/State');
 var viewTree = require('../modules/viewTree');
 var View = require('../modules/View');
-var BaseComponent = require('../modules/BaseComponent');
+import BaseComponent from '../modules/BaseComponent';
 
 
 describe('viewTree', function () {

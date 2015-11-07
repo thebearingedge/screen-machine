@@ -9,11 +9,11 @@ var expect = chai.expect;
 chai.use(sinonChai);
 
 var Promise = require('native-promise-only');
-var stateMachine = require('../modules/stateMachine');
+import stateMachine from '../modules/stateMachine';
 var State = require('../modules/State');
-var SimpleResolve = require('../modules/SimpleResolve');
-var DependentResolve = require('../modules/DependentResolve');
-var Transition = require('../modules/Transition');
+import SimpleResolve from '../modules/SimpleResolve';
+import DependentResolve from '../modules/DependentResolve';
+import Transition from '../modules/Transition';
 
 
 describe('Transition', function () {

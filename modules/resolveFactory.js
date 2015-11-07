@@ -1,35 +1,29 @@
 
 'use strict';
 
-var SimpleResolve = require('./SimpleResolve');
-var DependentResolve = require('./DependentResolve');
+import SimpleResolve from './SimpleResolve';
+import DependentResolve from './DependentResolve';
 
-module.exports = resolveFactory;
-
-
-function resolveFactory(Promise) {
+export default function resolveFactory(Promise) {
 
   return {
 
-    instantiate: function (resolveKey, state) {
-
+    instantiate(resolveKey, state) {
+      const args = [resolveKey, state, Promise];
       return Array.isArray(state.resolve[resolveKey])
-        ? new DependentResolve(resolveKey, state, Promise)
-        : new SimpleResolve(resolveKey, state, Promise);
+        ? new DependentResolve(...args)
+        : new SimpleResolve(...args);
     },
 
-
-    addTo: function (state) {
-
+    addTo(state) {
       if (typeof state.resolve !== 'object') return;
-
       Object
         .keys(state.resolve)
-        .forEach(function (resolveKey) {
-
+        .forEach(resolveKey => {
           state.addResolve(this.instantiate(resolveKey, state));
-        }, this);
+        });
     }
 
   };
+
 }

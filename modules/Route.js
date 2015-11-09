@@ -1,137 +1,83 @@
 
 'use strict';
 
-var routeSegment = require('./routeSegment');
+import Segment from './routeSegment';
 
+class Route {
 
-module.exports = Route;
-
-
-function Route(name, path) {
-
-  var splitPath = path.split('/');
-
-  var rawSegments = path[0] === '/'
-    ? splitPath.slice(1)
-    : splitPath;
-
-  this.name = name;
-  this.path = path;
-  this.segments = rawSegments
-    .map(function (segmentString) {
-
-      return routeSegment.create(segmentString);
+  constructor(name, path) {
+    const splitNames = name.split('.');
+    const parentName = splitNames[1] ?
+      splitNames.slice(0, splitNames.length - 1).join('.')
+      : null;
+    const pathParts = (path.startsWith('/') ? path.slice(1) : path).split('/');
+    const segments = pathParts.map(part => Segment.create(part));
+    const specificity = segments.map(segment => segment.specificity).join('');
+    Object.assign(this, {
+      name, path, segments, specificity, parentName
     });
-  this.specificity = this.segments
-    .map(function (segment) {
+  }
 
-      return segment.specificity;
-    })
-    .join('');
+  isAbsolute() {
+    return this.path.startsWith('/');
+  }
 
-  var splitNames = name.split('.');
+  isSplat() {
+    return this.path.startsWith('*');
+  }
 
-  this.parentName = splitNames[1]
-    ? splitNames.slice(0, splitNames.length - 1).join('.')
-    : null;
+  addChild(route) {
+    route.parent = this;
+    this.children || (this.children = []);
+    this.children.push(route);
+  }
+
+  match(unmatched) {
+    const { path, segments } = this;
+    const matched = [];
+    let result;
+    if (this.isSplat()) {
+      const remainder = unmatched.join('/');
+      const key = path.slice(1);
+      result = {};
+      result[key] = remainder;
+      matched.push(result);
+      unmatched.splice(0);
+      return matched;
+    }
+    const toMatch = segments.length;
+    let i = 0;
+    while (i < toMatch && toMatch <= unmatched.length) {
+      const segment = segments[i];
+      // jshint -W084
+      if (result = segment.match(unmatched[i])) matched.push(result);
+      else break;
+      i++;
+    }
+    if (matched.length < toMatch) return null;
+    unmatched.splice(0, toMatch);
+    return matched;
+  }
+
+  generate(params) {
+    const allSegments = [];
+    let route = this;
+    while (route) {
+      route
+        .segments.slice().reverse()
+        .forEach(segment => allSegments.unshift(segment));
+      route = route.parent;
+    }
+    const path = allSegments
+      .map(segment => segment.interpolate(params))
+      .filter(interpolated => interpolated !== '')
+      .join('/');
+    return '/' + path;
+  }
+
 }
-
 
 Route.prototype.parent = null;
 Route.prototype.children = null;
 
-
-Route.prototype.isAbsolute = function () {
-
-  return this.path[0] === '/';
-};
-
-
-Route.prototype.isSplat = function () {
-
-  return this.path[0] === '*';
-};
-
-
-Route.prototype.match = function (unmatched) {
-
-  var matched = [];
-  var result;
-
-  if (this.isSplat()) {
-
-    var remainder = unmatched.join('/');
-    var key = this.path.slice(1);
-
-    result = {};
-    result[key] = remainder;
-    matched.push(result);
-    unmatched.splice(0);
-    return matched;
-  }
-
-  var toMatch = this.segments.length;
-  var i = 0;
-
-  while (i < toMatch && toMatch <= unmatched.length) {
-
-    var segment = this.segments[i];
-
-    // jshint -W084
-    if (result = segment.match(unmatched[i])) {
-
-      matched.push(result);
-    }
-    else {
-
-      break;
-    }
-
-    i++;
-  }
-
-  if (matched.length < toMatch) {
-
-    return null;
-  }
-
-  unmatched.splice(0, toMatch);
-  return matched;
-};
-
-
-Route.prototype.addChild = function (route) {
-
-  route.parent = this;
-
-  this.children || (this.children = []);
-  this.children.push(route);
-};
-
-
-Route.prototype.generate = function (params) {
-
-  var child = this;
-  var allSegments = [];
-
-  while (child) {
-
-    child.segments.slice().reverse().forEach(collectSegment);
-    child = child.parent;
-  }
-
-  var path = allSegments
-    .map(function (segment) {
-
-      return segment.interpolate(params);
-    })
-    .filter(function (segment) {
-
-      return segment !== '';
-    })
-    .join('/');
-
-  return '/' + path;
-
-  function collectSegment(segment) { allSegments.unshift(segment); }
-};
+export default Route;

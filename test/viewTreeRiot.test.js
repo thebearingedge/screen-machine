@@ -6,8 +6,8 @@ var expect = chai.expect;
 var document = require('jsdom').jsdom();
 var riot = require('riot');
 import riotComponent from '../riotComponent';
-var viewTree = require('../modules/viewTree');
-var stateRegistry = require('../modules/stateRegistry');
+import viewTree from '../modules/viewTree';
+import stateRegistry from '../modules/stateRegistry';
 import resolveFactory from '../modules/resolveFactory';
 var routes = { add: function () {} };
 

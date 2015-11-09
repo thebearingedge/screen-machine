@@ -34,9 +34,8 @@ export default function stateMachine(events, registry, Promise) {
 
     isInState(stateOrName, params, query) {
       const { current } = this.$state;
-      if (current) return false;
-      const state = this.getState(stateOrName);
-      return current === state &&
+      if (!current) return false;
+      return current === this.getState(stateOrName) &&
              this.hasParams(params, query);
     },
 

@@ -9,7 +9,7 @@ var expect = chai.expect;
 chai.use(sinonChai);
 
 
-var State = require('../modules/State');
+import State from '../modules/State';
 
 
 describe('State', function () {

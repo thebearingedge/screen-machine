@@ -1,7 +1,7 @@
 
 'use strict';
 
-var Route = require('./Route');
+import Route from './Route';
 var urlTools = require('./urlTools');
 
 
@@ -11,40 +11,28 @@ module.exports = function routerFactory() {
 
     root: null,
 
-
     routes: {},
 
+    queues: { __absolute__: [] },
 
-    queues: {
-      __absolute__: []
-    },
-
-
-    add: function (name, path) {
-
-      var route = new Route(name, path);
-
+    add(name, path) {
+      const route = new Route(name, path);
       this.register(route);
       return route;
     },
 
-
     register: function (route) {
 
-      if (route.path === '/') {
+      const { routes } = this;
 
-        this.routes[route.name] = this.root = route;
+      if (route.path === '/') {
+        routes[route.name] = this.root = route;
         return this.flushQueueFor(route);
       }
 
       if (route.isAbsolute()) {
-
-        if (!this.root) {
-
-          return this.enqueue(null, route);
-        }
-
-        this.routes[route.name] = route;
+        if (!this.root) return this.enqueue(null, route);
+        routes[route.name] = route;
         this.root.addChild(route);
         return this.flushQueueFor(route);
       }
@@ -52,10 +40,7 @@ module.exports = function routerFactory() {
       var parentName = route.parentName;
       var parentRoute = this.routes[parentName];
 
-      if (parentName && !parentRoute) {
-
-        return this.enqueue(parentName, route);
-      }
+      if (parentName && !parentRoute) return this.enqueue(parentName, route);
 
       this.routes[route.name] = route;
       parentRoute || (parentRoute = this.root);
@@ -81,10 +66,7 @@ module.exports = function routerFactory() {
 
         var matched;
 
-        children.sort(function (a, b) {
-
-          return b.specificity - a.specificity;
-        });
+        children.sort((a, b) => b.specificity - a.specificity);
 
         for (var i = 0; i < children.length; i++) {
 
@@ -92,31 +74,20 @@ module.exports = function routerFactory() {
 
           // jshint -W084
           if (matched = child.match(unmatched)) {
-
             results = results.concat(matched);
             route = child;
             children = route.children
               ? route.children.slice()
               : [];
-
             break;
           }
-          else {
-
-            continue;
-          }
+          else continue;
         }
 
-        if (!matched) {
-
-          break;
-        }
+        if (!matched) break;
       }
 
-      if (unmatched.length) {
-
-        return null;
-      }
+      if (unmatched.length) return null;
 
       var params = this.flattenParams(results);
       var query = urlParts.search
@@ -126,72 +97,44 @@ module.exports = function routerFactory() {
       return [route.name, params, query];
     },
 
-
-    href: function () {
-
-      return this.toUrl.apply(this, arguments);
+    href() {
+      return this.toUrl(...arguments);
     },
 
-
-    toUrl: function (name, params, query, fragment) {
-
-      var pathname = this.routes[name].generate(params);
-
+    toUrl(name, params, query, fragment) {
+      const pathname = this.routes[name].generate(params);
       return urlTools.combine(pathname, query, fragment);
     },
 
-
-    flattenParams: function (results) {
-
+    flattenParams(results) {
       return results
-        .reduce(function (flattened, resultSet) {
-
-          return flattened.concat(resultSet);
-        }, [])
-        .reduce(function (params, result) {
-
-          return Object.assign(params, result);
-        }, {});
+        .reduce((flattened, resultSet) => flattened.concat(resultSet), [])
+        .reduce((params, result) => Object.assign(params, result), {});
     },
 
-
-    enqueue: function (parentName, route) {
-
-      if (!parentName) {
-
-        this.queues.__absolute__.push(route);
-      }
+    enqueue(parentName, route) {
+      const { queues } = this;
+      if (!parentName) queues.__absolute__.push(route);
       else {
-
-        this.queues[parentName] || (this.queues[parentName] = []);
+        this.queues[parentName] || (queues[parentName] = []);
         this.queues[parentName].push(route);
       }
-
       return this;
     },
 
-
-    flushQueueFor: function (route) {
-
-      var queue;
-
-      if (route === this.root) {
-
-        queue = this.queues.__absolute__;
-
+    flushQueueFor(route) {
+      const { root, queues } = this;
+      let queue;
+      if (route === root) {
+        queue = queues.__absolute__;
         while (queue && queue.length) {
-
           this.register(queue.pop());
         }
       }
-
-      queue = this.queues[route.name];
-
+      queue = queues[route.name];
       while (queue && queue.length) {
-
         this.register(queue.pop());
       }
-
       return this;
     }
 

@@ -8,9 +8,9 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-var Promise = require('native-promise-only');
+import Promise from 'native-promise-only';
 import stateMachine from '../modules/stateMachine';
-var State = require('../modules/State');
+import State from '../modules/State';
 import SimpleResolve from '../modules/SimpleResolve';
 import DependentResolve from '../modules/DependentResolve';
 import Transition from '../modules/Transition';

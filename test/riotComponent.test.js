@@ -8,9 +8,9 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-var State = require('../modules/State');
+import State from '../modules/State';
 import riotComponent from '../riotComponent';
-var View = require('../modules/View');
+import View from '../modules/View';
 var document = require('jsdom').jsdom();
 var riot = require('riot');
 

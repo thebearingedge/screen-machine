@@ -4,13 +4,9 @@
 module.exports = urlWatcher;
 
 
-function urlWatcher(window, options) {
-
-  options || (options = {});
-
-  var history = window.history || {};
-  var location = window.location;
-  var windowEvent = history.pushState && (options.html5 !== false)
+function urlWatcher(window, options = {}) {
+  const { history, location } = window;
+  const windowEvent = (history || {}).pushState && (options.html5 !== false)
     ? 'popstate'
     : 'hashchange';
 
@@ -18,72 +14,41 @@ function urlWatcher(window, options) {
 
     listener: null,
 
-
-    subscribe: function (onChange) {
-
-      this.listener = function () {
-
-        onChange.call(null, this.get());
-      }.bind(this);
-
+    subscribe(onChange) {
+      this.listener = () => onChange.call(null, this.get());
       this.watch();
       onChange.call(null, this.get());
     },
 
-
-    watch: function () {
-
+    watch() {
       window.addEventListener(windowEvent, this.listener);
     },
 
-
-    ignore: function () {
-
+    ignore() {
       window.removeEventListener(windowEvent, this.listener);
     },
 
-
-    get: function () {
-
-      var url = windowEvent === 'popstate'
+    get() {
+      const url = windowEvent === 'popstate'
         ? location.pathname + location.search + location.hash
         : location.hash.slice(1) || '/';
-
       return decodeURIComponent(url);
     },
 
-
-    push: function (url) {
-
-      if (windowEvent === 'popstate') {
-
-        history.pushState({}, null, url);
-      }
+    push(url) {
+      if (windowEvent === 'popstate') history.pushState({}, null, url);
       else {
-
         this.ignore();
         location.hash = url;
         this.watch();
       }
     },
 
-
-    replace: function (url) {
-
-      if (windowEvent === 'popstate') {
-
-        history.replaceState({}, null, url);
-      }
+    replace(url) {
+      if (windowEvent === 'popstate') history.replaceState({}, null, url);
       else {
-
-        var href = location.protocol +
-          '//' +
-          location.host +
-          location.pathname +
-          location.search +
-          '#' +
-          url;
-
+        const { protocol, host, pathname, search } = location;
+        const href = `${protocol}//${host}${pathname}${search}#${url}`;
         this.ignore();
         location.replace(href);
         this.watch();

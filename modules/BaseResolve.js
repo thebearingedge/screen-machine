@@ -28,7 +28,7 @@ class BaseResolve {
 
 BaseResolve.prototype.taskDelegate = {
 
-  isWaitingFor: function (dependencyId) {
+  isWaitingFor(dependencyId) {
     return this.waitingFor.indexOf(dependencyId) > -1;
   },
 

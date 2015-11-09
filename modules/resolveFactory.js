@@ -16,9 +16,10 @@ export default function resolveFactory(Promise) {
     },
 
     addTo(state) {
-      if (typeof state.resolve !== 'object') return;
+      const { resolve } = state;
+      if (!resolve || typeof resolve !== 'object') return;
       Object
-        .keys(state.resolve)
+        .keys(resolve)
         .forEach(resolveKey => {
           state.addResolve(this.instantiate(resolveKey, state));
         });

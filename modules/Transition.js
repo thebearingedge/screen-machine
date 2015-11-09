@@ -34,8 +34,7 @@ class Transition {
   }
 
   redirect() {
-    const { _machine } = this;
-    return _machine.transitionTo(...arguments);
+    return this._machine.transitionTo(...arguments);
   }
 
   _attempt() {
@@ -108,6 +107,7 @@ function assertAcyclic(graph) {
   const OK = 2;
   const visited = {};
   const stack = [];
+
   for (let taskId in graph) visit(taskId);
 
   function visit(taskId) {

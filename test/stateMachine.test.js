@@ -11,11 +11,8 @@ chai.use(sinonChai);
 import Promise from 'native-promise-only';
 import eventBus from '../modules/EventBus';
 import resolveFactory from '../modules/resolveFactory';
-var stateRegistry = require('../modules/stateRegistry');
-
-
+import stateRegistry from '../modules/stateRegistry';
 import stateMachine from '../modules/stateMachine';
-
 
 describe('stateMachine', function () {
 

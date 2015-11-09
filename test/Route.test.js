@@ -4,9 +4,7 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-
-var Route = require('../modules/Route');
-
+import Route from '../modules/Route';
 
 describe('Route', function () {
 

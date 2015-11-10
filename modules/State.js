@@ -120,7 +120,7 @@ class State {
   shouldResolve(cache) {
     const { $resolves, cacheable } = this;
     if (!$resolves) return false;
-    if (cacheable === false) return true;
+    if (!cacheable) return true;
     return $resolves.some(resolve => !(resolve.id in cache.$store));
   }
 

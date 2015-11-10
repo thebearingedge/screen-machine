@@ -50,15 +50,9 @@ module.exports = {
   combine(pathname, search, hash) {
     let url = pathname;
     search || (search = '');
-    if (typeof search === 'object') {
-      search = this.formatQuery(search);
-    }
-    if (search) {
-      url += '?' + search;
-    }
-    if (typeof hash !== 'undefined' && hash !== '') {
-      url += '#' + hash;
-    }
+    if (typeof search === 'object') search = this.formatQuery(search);
+    if (search) url += '?' + search;
+    if (hash) url += '#' + hash;
     return url;
   }
 

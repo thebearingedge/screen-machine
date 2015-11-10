@@ -21,27 +21,21 @@ module.exports = function routerFactory() {
       return route;
     },
 
-    register: function (route) {
-
+    register(route) {
       const { routes } = this;
-
       if (route.path === '/') {
         routes[route.name] = this.root = route;
         return this.flushQueueFor(route);
       }
-
       if (route.isAbsolute()) {
         if (!this.root) return this.enqueue(null, route);
         routes[route.name] = route;
         this.root.addChild(route);
         return this.flushQueueFor(route);
       }
-
-      var parentName = route.parentName;
-      var parentRoute = this.routes[parentName];
-
+      const parentName = route.parentName;
+      let parentRoute = this.routes[parentName];
       if (parentName && !parentRoute) return this.enqueue(parentName, route);
-
       this.routes[route.name] = route;
       parentRoute || (parentRoute = this.root);
       parentRoute.addChild(route);
@@ -49,32 +43,21 @@ module.exports = function routerFactory() {
     },
 
 
-    find: function (url) {
-
-      var urlParts = urlTools.toParts(url);
-      var unmatched = urlParts.pathname.split('/').slice(1);
-      var results = [];
-      var route = this.root;
-
+    find(url) {
+      const urlParts = urlTools.toParts(url);
+      const unmatched = urlParts.pathname.split('/').slice(1);
+      const results = [];
+      let route = this.root;
       results.push(route.match(unmatched));
-
-      var children = route.children
-        ? route.children.slice()
-        : [];
-
+      let children = (route.children || []).slice();
       while (unmatched.length && children.length) {
-
-        var matched;
-
+        let matched;
         children.sort((a, b) => b.specificity - a.specificity);
-
-        for (var i = 0; i < children.length; i++) {
-
-          var child = children[i];
-
+        for (let i = 0; i < children.length; i++) {
+          const child = children[i];
           // jshint -W084
           if (matched = child.match(unmatched)) {
-            results = results.concat(matched);
+            results.push(matched);
             route = child;
             children = route.children
               ? route.children.slice()
@@ -83,17 +66,13 @@ module.exports = function routerFactory() {
           }
           else continue;
         }
-
         if (!matched) break;
       }
-
       if (unmatched.length) return null;
-
-      var params = this.flattenParams(results);
-      var query = urlParts.search
+      const params = flattenParams(results);
+      const query = urlParts.search
         ? urlTools.parseQuery(urlParts.search)
         : {};
-
       return [route.name, params, query];
     },
 
@@ -106,18 +85,12 @@ module.exports = function routerFactory() {
       return urlTools.combine(pathname, query, fragment);
     },
 
-    flattenParams(results) {
-      return results
-        .reduce((flattened, resultSet) => flattened.concat(resultSet), [])
-        .reduce((params, result) => Object.assign(params, result), {});
-    },
-
     enqueue(parentName, route) {
       const { queues } = this;
       if (!parentName) queues.__absolute__.push(route);
       else {
-        this.queues[parentName] || (queues[parentName] = []);
-        this.queues[parentName].push(route);
+        queues[parentName] || (queues[parentName] = []);
+        queues[parentName].push(route);
       }
       return this;
     },
@@ -139,4 +112,11 @@ module.exports = function routerFactory() {
     }
 
   };
+
 };
+
+function flattenParams(results) {
+  return results
+    .reduce((flattened, resultSet) => flattened.concat(resultSet), [])
+    .reduce((params, result) => Object.assign(params, result), {});
+}

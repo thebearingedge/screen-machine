@@ -52,9 +52,9 @@ BaseResolve.prototype.taskDelegate = {
           .execute(params, query, transition, dependencies);
       }
       catch (e) {
-        return reject(e);
+        reject(e);
       }
-      return resolve(resultOrPromise);
+      resolve(resultOrPromise);
     });
   },
 

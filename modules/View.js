@@ -67,8 +67,7 @@ class View {
 
   isShadowed() {
     const { container } = this;
-    return !!container &&
-             container.view.nextComponent !== container;
+    return !!container && container.view.nextComponent !== container;
   }
 
   publish(resolved, params, query) {

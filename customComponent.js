@@ -15,9 +15,8 @@ export default function customComponent(document) {
     }
 
     render() {
-      const args = [...arguments, document];
       const { factory, childViews } = this;
-      const { viewController, node } = factory(...args);
+      const { viewController, node } = factory(...arguments, document);
       childViews.forEach(view => view.attachWithin(node));
       return Object.assign(this, { viewController, node });
     }
@@ -30,8 +29,8 @@ export default function customComponent(document) {
     destroy() {
       const { viewController, childViews } = this;
       viewController.destroy();
-      this.viewController = this.node = null;
       childViews.forEach(view => view.detach());
+      this.viewController = this.node = null;
       return this;
     }
 

@@ -17,10 +17,8 @@ export default function stateMachine(events, registry, Promise) {
       return this;
     },
 
-    getState(stateOrName) {
-      return typeof stateOrName === 'string'
-        ? registry.states[stateOrName]
-        : stateOrName;
+    getState(stateName) {
+      return registry.states[stateName];
     },
 
     hasState(stateOrName, params, query) {
@@ -34,8 +32,8 @@ export default function stateMachine(events, registry, Promise) {
 
     isInState(stateOrName, params, query) {
       const { current } = this.$state;
-      if (!current) return false;
-      return current === this.getState(stateOrName) &&
+      return !!current &&
+             current === this.getState(stateOrName) &&
              this.hasParams(params, query);
     },
 
@@ -44,7 +42,7 @@ export default function stateMachine(events, registry, Promise) {
              equalForKeys(query || {}, this.$state.query);
     },
 
-    createTransition(stateOrName, params, query, options = {}) {
+    createTransition(stateOrName, params, query) {
       const { $state, cache } = this;
       const toState = typeof stateOrName === 'string'
         ? registry.states[stateOrName]
@@ -70,7 +68,7 @@ export default function stateMachine(events, registry, Promise) {
         entering = toBranch.slice(toBranch.indexOf(fromState) + 1);
         updating = fromBranch.filter(toUpdate);
       }
-      const transition = new Transition(this, toState, params, query, options);
+      const transition = new Transition(this, toState, params, query);
       const resolves = entering.concat(updating).reduce(collectResolves, []);
       this.transition = transition._prepare(resolves, cache, exiting, Promise);
       exiting.reverse().forEach(callHook('beforeExit', transition));
@@ -141,14 +139,11 @@ function collectResolves(resolves, state) {
 
 function callHook(hook, transition) {
   return function callTransitionHook(state) {
-    if (typeof state[hook] === 'function') {
-      state[hook].call(state, transition);
-    }
+    typeof state[hook] === 'function' && state[hook].call(state, transition);
   };
 }
 
 function equalForKeys(partial, complete) {
   var keys = Object.keys(partial);
-  if (!keys.length) return true;
-  return keys.every(key => (complete[key] === partial[key]));
+  return !keys.length || keys.every(key => (complete[key] === partial[key]));
 }

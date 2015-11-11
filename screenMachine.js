@@ -1,43 +1,36 @@
 
 'use strict';
 
-var urlWatcher = require('./modules/urlWatcher');
-var eventBus = require('./modules/eventBus');
-var viewTree = require('./modules/viewTree');
-var resolveFactory = require('./modules/resolveFactory');
-var router = require('./modules/router');
-var stateRegistry = require('./modules/stateRegistry');
-var stateMachine = require('./modules/stateMachine');
-
+import urlWatcher from './modules/urlWatcher';
+import eventBus from './modules/eventBus';
+import viewTree from './modules/viewTree';
+import resolveFactory from './modules/resolveFactory';
+import router from './modules/router';
+import stateRegistry from './modules/stateRegistry';
+import stateMachine from './modules/stateMachine';
 
 export default function screenMachine(config) {
 
   const { document, promises, html5, eventsConfig: events } = config;
   const { defaultView: window } = document;
-
   const events = eventBus(eventsConfig); // jshint ignore: line
   const url = urlWatcher(window, { html5 });
-  var routes = router();
-  var registry = stateRegistry();
-  var resolves = resolveFactory(promises);
-  var machine = stateMachine(events, registry, promises);
-  var Component = config.components(document, events, machine, routes);
-  var views = viewTree(document, Component);
+  const routes = router();
+  const registry = stateRegistry();
+  const resolves = resolveFactory(promises);
+  const machine = stateMachine(events, registry, promises);
+  const Component = config.components(document, events, machine, routes);
+  const views = viewTree(document, Component);
 
   return {
 
     state() {
-
-      var registered = registry.add.apply(registry, arguments);
-
+      const registered = registry.add(...arguments);
       if (registered.path) routes.add(registered.name, registered.path);
-
       resolves.addTo(registered);
       views.processState(registered);
-
       return this;
     },
-
 
     start() {
       machine.init(registry.$root, {});
@@ -46,7 +39,6 @@ export default function screenMachine(config) {
       window.addEventListener('click', this._catchLinks.bind(this));
       return this;
     },
-
 
     _watchUrl(url) {
       return this._navigateTo(url, { routeChange: true });
@@ -57,7 +49,7 @@ export default function screenMachine(config) {
       const stateArgs = routes.find(url);
       if (stateArgs) {
         stateArgs.push(options);
-        return this.transitionTo.apply(this, stateArgs);
+        return this.transitionTo(...stateArgs);
       }
       events.notify('routeNotFound', url);
     },
@@ -88,28 +80,19 @@ export default function screenMachine(config) {
 
 
     transitionTo(stateOrName, params, query, options = {}) {
-
       return machine
-        .transitionTo.apply(machine, arguments)
-        .then(function (transition) {
-
+        .transitionTo(...arguments)
+        .then(transition => {
           if (!transition.isSuccessful()) return transition;
-
           transition._commit();
-
           const state = transition.toState;
           const components = state.getAllComponents();
           const resolved = machine.getResolved();
-
           views.compose(components, resolved, params, query);
-
           if (!options.routeChange) {
-
             url.push(routes.toUrl(state.name, params, query));
           }
-
           events.notify('stateChangeSuccess', transition);
-
           return transition._cleanup();
         });
     },
@@ -117,5 +100,7 @@ export default function screenMachine(config) {
     go() {
       return this.transitionTo(...arguments);
     }
+
   };
+
 }

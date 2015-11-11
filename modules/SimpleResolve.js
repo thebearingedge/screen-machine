@@ -10,8 +10,8 @@ class SimpleResolve extends BaseResolve {
     this.invokable = state.resolve[resolveKey];
   }
 
-  execute(params, query, transition) {
-    return this.invokable.call(null, params, query, transition);
+  execute() {
+    return this.invokable(...arguments);
   }
 
 }

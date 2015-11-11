@@ -64,10 +64,7 @@ class State {
   filterParams(params) {
     return this
       .$paramKeys
-      .reduce((ownParams, key) => {
-        ownParams[key] = params[key];
-        return ownParams;
-      }, {});
+      .reduce((own, key) => Object.assign(own, { [key]: params[key] }), {});
   }
 
   isStale(oldParams, oldQuery, newParams, newQuery) {

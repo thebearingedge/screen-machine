@@ -42,7 +42,6 @@ module.exports = function routerFactory() {
       return this.flushQueueFor(route);
     },
 
-
     find(url) {
       const urlParts = urlTools.toParts(url);
       const unmatched = urlParts.pathname.split('/').slice(1);
@@ -97,17 +96,12 @@ module.exports = function routerFactory() {
 
     flushQueueFor(route) {
       const { root, queues } = this;
-      let queue;
-      if (route === root) {
-        queue = queues.__absolute__;
-        while (queue && queue.length) {
-          this.register(queue.pop());
-        }
-      }
-      queue = queues[route.name];
-      while (queue && queue.length) {
-        this.register(queue.pop());
-      }
+      const toFlush = route === root
+        ? [queues.__absolute__, queues[route.name]]
+        : [queues[route.name]];
+      toFlush.forEach(queue => {
+        while (queue && queue.length) this.register(queue.pop());
+      });
       return this;
     }
 

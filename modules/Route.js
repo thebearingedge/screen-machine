@@ -68,11 +68,11 @@ class Route {
         .forEach(segment => allSegments.unshift(segment));
       route = route.parent;
     }
-    const path = allSegments
+    return allSegments
       .map(segment => segment.interpolate(params))
       .filter(interpolated => interpolated !== '')
-      .join('/');
-    return '/' + path;
+      .reduce((path, segment) => path + '/' + segment, '') ||
+      '/';
   }
 
 }

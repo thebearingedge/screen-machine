@@ -5,10 +5,10 @@ var chai = require('chai');
 var expect = chai.expect;
 var document = require('jsdom').jsdom();
 var riot = require('riot');
-var riotComponent = require('../riotComponent');
-var viewTree = require('../modules/viewTree');
-var stateRegistry = require('../modules/stateRegistry');
-var resolveFactory = require('../modules/resolveFactory');
+import riotComponent from '../riotComponent';
+import viewTree from '../modules/viewTree';
+import stateRegistry from '../modules/stateRegistry';
+import resolveFactory from '../modules/resolveFactory';
 var routes = { add: function () {} };
 
 require('./riot-tags/all');
@@ -36,7 +36,7 @@ describe('Riot Component Composition', function () {
       registry.add('home', {
         component: 'home',
         resolve: {
-          user: function () {}
+          user: () => {}
         }
       }),
 

@@ -9,35 +9,28 @@ var router = require('./modules/router');
 var stateRegistry = require('./modules/stateRegistry');
 var stateMachine = require('./modules/stateMachine');
 
-module.exports = screenMachine;
 
+export default function screenMachine(config) {
 
-function screenMachine(config) {
+  const { document, promises, html5, eventsConfig: events } = config;
+  const { defaultView: window } = document;
 
-  var document = config.document;
-  var window = document.defaultView;
-  var Promise = config.promises;
-  var html5 = config.html5;
-
-  var events = eventBus(config.events);
-  var url = urlWatcher(window, { html5: html5 });
+  const events = eventBus(eventsConfig); // jshint ignore: line
+  const url = urlWatcher(window, { html5 });
   var routes = router();
   var registry = stateRegistry();
-  var resolves = resolveFactory(Promise);
-  var machine = stateMachine(events, registry, Promise);
+  var resolves = resolveFactory(promises);
+  var machine = stateMachine(events, registry, promises);
   var Component = config.components(document, events, machine, routes);
   var views = viewTree(document, Component);
 
   return {
 
-    state: function state() {
+    state() {
 
       var registered = registry.add.apply(registry, arguments);
 
-      if (registered.path) {
-
-        routes.add(registered.name, registered.path);
-      }
+      if (registered.path) routes.add(registered.name, registered.path);
 
       resolves.addTo(registered);
       views.processState(registered);
@@ -46,92 +39,67 @@ function screenMachine(config) {
     },
 
 
-    start: function start() {
-
+    start() {
       machine.init(registry.$root, {});
       views.mountRoot();
       url.subscribe(this._watchUrl.bind(this));
       window.addEventListener('click', this._catchLinks.bind(this));
-
       return this;
     },
 
 
-    _watchUrl: function _watchUrl(url) {
-
+    _watchUrl(url) {
       return this._navigateTo(url, { routeChange: true });
     },
 
 
-    _navigateTo: function (url, options) {
-
-      options || (options = {});
-
-      var args = routes.find(url);
-
-      if (!args) {
-
-        events.notify('routeNotFound', url);
+    _navigateTo: function (url, options = {}) {
+      const stateArgs = routes.find(url);
+      if (stateArgs) {
+        stateArgs.push(options);
+        return this.transitionTo.apply(this, stateArgs);
       }
-      else {
-
-        args.push(options);
-
-        return this.transitionTo.apply(this, args);
-      }
+      events.notify('routeNotFound', url);
     },
 
 
     _catchLinks: function (evt) {
-
-      var ignore = evt.altKey ||
+      const ignore = evt.altKey ||
                    evt.ctrlKey ||
                    evt.metaKey ||
                    evt.shiftKey ||
                    evt.defaultPrevented;
-
       if (ignore) return true;
-
-      var anchor = null;
-
-      for (var node = evt.target; node.parentNode; node = node.parentNode) {
-
+      let anchor = null;
+      let node = evt.target;
+      while (node.parentNode) {
         if (node.nodeName === 'A') {
-
           anchor = node;
           break;
         }
+        node = node.parentNode;
       }
-
       if (!anchor) return true;
-
-      var href = anchor.getAttribute('href');
-      var isAbolute = href.match(/^([a-z]+:\/\/|\/\/)/);
-
-      if (isAbolute) return true;
-
+      const href = anchor.getAttribute('href');
+      if (href.match(/^([a-z]+:\/\/|\/\/)/)) return true;
       evt.preventDefault();
       return this._navigateTo(href);
     },
 
 
-    transitionTo: function transitionTo(stateOrName, params, query, options) {
+    transitionTo(stateOrName, params, query, options = {}) {
 
-      options || (options = {});
-
-      return machine.transitionTo.apply(machine, arguments)
+      return machine
+        .transitionTo.apply(machine, arguments)
         .then(function (transition) {
 
-          if (!transition.isSuccessful()) {
-
-            return transition;
-          }
+          if (!transition.isSuccessful()) return transition;
 
           transition._commit();
 
-          var state = transition.toState;
-          var components = state.getAllComponents();
-          var resolved = machine.getResolved();
+          const state = transition.toState;
+          const components = state.getAllComponents();
+          const resolved = machine.getResolved();
 
           views.compose(components, resolved, params, query);
 
@@ -146,10 +114,8 @@ function screenMachine(config) {
         });
     },
 
-
-    go: function go() {
-
-      return this.transitionTo.apply(null, arguments);
+    go() {
+      return this.transitionTo(...arguments);
     }
   };
 }

@@ -6,10 +6,10 @@ var sinon = require('sinon');
 var expect = chai.expect;
 
 var Promise = require('native-promise-only');
-var State = require('../modules/State');
-var SimpleResolve = require('../modules/SimpleResolve');
-var DependentResolve = require('../modules/DependentResolve');
-var resolveFactory = require('../modules/resolveFactory');
+import State from '../modules/State';
+import SimpleResolve from '../modules/SimpleResolve';
+import DependentResolve from '../modules/DependentResolve';
+import resolveFactory from '../modules/resolveFactory';
 
 
 describe('resolveFactory', function () {

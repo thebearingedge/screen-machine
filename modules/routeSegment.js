@@ -1,71 +1,52 @@
 
 'use strict';
 
-module.exports = {
+export default class Segment {
 
-  create: function (string) {
-
-    return new Segment(string);
+  static create() {
+    return new this(...arguments);
   }
 
-};
-
-
-function Segment(string) {
-
-  var match;
-
-  // jshint -W084
-  // thanks to @jmeas
-  if (match = string.match(/^:([^\/]+)$/)) {
-
-    this.type = 'dynamic';
-    this.key = match[0].slice(1);
-    this.specificity = '3';
+  constructor(string) {
+    let match, type, key, specificity;
+    // jshint -W084
+    if (match = string.match(/^:([^\/]+)$/)) {
+      type = 'dynamic';
+      key = match[0].slice(1);
+      specificity = '3';
+    }
+    else if (match = string.match(/^\*([^\/]+)$/)) {
+      type = 'splat';
+      key = match[0].slice(1);
+      specificity = '2';
+    }
+    else if (string === '') {
+      type = 'epsilon';
+      key = '';
+      specificity = '1';
+    }
+    else {
+      type = 'static';
+      key = string;
+      specificity = '4';
+    }
+    Object.assign(this, { type, key, specificity });
   }
-  else if (match = string.match(/^\*([^\/]+)$/)) {
 
-    this.type = 'splat';
-    this.key = match[0].slice(1);
-    this.specificity = '2';
+  match(string) {
+    const { type, key } = this;
+    if (type === 'splat' || type === 'dynamic') return { [key]: string };
+    return key === string ? {} : null;
   }
-  else if (string === '') {
 
-    this.type = 'epsilon';
-    this.key = '';
-    this.specificity = '1';
+  interpolate(params) {
+    const { type, key } = this;
+    switch (type) {
+      case 'dynamic': return encodeURIComponent(params[key]);
+      case 'splat': return '';
+      case 'epsilon': return '';
+      default: return key;
+    }
   }
-  else {
 
-    this.type = 'static';
-    this.key = string;
-    this.specificity = '4';
-  }
 }
-
-
-Segment.prototype.match = function match(string) {
-
-  if (this.type === 'splat' || this.type === 'dynamic') {
-
-    var result = {};
-
-    result[this.key] = string;
-    return result;
-  }
-
-  return this.key === string
-    ? {}
-    : null;
-};
-
-
-Segment.prototype.interpolate = function interpolate(params) {
-
-  switch (this.type) {
-    case 'dynamic': return encodeURIComponent(params[this.key]);
-    case 'splat': return '';
-    case 'epsilon': return '';
-    default: return this.key;
-  }
-};

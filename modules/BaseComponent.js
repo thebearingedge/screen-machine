@@ -1,44 +1,35 @@
 
 'use strict';
 
-module.exports = BaseComponent;
+export default class BaseComponent {
 
+  constructor(componentName, viewKey, state) {
+    this.name = componentName;
+    this.state = state;
+    this.childViews = [];
+    this.node = null;
+  }
 
-function BaseComponent(componentName, viewKey, state) {
+  setView(view) {
+    this.view = view;
+    return this;
+  }
 
-  this.name = componentName;
-  this.state = state;
-  this.childViews = [];
+  addChildView(view) {
+    this.childViews.push(view);
+    return this;
+  }
+
+  shouldRender() {
+    const { view } = this;
+    return !view.isShadowed() &&
+            view.nextComponent === this &&
+            view.currentComponent !== this;
+  }
+
+  load() {
+    this.view.loadComponent(this);
+    return this;
+  }
+
 }
-
-
-BaseComponent.prototype.node = null;
-
-
-BaseComponent.prototype.setView = function (view) {
-
-  this.view = view;
-  return this;
-};
-
-
-BaseComponent.prototype.addChildView = function (view) {
-
-  this.childViews.push(view);
-  return this;
-};
-
-
-BaseComponent.prototype.shouldRender = function () {
-
-  return !this.view.isShadowed() &&
-    this.view.nextComponent === this &&
-    this.view.currentComponent !== this;
-};
-
-
-BaseComponent.prototype.load = function () {
-
-  this.view.loadComponent(this);
-  return this;
-};

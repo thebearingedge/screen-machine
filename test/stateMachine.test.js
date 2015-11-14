@@ -8,14 +8,11 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-var Promise = require('native-promise-only');
-var eventBus = require('../modules/EventBus');
-var resolveFactory = require('../modules/resolveFactory');
-var stateRegistry = require('../modules/stateRegistry');
-
-
-var stateMachine = require('../modules/stateMachine');
-
+import Promise from 'native-promise-only';
+import eventBus from '../modules/EventBus';
+import resolveFactory from '../modules/resolveFactory';
+import stateRegistry from '../modules/stateRegistry';
+import stateMachine from '../modules/stateMachine';
 
 describe('stateMachine', function () {
 

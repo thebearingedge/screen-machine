@@ -7,31 +7,21 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-var stateRegistry = require('../modules/stateRegistry');
-var State = require('../modules/State');
+import stateRegistry from '../modules/stateRegistry';
+import State from '../modules/State';
 
 
 describe('stateRegistry', function () {
 
-  var registry, viewTree, resolveService, router, rootState;
+  let registry, viewTree, resolveService, router, rootState;
 
   beforeEach(function () {
-
     viewTree = {
-      views: {
-        '': {}
-      },
-      processState: function () {}
+      views: { '': {} },
+      processState() {}
     };
-
-    resolveService = {
-      addResolvesTo: function () {}
-    };
-
-    router = {
-      add: function () {}
-    };
-
+    resolveService = { addResolvesTo() {} };
+    router = { add() {} };
     registry = stateRegistry(viewTree, resolveService, router);
     rootState = registry.$root;
   });

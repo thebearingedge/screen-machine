@@ -10,9 +10,9 @@ var expect = chai.expect;
 
 chai.use(sinonChai);
 
-var State = require('../modules/State');
-var vueComponent = require('../vueComponent');
-var View = require('../modules/View');
+import State from '../modules/State';
+import vueComponent from '../vueComponent';
+import View from '../modules/View';
 var jsdom = require('jsdom').jsdom;
 
 const vueDir = path.join(__dirname, '../node_modules/vue/src');

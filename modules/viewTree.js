@@ -1,166 +1,95 @@
 
 'use strict';
 
-var View = require('./View');
+import View from './View';
 
-module.exports = viewTree;
+export default function viewTree(document, Component) {
 
-
-function viewTree(document, Component) {
-
-  var tree = {
-    loadedViews: [],
-    activeViews: []
-  };
-
-  var rootView = new View('@', tree);
+  const tree = { loadedViews: [], activeViews: [] };
+  const rootView = new View('@', tree);
 
   return {
 
     $root: rootView,
 
+    views: { '@': rootView },
 
-    views: {
-      '@': rootView
-    },
-
-
-    mountRoot: function () {
-
+    mountRoot() {
       rootView.attachWithin(document.body);
       tree.activeViews.push(rootView);
     },
 
-
-    processState: function (state) {
-
-      var componentName;
-      var view;
-
-      if (state.views != null) {
-
+    processState(state) {
+      const { views, component } = state;
+      let componentName;
+      let view;
+      if (views) {
         Object
-          .keys(state.views)
+          .keys(views)
           .sort()
-          .forEach(function (viewKey) {
-
+          .forEach(viewKey => {
             componentName = viewKey;
             view = this.ensureView(viewKey, state);
             this.createComponent(componentName, viewKey, state, view);
-          }, this);
+          });
       }
-      else if (state.component) {
-
+      else if (component) {
         componentName = '';
         view = this.ensureView(null, state);
         this.createComponent(componentName, view.viewKey, state, view);
       }
-
       return this;
     },
 
-
-    ensureView: function (viewKey, state) {
-
+    ensureView(viewKey, state) {
       viewKey || (viewKey = '@' + (state.parent || ''));
       return this.views[viewKey] || this.createView(viewKey, state);
     },
 
-
-    createView: function (viewKey, state) {
-
+    createView(viewKey, state) {
       viewKey = viewKey.indexOf('@') > -1
         ? viewKey
         : viewKey + '@' + state.parent;
-
-      var targetStateName = viewKey.slice(viewKey.indexOf('@') + 1);
-      var targetState = targetStateName === state.name
+      const targetStateName = viewKey.slice(viewKey.indexOf('@') + 1);
+      const targetState = targetStateName === state.name
         ? state
         : state.getAncestor(targetStateName);
-      var view = this.views[viewKey] = new View(viewKey, tree);
-
+      const view = new View(viewKey, tree);
+      this.views[viewKey] = view;
       targetState.addView(view);
-
-      var container = targetState
-        .getComponents()
-        .sort()[0];
-
+      const container = targetState.getComponents().sort()[0];
       view.setContainer(container);
       return view;
     },
 
-
-    createComponent: function (componentName, viewKey, state, view) {
-
-      var component = new Component(componentName, viewKey, state, view);
-
+    createComponent(componentName, viewKey, state, view) {
+      const component = new Component(...arguments);
       view.addComponent(state.name, component);
       state.addComponent(component);
       return component;
     },
 
-
-    compose: function (components, resolved, params, query) {
-
+    compose(components, resolved, params, query) {
       components
-        .map(function (component) {
-
-          return component.load();
-        })
-        .filter(function (component) {
-
-          return component.shouldRender();
-        })
-        .forEach(function (component) {
-
-          component.render(resolved, params, query);
-        });
-
+        .map(component => component.load())
+        .filter(component => component.shouldRender())
+        .forEach(component => component.render(resolved, params, query));
       tree
         .loadedViews
-        .filter(function (loaded) {
-
-          return loaded.isShadowed();
-        })
-        .forEach(function (shadowed) {
-
-          shadowed.unload();
-        });
-
-      var toClose = tree
+        .filter(loaded => loaded.isShadowed())
+        .forEach(shadowed => shadowed.unload());
+      const toClose = tree
         .activeViews
-        .filter(function (active) {
-
-          return active.shouldClose();
-        });
-
+        .filter(active => active.shouldClose());
       tree.activeViews = tree.loadedViews.slice();
-
       tree
         .loadedViews
-        .map(function (view) {
-
-          return view.publish(resolved, params, query);
-        })
-        .forEach(function (view) {
-
-          return view.cleanUp();
-        });
-
-      toClose
-        .forEach(function (view) {
-
-          view.close();
-        });
-
-      tree
-        .loadedViews
-        .slice()
-        .forEach(function (view) {
-
-          view.unload();
-        });
+        .map(loaded => loaded.publish(resolved, params, query))
+        .forEach(published => published.cleanUp());
+      toClose.forEach(open => open.close());
+      tree.loadedViews.slice().forEach(view => view.unload());
     }
 
   };
+
 }

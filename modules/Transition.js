@@ -1,211 +1,125 @@
 
 'use strict';
 
-module.exports = Transition;
+class Transition {
 
+  constructor(_machine, toState, toParams, toQuery) {
+    const { $state } = _machine;
+    const { current: fromState, params: fromParams, query: fromQuery } = $state;
+    Object.assign(this, {
+      _machine, fromState, fromParams, fromQuery, toState, toParams, toQuery,
+      _canceled: false, _succeeded: false, _tasks: null
+    });
+  }
 
-function Transition(machine, toState, toParams, toQuery, options) {
+  isCanceled() {
+    return !this._succeeded && this._canceled;
+  }
 
-  options || (options = {});
+  isSuperseded() {
+    return this !== this._machine.transition;
+  }
 
-  this._machine = machine;
-  this.toState = toState;
-  this.toParams = toParams;
-  this.toQuery = toQuery;
-  this.fromState = machine.$state.current;
-  this.fromParams = machine.$state.params;
-  this.fromQuery = machine.$state.query;
+  isSuccessful() {
+    return this._succeeded && !this.isSuperseded();
+  }
+
+  cancel() {
+    !this._succeeded && (this._canceled = true);
+    return this;
+  }
+
+  retry() {
+    return this.redirect(this.toState, this.toParams, this.toQuery);
+  }
+
+  redirect() {
+    return this._machine.transitionTo(...arguments);
+  }
+
+  _attempt() {
+    if (this.isCanceled()) return this._fail('transition canceled');
+    if (this.isSuperseded()) return this._fail('transition superseded');
+    const { _tasks, _Promise } = this;
+    const queue = _tasks.slice();
+    const wait = queue.length;
+    const completed = [];
+    const toRun = queue
+      .filter(task => task.isReady())
+      .map(ready => ready.runSelf(queue, completed, wait));
+    return _Promise.all(toRun).then(() => this._succeed());
+  }
+
+  _fail(reason) {
+    return this._Promise.reject(new Error(reason));
+  }
+
+  _succeed() {
+    this._succeeded = true;
+    return this._Promise.resolve(this);
+  }
+
+  _commit() {
+    const { _machine, toState, toParams, toQuery, _tasks, _cache } = this;
+    _machine.init(toState, toParams, toQuery);
+    _tasks.forEach(task => _cache.set(task.id, task.result));
+    return this;
+  }
+
+  _cleanup() {
+    this._exiting.forEach(exited => exited.sleep());
+    return this;
+  }
+
+  _prepare(resolves, _cache, _exiting, _Promise) {
+    const { toParams, toQuery } = this;
+    const _tasks = resolves.map(resolve => {
+      return resolve.createTask(toParams, toQuery, this, _cache);
+    });
+    Object.assign(this, { _tasks, _cache, _exiting, _Promise });
+    if (!_tasks.length) return this;
+    const graph = _tasks
+      .reduce((graph, task) => {
+        graph[task.id] = task.waitingFor;
+        return graph;
+      }, {});
+    _tasks
+      .filter(task => !task.isReady())
+      .forEach(notReady => {
+        notReady
+          .waitingFor
+          .filter(dependency => !(dependency in graph))
+          .forEach(absent => {
+            notReady.setDependency(absent, _cache.get(absent));
+          });
+      });
+    assertAcyclic(graph);
+    return this;
+  }
+
 }
 
+export default Transition;
 
-Transition.prototype._canceled = false;
-Transition.prototype._succeeded = false;
-Transition.prototype._tasks = null;
+function assertAcyclic(graph) {
 
+  const VISITING = 1;
+  const OK = 2;
+  const visited = {};
+  const stack = [];
 
-Transition.prototype.isCanceled = function () {
-
-  if (this._succeeded) return false;
-  return this._canceled;
-};
-
-
-Transition.prototype.isSuperseded = function () {
-
-  return this !== this._machine.transition;
-};
-
-
-Transition.prototype.isSuccessful = function () {
-
-  return this._succeeded && !this.isSuperseded();
-};
-
-
-Transition.prototype.cancel = function () {
-
-  if (!this._succeeded) {
-
-    this._canceled = true;
-  }
-
-  return this;
-};
-
-
-Transition.prototype._cleanup = function () {
-
-  this
-    ._exiting
-    .forEach(function (exited) {
-
-      exited.sleep();
-    });
-
-  return this;
-};
-
-
-Transition.prototype.redirect = function () {
-
-  return this._machine.transitionTo.apply(this._machine, arguments);
-};
-
-
-Transition.prototype.retry = function () {
-
-  return this.redirect(this.toState, this.toParams, this.toQuery);
-};
-
-
-Transition.prototype._prepare = function (resolves, cache, exiting, Promise) {
-
-  var tasks = this._tasks = resolves
-    .map(function (resolve) {
-
-      return resolve.createTask(this.toParams, this.toQuery, this, cache);
-    }, this);
-  this._cache = cache;
-  this._exiting = exiting;
-  this._Promise = Promise;
-
-  if (!tasks.length) return this;
-
-  var graph = tasks
-    .reduce(function (graph, task) {
-
-      graph[task.id] = task.waitingFor;
-
-      return graph;
-    }, {});
-
-  tasks
-    .filter(function (task) {
-
-      return !task.isReady();
-    })
-    .forEach(function (notReady) {
-
-      notReady
-        .waitingFor
-        .filter(function (dependency) {
-
-          return !(dependency in graph);
-        })
-        .forEach(function (absent) {
-
-          var cached = cache.get(absent);
-
-          notReady.setDependency(absent, cached);
-        });
-    });
-
-  var VISITING = 1;
-  var OK = 2;
-  var visited = {};
-  var stack = [];
-  var taskId;
-
-  for (taskId in graph) {
-
-    visit(taskId);
-  }
-
-  return this;
-
+  for (let taskId in graph) visit(taskId);
 
   function visit(taskId) {
-
     if (visited[taskId] === OK) return;
-
     stack.push(taskId);
-
     if (visited[taskId] === VISITING) {
-
       stack.splice(0, stack.indexOf(taskId));
       throw new Error('Cyclic resolve dependency: ' + stack.join(' -> '));
     }
-
     visited[taskId] = VISITING;
     graph[taskId].forEach(visit);
     stack.pop();
     visited[taskId] = OK;
   }
-};
-
-
-Transition.prototype._attempt = function () {
-
-  if (this.isCanceled()) {
-
-    return this._fail('transition canceled');
-  }
-
-  if (this.isSuperseded()) {
-
-    return this._fail('transition superseded');
-  }
-
-  var queue = this._tasks.slice();
-  var wait = queue.length;
-  var completed = [];
-  var toRun = queue
-    .filter(function (task) {
-
-      return task.isReady();
-    })
-    .map(function (ready) {
-
-      return ready.runSelf(queue, completed, wait);
-    }, this);
-
-  return this._Promise.all(toRun)
-    .then(this._succeed.bind(this));
-};
-
-
-Transition.prototype._fail = function (reason) {
-
-  return this._Promise.reject(new Error(reason));
-};
-
-
-Transition.prototype._succeed = function () {
-
-  this._succeeded = true;
-
-  return this._Promise.resolve(this);
-};
-
-
-Transition.prototype._commit = function () {
-
-  this._machine.init(this.toState, this.toParams, this.toQuery);
-
-  this._tasks.forEach(function (task) {
-
-    this._cache.set(task.id, task.result);
-  }, this);
-
-  return this;
-};
+}

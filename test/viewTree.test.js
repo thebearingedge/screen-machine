@@ -9,14 +9,13 @@ var document = require('jsdom').jsdom();
 
 chai.use(sinonChai);
 
-var State = require('../modules/State');
-var viewTree = require('../modules/viewTree');
-var View = require('../modules/View');
-var BaseComponent = require('../modules/BaseComponent');
+import State from '../modules/State';
+import viewTree from '../modules/viewTree';
+import View from '../modules/View';
+import BaseComponent from '../modules/BaseComponent';
 
 
 describe('viewTree', function () {
-
 
   describe('.processState(state)', function () {
 
@@ -37,13 +36,8 @@ describe('viewTree', function () {
 
 
     it('should do nothing if a state defines no components', function () {
-
-      var empty = new State({
-        name: 'empty'
-      });
-
+      const empty = new State({ name: 'empty' });
       tree.processState(empty);
-
       expect(empty.$components).to.equal(null);
       expect(tree.views).to.deep.equal({
         '@': tree.views['@']

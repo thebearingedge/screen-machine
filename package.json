@@ -6,7 +6,7 @@
   "scripts": {
     "test": "./node_modules/.bin/istanbul test ./node_modules/.bin/_mocha",
     "cover": "npm test --coverage && npm run coverage",
-    "tdd": "./node_modules/.bin/mocha -w -R min",
+    "tdd": "./node_modules/.bin/mocha -w --compilers js:babel-core/register -R min",
     "coverage": "./node_modules/.bin/http-server coverage/lcov-report -sp 3000"
   },
   "repository": {
@@ -20,6 +20,8 @@
   },
   "homepage": "https://github.com/thebearingedge/screen-machine#readme",
   "devDependencies": {
+    "babel-core": "^6.1.2",
+    "babel-preset-es2015": "^6.1.2",
     "chai": "^3.0.0",
     "chai-as-promised": "^5.1.0",
     "glob": "^5.0.15",

@@ -10,7 +10,7 @@ chai.use(sinonChai);
 
 var document = require('jsdom').jsdom();
 
-var View = require('../modules/View');
+import View from '../modules/View';
 
 
 describe('View', function () {

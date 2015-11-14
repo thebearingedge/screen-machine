@@ -4,7 +4,7 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var routeSegment = require('../modules/routeSegment');
+import Segment from '../modules/routeSegment';
 
 
 describe('routeSegment', function () {
@@ -15,7 +15,7 @@ describe('routeSegment', function () {
 
     beforeEach(function () {
 
-      staticSegment = routeSegment.create('foo');
+      staticSegment = Segment.create('foo');
 
       expect(staticSegment.type).to.equal('static');
       expect(staticSegment.specificity).to.equal('4');
@@ -57,7 +57,7 @@ describe('routeSegment', function () {
 
     beforeEach(function () {
 
-      dynamicSegment = routeSegment.create(':foo');
+      dynamicSegment = Segment.create(':foo');
 
       expect(dynamicSegment.type).to.equal('dynamic');
       expect(dynamicSegment.specificity).to.equal('3');
@@ -93,7 +93,7 @@ describe('routeSegment', function () {
 
     beforeEach(function () {
 
-      splatSegment = routeSegment.create('*foo');
+      splatSegment = Segment.create('*foo');
 
       expect(splatSegment.type).to.equal('splat');
       expect(splatSegment.specificity).to.equal('2');
@@ -130,7 +130,7 @@ describe('routeSegment', function () {
 
     beforeEach(function () {
 
-      epsilonSegment = routeSegment.create('');
+      epsilonSegment = Segment.create('');
 
       expect(epsilonSegment.type).to.equal('epsilon');
       expect(epsilonSegment.specificity).to.equal('1');

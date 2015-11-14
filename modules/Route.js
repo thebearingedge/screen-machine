@@ -63,12 +63,11 @@ class Route {
     const allSegments = [];
     let route = this;
     while (route) {
-      route
-        .segments.slice().reverse()
-        .forEach(segment => allSegments.unshift(segment));
+      allSegments.unshift(route.segments.slice());
       route = route.parent;
     }
     return allSegments
+      .reduce((flat, routeSegments) => flat.concat(routeSegments), [])
       .map(segment => segment.interpolate(params))
       .filter(interpolated => interpolated !== '')
       .reduce((path, segment) => path + '/' + segment, '') ||

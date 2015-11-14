@@ -108,6 +108,10 @@ export default function stateMachine(events, registry, Promise) {
 
       unset(resolveId) {
         delete this.$store[resolveId];
+      },
+
+      has(resolveId) {
+        return resolveId in this.$store;
       }
 
     },

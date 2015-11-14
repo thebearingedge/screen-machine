@@ -10,13 +10,11 @@ class State {
     definition.parent = parent || getParentName(name);
     const [ pathOnly, querySegment ] = definition.path.split('?');
     const splitPath = pathOnly.split('/');
+    const pathSegments = !!splitPath[0] ? splitPath : splitPath.slice(1);
     this.$definition = definition;
     this.$includes = { [name]: true };
     this.$ancestors = { [name]: this };
-    this.$pathSegments = !!splitPath[0] ? splitPath : splitPath.slice(1);
-    this.$querySegments = querySegment ? [querySegment] : [];
-    this.$paramKeys = this
-      .$pathSegments
+    this.$paramKeys = pathSegments
       .filter(anySegment => anySegment.startsWith(':'))
       .map(dynamicSegment => dynamicSegment.slice(1));
     this.$queryKeys = querySegment ? querySegment.split('&') : [];
@@ -28,8 +26,6 @@ class State {
     Object.assign(this.$includes, parentNode.$includes);
     Object.assign(this.$ancestors, parentNode.$ancestors);
     this.$branch = parentNode.getBranch().concat(this);
-    this.$pathSegments = parentNode.$pathSegments.concat(this.$pathSegments);
-    this.$querySegments = parentNode.$querySegments.concat(this.$querySegments);
     this.$paramKeys = parentNode.$paramKeys.concat(this.$paramKeys);
     this.$parent = parentNode;
     return this;
@@ -40,7 +36,7 @@ class State {
   }
 
   getBranch() {
-    return (this.$branch || [this]).slice();
+    return this.$branch ? this.$branch.slice() : [this];
   }
 
   getParent() {
@@ -109,16 +105,14 @@ class State {
     return this
       .getBranch()
       .reverse()
-      .reduce((components, state) => {
-        return components.concat(state.getComponents());
-      }, []);
+      .reduce((all, state) => all.concat(state.getComponents()), []);
   }
 
   shouldResolve(cache) {
     const { $resolves, cacheable } = this;
     if (!$resolves) return false;
     if (!cacheable) return true;
-    return $resolves.some(resolve => !(resolve.id in cache.$store));
+    return $resolves.some(resolve => !cache.has(resolve.id));
   }
 
 }
@@ -128,8 +122,6 @@ State.prototype.$branch = null;
 State.prototype.$resolves = null;
 State.prototype.$views = null;
 State.prototype.$components = null;
-State.prototype.$paramCache = null;
-State.prototype.$pathSegments = null;
 
 export default State;
 

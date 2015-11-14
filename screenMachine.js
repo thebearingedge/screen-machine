@@ -11,7 +11,9 @@ import stateMachine from './modules/stateMachine';
 
 export default function screenMachine(config) {
 
-  const { document, promises, html5, eventsConfig: events } = config;
+  const {
+    document, promises, html5 = true, events:eventsConfig, components
+  } = config;
   const { defaultView: window } = document;
   const events = eventBus(eventsConfig); // jshint ignore: line
   const url = urlWatcher(window, { html5 });
@@ -19,7 +21,7 @@ export default function screenMachine(config) {
   const registry = stateRegistry();
   const resolves = resolveFactory(promises);
   const machine = stateMachine(events, registry, promises);
-  const Component = config.components(document, events, machine, routes);
+  const Component = components(document, events, machine, routes);
   const views = viewTree(document, Component);
 
   return {
@@ -44,8 +46,7 @@ export default function screenMachine(config) {
       return this._navigateTo(url, { routeChange: true });
     },
 
-
-    _navigateTo: function (url, options = {}) {
+    _navigateTo(url, options = {}) {
       const stateArgs = routes.find(url);
       if (stateArgs) {
         stateArgs.push(options);
@@ -54,8 +55,7 @@ export default function screenMachine(config) {
       events.notify('routeNotFound', url);
     },
 
-
-    _catchLinks: function (evt) {
+    _catchLinks(evt) {
       const ignore = evt.altKey ||
                    evt.ctrlKey ||
                    evt.metaKey ||
@@ -77,7 +77,6 @@ export default function screenMachine(config) {
       evt.preventDefault();
       return this._navigateTo(href);
     },
-
 
     transitionTo(stateOrName, params, query, options = {}) {
       return machine

@@ -1,8 +1,7 @@
 
 'use strict';
 
-module.exports = function (machine) {
-
+export default function notFoundScreen(machine) {
   machine
     .state('notFound', {
       path: '/*not-found',
@@ -16,4 +15,4 @@ module.exports = function (machine) {
         }
       }
     });
-};
+}

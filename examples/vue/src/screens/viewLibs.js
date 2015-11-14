@@ -1,14 +1,12 @@
 
 'use strict';
 
-module.exports = function (machine) {
-
+export default function viewLibsScreen(machine) {
   machine
-
     .state('viewLibs', {
       path: 'view-libraries',
       resolve: {
-        libs: function () {
+        libs() {
           return [
             { libName: 'riot' },
             { libName: 'react' },
@@ -18,29 +16,19 @@ module.exports = function (machine) {
         }
       },
       views: {
-        '@': { // <- render into root View
-          component: 'Libraries'
-        },
-        '@viewLibs': { // <- render into 'libraries' component
-          component: 'LibrariesLanding'
-        }
+        '@': {  component: 'Libraries' },
+        '@viewLibs': { component: 'LibrariesLanding' }
       }
     })
-
     .state('viewLibs.library', {
       path: ':libName',
-      component: 'LibraryDescription', // <- render into 'libraries' component
+      component: 'LibraryDescription',
       resolve: {
-        content: ['libs@viewLibs', function (libs, params) {
-
-          var lib = libs
-            .filter(function (lib) {
-
-              return lib.libName === params.libName;
-            })[0];
-
-          return lib.libName + ' is super-cool.';
+        content: ['libs@viewLibs', (libs, params) => {
+          return libs
+            .find(lib => lib.libName === params.libName)
+            .libName + ' is super-cool';
         }]
       }
     });
-};
+}

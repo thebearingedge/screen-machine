@@ -6,7 +6,7 @@ module.exports = urlWatcher;
 
 function urlWatcher(window, options = { html5: true }) {
   const { history, location } = window;
-  const windowEvent = (history || {}).pushState && (!options.html5)
+  const windowEvent = (history || {}).pushState && (options.html5)
     ? 'popstate'
     : 'hashchange';
   const POPSTATE = windowEvent === 'popstate';

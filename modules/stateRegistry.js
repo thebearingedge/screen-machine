@@ -32,21 +32,17 @@ export default function stateRegistry() {
       const parentState = states[parentName];
       if (parentName && !parentState) return this.enqueue(parentName, state);
       states[state.name] = state.inheritFrom(parentState || this.$root);
-      return this.flushQueueFor(state);
+      this.flushQueueFor(state);
     },
 
     enqueue(parentName, state) {
       this.queues[parentName] || (this.queues[parentName] = []);
       this.queues[parentName].push(state);
-      return this;
     },
 
     flushQueueFor(state) {
       const queue = this.queues[state.name];
-      while (queue && queue.length) {
-        this.register(queue.pop());
-      }
-      return this;
+      while (queue && queue.length) this.register(queue.pop());
     }
 
   };

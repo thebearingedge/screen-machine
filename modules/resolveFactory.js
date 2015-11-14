@@ -9,10 +9,9 @@ export default function resolveFactory(Promise) {
   return {
 
     instantiate(resolveKey, state) {
-      const args = [resolveKey, state, Promise];
       return Array.isArray(state.resolve[resolveKey])
-        ? new DependentResolve(...args)
-        : new SimpleResolve(...args);
+        ? new DependentResolve(...arguments, Promise)
+        : new SimpleResolve(...arguments, Promise);
     },
 
     addTo(state) {
@@ -20,9 +19,7 @@ export default function resolveFactory(Promise) {
       if (!resolve || typeof resolve !== 'object') return;
       Object
         .keys(resolve)
-        .forEach(resolveKey => {
-          state.addResolve(this.instantiate(resolveKey, state));
-        });
+        .forEach(key => state.addResolve(this.instantiate(key, state)));
     }
 
   };

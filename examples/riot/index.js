@@ -1,23 +1,13 @@
 
 'use strict';
 
-var express = require('express');
-var app = express();
+import express from 'express';
 
-var publicDir = __dirname + '/public';
+const publicDir = --__dirname + '/public';
+const runMessage = 'Riot Screen Machine Demo is running on port 3000';
+const app = express();
 
-
-app.get('/*.js', function (req, res) {
-
-  res.sendFile(publicDir + '/js/bundle.js');
-});
-
-app.get('*', function (req, res) {
-
-  res.sendFile(publicDir + '/index.html');
-});
-
-app.listen(3000, function () {
-
-  console.log('Riot Screen Machine Demo is running on port 3000');
-});
+app
+  .get('/*.js', (req, res) => res.sendFile(publicDir + '/js/bundle.js'))
+  .get('*', (req, res) => res.sendFile(publicDir + '/index.html'))
+  .listen(3000, () => console.log(runMessage));

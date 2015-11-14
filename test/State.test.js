@@ -35,25 +35,20 @@ describe('State', function () {
   it('should break its path into segments', function () {
 
     state = new State({ name: 'foo', path: '/foo-path' });
-    expect(state.$pathSegments).to.deep.equal(['foo-path']);
     expect(state.$queryKeys).to.deep.equal([]);
 
     state = new State({ name: 'foo', path: 'foo-path' });
-    expect(state.$pathSegments).to.deep.equal(['foo-path']);
     expect(state.$queryKeys).to.deep.equal([]);
 
     state = new State({ name: 'bar', path: '/foo-path/:barParam' });
-    expect(state.$pathSegments).to.deep.equal(['foo-path', ':barParam']);
     expect(state.$paramKeys).to.deep.equal(['barParam']);
     expect(state.$queryKeys).to.deep.equal([]);
 
     state = new State({ name: 'baz', path: '/baz-path?qux&quux' });
-    expect(state.$pathSegments).to.deep.equal(['baz-path']);
     expect(state.$queryKeys).to.deep.equal(['qux', 'quux']);
 
 
     state = new State({ name: 'qux', path: '/' });
-    expect(state.$pathSegments).to.deep.equal(['']);
     expect(state.$queryKeys).to.deep.equal([]);
   });
 
@@ -328,7 +323,6 @@ describe('State', function () {
       expect(bar.$paramKeys).to.include('baz', 'qux');
       expect(bar.$branch[0]).to.equal(foo);
       expect(bar.$parent).to.equal(foo);
-      expect(bar.$pathSegments).to.deep.equal(['', 'bar']);
     });
 
 

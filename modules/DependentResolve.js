@@ -20,11 +20,9 @@ class DependentResolve extends BaseResolve {
   }
 
   execute(params, query, transition, dependencies) {
-    const args = this
-      .injectables
-      .map(injectable => dependencies[injectable])
-      .concat(params, query, transition);
-    return this.invokable(...args);
+    const { injectables, invokable } = this;
+    const args = injectables.map(injectable => dependencies[injectable]);
+    return invokable(...args, params, query, transition);
   }
 
 }

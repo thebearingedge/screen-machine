@@ -1,18 +1,16 @@
 
 'use strict';
 
-module.exports = function (machine) {
-
+export default function homeScreen(machine) {
   machine
     .state('home', {
       path: '/',
       component: 'Home',
       resolve: {
-        today: function () {
-
+        today() {
           return new Date();
         }
       },
       cacheable: false
     });
-};
+}

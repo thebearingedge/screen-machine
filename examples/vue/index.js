@@ -1,23 +1,14 @@
 
 'use strict';
 
-var express = require('express');
-var app = express();
+import express from 'express';
 
-var publicDir = __dirname + '/public';
+const publicDir = __dirname + '/public';
+const runMessage = 'Vue Screen Machine Demo is running on port 3000';
+const app = express();
 
+app
+  .get('/*.js', (req, res) => res.sendFile(publicDir + '/bundle.js'))
+  .get('*', (req, res) => res.sendFile(publicDir + '/index.html'))
+  .listen(3000, () => console.log(runMessage));
 
-app.get('/*.js', function (req, res) {
-
-  res.sendFile(publicDir + '/js/bundle.js');
-});
-
-app.get('*', function (req, res) {
-
-  res.sendFile(publicDir + '/index.html');
-});
-
-app.listen(3000, function () {
-
-  console.log('Vue Screen Machine Demo is running on port 3000');
-});

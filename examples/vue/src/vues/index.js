@@ -1,7 +1,7 @@
 
 'use strict';
 
-module.exports = function vues(Vue) {
+export default function vues(Vue) {
 
   Vue.component('Home', {
     template: `<div>
@@ -58,4 +58,4 @@ module.exports = function vues(Vue) {
     template: `<h4>Aw, Snap. We could not find the page you were looking for :(</h4>`
   });
 
-};
+}

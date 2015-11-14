@@ -157,6 +157,21 @@ describe('stateMachine', function () {
 
   });
 
+  describe('.isInState(stateName, params, query)', () => {
+
+    it('knows if its current state matches a given state', () => {
+      expect(machine.isInState('app.foo.bar.baz')).to.equal(false);
+      machine.init(bazState, { bazParam: '42', fooParam: '7' });
+      expect(machine.isInState(
+        'app.foo.bar.baz', { bazParam: '41', fooParam: '6' }
+      )).to.equal(false);
+      expect(machine.isInState(
+        'app.foo.bar.baz', { bazParam: '42', fooParam: '7' }
+      )).to.equal(true);
+    });
+
+  });
+
 
   describe('.createTransition(state, params, query, options)', function () {
 
@@ -453,10 +468,7 @@ describe('stateMachine', function () {
 
     it('should not run resolves if canceled by hook', function (done) {
 
-      appState.beforeEnter = function (transition) {
-
-        transition.cancel();
-      };
+      appState.beforeEnter = transition => transition.cancel();
 
       machine.init(rootState, {}, {});
 

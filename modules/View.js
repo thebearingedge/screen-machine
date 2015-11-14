@@ -67,8 +67,7 @@ class View {
 
   isShadowed() {
     const { container } = this;
-    return !!container &&
-             container.view.nextComponent !== container;
+    return !!container && container.view.nextComponent !== container;
   }
 
   publish(resolved, params, query) {
@@ -80,16 +79,17 @@ class View {
     const { content, element, nextComponent } = this;
     if (content) element.replaceChild(nextComponent.node, content);
     else element.appendChild(nextComponent.node);
-    this.content = nextComponent.node;
-    this.lastComponent = currentComponent;
-    this.currentComponent = nextComponent;
-    this.nextComponent = null;
-    return this;
+    return Object.assign(this, {
+      content: nextComponent.node,
+      lastComponent: currentComponent,
+      currentComponent: nextComponent,
+      nextComponent: null
+    });
   }
 
   shouldUpdate() {
-    return !!this.currentComponent &&
-             this.currentComponent === this.nextComponent;
+    const { currentComponent, nextComponent } = this;
+    return !!currentComponent && currentComponent === nextComponent;
   }
 
   shouldClose() {

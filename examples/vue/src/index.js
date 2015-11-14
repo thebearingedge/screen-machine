@@ -3,42 +3,38 @@
 
 /* global -document */
 /* global -Promise */
-var document = require('global/document');
-var Vue = require('vue/dist/vue.min.js');
-var screenMachine = require('../../../screenMachine');
-var vueComponent = require('../../../vueComponent');
-var EventEmitter = require('events').EventEmitter;
-var NativePromise = require('native-promise-only');
-var emitter = new EventEmitter();
+import document from 'global/document';
+import Vue from 'vue';
+import screenMachine from '../../../screenMachine';
+import vueComponent from '../../../vueComponent';
+import EventEmitter from 'events';
+import NativePromise from 'native-promise-only';
+import domready from 'domready';
+import homeScreen from './screens/home';
+import viewLibs from './screens/viewLibs';
+import notFound from './screens/notFound';
+import views from './vues';
 
+const emitter = new EventEmitter();
 
-var config = {
+Vue.config.silent = true;
+
+const config = {
+  document,
   components: vueComponent(Vue),
-  document: document,
   promises: NativePromise,
   events: {
-    emitter: emitter,
+    emitter,
     trigger: 'emit',
     on: 'addListener',
     off: 'removeListener'
   }
 };
 
-require('./vues')(Vue);
+const machine = global.machine = screenMachine(config);
 
-var machine = global.machine = screenMachine(config);
-
-
-var domready = require('domready');
-var homeScreen = require('./screens/home');
-var viewLibs = require('./screens/viewLibs');
-var notFound = require('./screens/notFound');
-
+views(Vue);
 homeScreen(machine);
 viewLibs(machine);
 notFound(machine);
-
-domready(function () {
-
-  machine.start();
-});
+domready(() => machine.start());

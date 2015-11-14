@@ -1,87 +1,67 @@
 
 'use strict';
 
-var chai = require('chai');
-var sinonChai = require('sinon-chai');
-var expect = chai.expect;
-
-chai.use(sinonChai);
-
+import chai from 'chai';
+import sinonChai from 'sinon-chai';
 import stateRegistry from '../modules/stateRegistry';
 import State from '../modules/State';
 
+chai.use(sinonChai);
 
-describe('stateRegistry', function () {
+const { expect } = chai;
 
-  let registry, viewTree, resolveService, router, rootState;
+describe('stateRegistry', () => {
 
-  beforeEach(function () {
-    viewTree = {
-      views: { '': {} },
-      processState() {}
-    };
-    resolveService = { addResolvesTo() {} };
-    router = { add() {} };
-    registry = stateRegistry(viewTree, resolveService, router);
-    rootState = registry.$root;
+  let registry, $root;
+
+  beforeEach(() => {
+    registry = stateRegistry();
+    $root = registry.$root;
   });
 
+  describe('.add(String stateName, Object definition) -> this', () => {
 
-  describe('.add(String stateName, Object definition) -> this', function () {
-
-    it('should create and register a State', function () {
-
+    it('should create and register a State', () => {
       registry.add('foo', {});
-
-      var fooState = registry.states.foo;
+      const fooState = registry.states.foo;
       expect(fooState instanceof State).to.equal(true);
-      expect(fooState.$parent).to.equal(rootState);
+      expect(fooState.$parent).to.equal($root);
     });
 
-
-    it('should accept an object definition with a name property', function () {
-
+    it('should accept an object definition with a name property', () => {
       registry.add({ name: 'foo' });
-
-      var fooState = registry.states.foo;
+      const fooState = registry.states.foo;
       expect(fooState instanceof State).to.equal(true);
-      expect(fooState.$parent).to.equal(rootState);
+      expect(fooState.$parent).to.equal($root);
     });
 
-
-    it('should enqueue a state with a lazy parent', function () {
-
+    it('should enqueue a state with a lazy parent', () => {
       registry.add('foo.bar', {});
-
-      var barState = registry.queues.foo[0];
-
+      const barState = registry.queues.foo[0];
       expect(barState.$parent).to.equal(null);
       expect(registry.states['foo.bar']).to.equal(undefined);
       expect(barState instanceof State).to.equal(true);
     });
 
-
-    it('should throw if state name is invalid', function () {
-
-      expect(registry.add.bind(registry, {}))
+    it('should throw if state name is invalid', () => {
+      expect(() => registry.add({}))
         .to.throw(Error, 'State definitions must include a string name');
     });
 
-
-    it('should dequeue states that were queued', function () {
+    it('should dequeue states that were queued', () => {
 
       registry.add('foo.bar', {});
       registry.add('foo.bar.baz', {});
 
-      var barState = registry.queues.foo[0];
-      var bazState = registry.queues['foo.bar'][0];
+      const barState = registry.queues.foo[0];
+      const bazState = registry.queues['foo.bar'][0];
 
       expect(barState.$parent).to.equal(null);
       expect(bazState.$parent).to.equal(null);
 
       registry.add('foo', {});
 
-      var fooState = registry.states.foo;
+      const fooState = registry.states.foo;
 
       expect(registry.queues.foo.length).to.equal(0);
       expect(registry.queues['foo.bar'].length).to.equal(0);

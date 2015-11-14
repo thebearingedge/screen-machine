@@ -1,10 +1,8 @@
 
 'use strict';
 
-module.exports = urlWatcher;
+export default function urlWatcher(window, options = { html5: true }) {
 
-
-function urlWatcher(window, options = { html5: true }) {
   const { history, location } = window;
   const windowEvent = (history || {}).pushState && (options.html5)
     ? 'popstate'

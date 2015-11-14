@@ -11,4 +11,3 @@ app
   .get('/*.js', (req, res) => res.sendFile(publicDir + '/bundle.js'))
   .get('*', (req, res) => res.sendFile(publicDir + '/index.html'))
   .listen(3000, () => console.log(runMessage));
-

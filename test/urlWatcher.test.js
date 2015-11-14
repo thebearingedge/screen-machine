@@ -28,7 +28,7 @@ describe('urlWatcher', function () {
         location: mockLocation('http://www.example.com/foo?bar=baz%20qux')
       };
 
-      url = urlWatcher(window, {});
+      url = urlWatcher(window);
     });
 
 

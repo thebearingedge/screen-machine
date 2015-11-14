@@ -65,13 +65,9 @@ class State {
 
   isStale(oldParams, oldQuery, newParams, newQuery) {
     const { $paramKeys, $queryKeys } = this;
-    const staleParams = $paramKeys.some(key => {
-      return newParams[key] !== oldParams[key];
-    });
-    const staleQuery = $queryKeys.some(key => {
-      return newQuery[key] !== oldQuery[key];
-    });
-    return staleParams || staleQuery;
+    const params = $paramKeys.some(key => newParams[key] !== oldParams[key]);
+    const query = $queryKeys.some(key => newQuery[key] !== oldQuery[key]);
+    return params || query;
   }
 
   sleep() {

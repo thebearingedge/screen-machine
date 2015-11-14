@@ -1,37 +1,38 @@
 
 'use strict';
 
-var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
-var expect = chai.expect;
-
-chai.use(sinonChai);
-
-var Promise = require('native-promise-only');
+import chai from 'chai';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import chaiAsPromised from 'chai-as-promised';
+import Promise from 'native-promise-only';
 import State from '../modules/State';
 import DependentResolve from '../modules/DependentResolve';
 
+chai.use(sinonChai);
+chai.use(chaiAsPromised);
 
-describe('bDependentResolve', function () {
+const { expect } = chai;
 
-  var state;
+describe('DependentResolve', () => {
 
-  beforeEach(function () {
+  let state;
+
+  beforeEach(() => {
 
     state = new State({
       name: 'child',
       resolve: {
-        bar: function () {},
+        bar: () => {},
         baz: ['foo@parent', 'bar', sinon.spy()]
       }
     });
   });
 
 
-  it('should have an invokable and list of injectables', function () {
+  it('should have an invokable and list of injectables', () => {
 
-    var resolve = new DependentResolve('baz', state, Promise);
+    const resolve = new DependentResolve('baz', state, Promise);
 
     expect(resolve.injectables).to.deep.equal(['foo@parent', 'bar@child']);
     expect(typeof resolve.invokable).to.equal('function');
@@ -39,14 +40,14 @@ describe('bDependentResolve', function () {
   });
 
 
-  it('should call its invokable with dependencies', function () {
+  it('should call its invokable with dependencies', () => {
 
-    var params = {};
-    var query = {};
-    var transition = {};
-    var dependencies = { 'foo@parent': 'krünk', 'bar@child': 'pöpli' };
+    const params = {};
+    const query = {};
+    const transition = {};
+    const dependencies = { 'foo@parent': 'krünk', 'bar@child': 'pöpli' };
 
-    var resolve = new DependentResolve('baz', state, Promise);
+    const resolve = new DependentResolve('baz', state, Promise);
 
     resolve.execute(params, query, transition, dependencies);
 

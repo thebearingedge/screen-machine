@@ -1,34 +1,32 @@
 
 'use strict';
 
-var chai = require('chai');
-var sinon = require('sinon');
-var expect = chai.expect;
-
-var Promise = require('native-promise-only');
+import chai from 'chai';
+import sinon from 'sinon';
+import Promise from 'native-promise-only';
 import State from '../modules/State';
 import SimpleResolve from '../modules/SimpleResolve';
 import DependentResolve from '../modules/DependentResolve';
 import resolveFactory from '../modules/resolveFactory';
 
+const { expect } = chai;
 
-describe('resolveFactory', function () {
+describe('resolveFactory', () => {
 
-  var parentState, childState, grandChildState, factory;
+  let parentState, childState, grandChildState, factory;
 
-  beforeEach(function () {
-
+  beforeEach(() => {
     factory = resolveFactory(Promise);
     parentState = new State({
       name: 'parent',
       resolve: {
-        foo: function () {}
+        foo: () => {}
       }
     });
     childState = new State({
       name: 'parent.child',
       resolve: {
-        bar: ['foo@parent', function () {}]
+        bar: ['foo@parent', () => {}]
       }
     });
     grandChildState = new State({
@@ -36,35 +34,25 @@ describe('resolveFactory', function () {
     });
   });
 
+  describe('.addTo(state)', () => {
 
-  describe('.addTo(state)', function () {
-
-    it('should create SimpleResolves', function () {
-
+    it('should create SimpleResolves', () => {
       factory.addTo(parentState);
-
-      var resolve = parentState.$resolves[0];
-
+      const [ resolve ] = parentState.$resolves;
       expect(resolve instanceof SimpleResolve).to.equal(true);
     });
 
 
-    it('should create DependentResolves', function () {
-
+    it('should create DependentResolves', () => {
       factory.addTo(childState);
-
-      var resolve = childState.$resolves[0];
-
+      const [ resolve ] = childState.$resolves;
       expect(resolve instanceof DependentResolve).to.equal(true);
     });
 
 
-    it('should noop if a state does not define resolves', function () {
-
+    it('should noop if a state does not define resolves', () => {
       sinon.spy(factory, 'instantiate');
-
       factory.addTo(grandChildState);
-
       expect(factory.instantiate.called).to.equal(false);
     });
 

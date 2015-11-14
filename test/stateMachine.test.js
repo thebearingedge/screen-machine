@@ -484,10 +484,7 @@ describe('stateMachine', function () {
 
     it('should not run resolves if superseded by hook', function (done) {
 
-      appState.beforeEnter = function (transition) {
-
-        transition.redirect('qux', {}, {});
-      };
+      appState.beforeEnter = transition => transition.redirect('qux', {}, {});
 
       machine.init(rootState, {}, {});
 

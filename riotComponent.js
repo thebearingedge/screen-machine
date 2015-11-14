@@ -46,7 +46,7 @@ export default function riotComponent(riot) {
         const { tagName, childViews } = this;
         const opts = this.getOpts(resolved, params, query);
         const node = document.createElement(tagName);
-        const tagInstance = riot.mount(node, tagName, opts)[0];
+        const [ tagInstance ] = riot.mount(node, tagName, opts);
         childViews.forEach(view => view.attachWithin(node));
         return Object.assign(this, { node, tagInstance });
       }
@@ -70,8 +70,7 @@ export default function riotComponent(riot) {
           .state
           .getResolves()
           .reduce((opts, resolve) => {
-            opts[resolve.key] = resolved[resolve.id];
-            return opts;
+            return Object.assign(opts, { [resolve.key]: resolved[resolve.id] });
           }, { params, query });
       }
 

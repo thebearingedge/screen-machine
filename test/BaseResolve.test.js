@@ -1,133 +1,106 @@
 
 'use strict';
 
-var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
-var chaiAsPromised = require('chai-as-promised');
-var expect = chai.expect;
+import chai from 'chai';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import chaiAsPromised from 'chai-as-promised';
+import Promise from 'native-promise-only';
+import State from '../modules/State';
+import BaseResolve from '../modules/BaseResolve';
 
 chai.use(sinonChai);
 chai.use(chaiAsPromised);
 
-var Promise = require('native-promise-only');
-import State from '../modules/State';
-import BaseResolve from '../modules/BaseResolve';
+const { expect } = chai;
 
-describe('BaseResolve', function () {
+describe('BaseResolve', () => {
 
-  var state, cache;
+  let state, cache;
 
-  beforeEach(function () {
-
+  beforeEach(() => {
     state = new State({
       name: 'foo',
-      resolve: {
-        fooResolve: sinon.spy()
-      }
+      resolve: { fooResolve: sinon.spy() }
     });
     cache = { unset: sinon.spy() };
   });
 
-
-  it('should have an id', function () {
-
-    var resolve = new BaseResolve('fooResolve', state, Promise);
-
-    expect(resolve.id).to.equal('fooResolve@foo');
+  it('should have an id', () => {
+    const { id } = new BaseResolve('fooResolve', state, Promise);
+    expect(id).to.equal('fooResolve@foo');
   });
 
-
-  it('should be cacheable by default', function () {
-
-    var resolve = new BaseResolve('fooResolve', state, Promise);
-
-    expect(resolve.cacheable).to.equal(true);
+  it('should be cacheable by default', () => {
+    const { cacheable } = new BaseResolve('fooResolve', state, Promise);
+    expect(cacheable).to.equal(true);
   });
 
-
-  it('should not cacheable if state is not cacheable', function () {
-
+  it('should not cacheable if state is not cacheable', () => {
     state.cacheable = false;
-
-    var resolve = new BaseResolve('fooResolve', state, Promise);
-
-    expect(resolve.cacheable).to.equal(false);
+    const { cacheable } = new BaseResolve('fooResolve', state, Promise);
+    expect(cacheable).to.equal(false);
   });
 
 
-  describe('.clear()', function () {
+  describe('.clear()', () => {
 
-    it('should noop if not cacheable', function () {
-
-      var resolve = new BaseResolve('fooResolve', state, Promise);
-
+    it('should noop if not cacheable', () => {
+      const resolve = new BaseResolve('fooResolve', state, Promise);
       resolve.cache = cache;
       resolve.cacheable = false;
       resolve.clear();
-
       expect(cache.unset.called).to.equal(false);
     });
 
 
-    it('should clear its cached result', function () {
-
-      var resolve = new BaseResolve('fooResolve', state, Promise);
-
+    it('should clear its cached result', () => {
+      const resolve = new BaseResolve('fooResolve', state, Promise);
       resolve.cache = cache;
       resolve.clear();
-
       expect(cache.unset).to.have.been.calledWithExactly('fooResolve@foo');
     });
 
   });
 
 
-  describe('.createTask(params, query, cache)', function () {
+  describe('.createTask(params, query, cache)', () => {
 
-    var params, query, transition, cache;
+    let params, query, transition, cache;
 
-    beforeEach(function () {
-
+    beforeEach(() => {
       params = { baz: 42 };
       query = { qux: 'quux' };
       cache = { set: sinon.spy() };
       transition = {};
     });
 
-    it('should reference the cache and create a task delegate', function () {
-
-      var resolve = new BaseResolve('fooResolve', state, Promise);
-      var task = resolve.createTask(params, query, transition, cache);
-
+    it('should reference the cache and create a task delegate', () => {
+      const resolve = new BaseResolve('fooResolve', state, Promise);
+      const task = resolve.createTask(params, query, transition, cache);
       expect(resolve.cache).to.equal(cache);
       expect(task).to.be.ok;
     });
 
 
-    it('should copy a dependency list to the task', function () {
-
-      var resolve = new BaseResolve('fooResolve', state, Promise);
-
+    it('should copy a dependency list to the task', () => {
+      const resolve = new BaseResolve('fooResolve', state, Promise);
       resolve.injectables = ['grault', 'garply'];
-
-      var task = resolve.createTask(params, query, cache);
-
+      const task = resolve.createTask(params, query, cache);
       expect(task.waitingFor).to.deep.equal(resolve.injectables);
       expect(task.waitingFor).not.to.equal(resolve.injectables);
     });
 
 
-    describe('taskDelegate', function () {
+    describe('taskDelegate', () => {
 
-      var fooResolve, barResolve, bazResolve;
-      var fooTask, barTask, bazTask;
-      var params, query, cache;
-      var transition;
+      let fooResolve, barResolve, bazResolve;
+      let fooTask, barTask, bazTask;
+      let params, query, cache;
+      let transition;
 
-      beforeEach(function () {
-
-        var state = new State({
+      beforeEach(() => {
+        const state = new State({
           name: 'state',
           resolve: {
             foo: sinon.spy(),
@@ -135,49 +108,44 @@ describe('BaseResolve', function () {
             baz: ['foo', 'bar', sinon.spy()]
           }
         });
-
         fooResolve = new BaseResolve('foo', state, Promise);
         barResolve = new BaseResolve('bar', state, Promise);
         bazResolve = new BaseResolve('bar', state, Promise);
-
         barResolve.injectables = ['foo@state'];
         bazResolve.injectables = ['foo@state', 'bar@state'];
-
         params = { qux: 'quux' };
         query = { grault: 'garply' };
         transition = {};
         cache = { set: sinon.spy() };
-
         fooTask = fooResolve.createTask(params, query, transition, cache);
         barTask = barResolve.createTask(params, query, transition, cache);
         bazTask = bazResolve.createTask(params, query, transition, cache);
       });
 
-      describe('.isReady()', function () {
+      describe('.isReady()', () => {
 
-        it('should whether it is ready', function () {
-
+        it('should whether it is ready', () => {
           expect(fooTask.isReady()).to.equal(true);
           expect(barTask.isReady()).to.equal(false);
           expect(bazTask.isReady()).to.equal(false);
         });
+
       });
 
-      describe('.isWaitingFor(dependencyId)', function () {
+      describe('.isWaitingFor(dependencyId)', () => {
 
-        it('should know who it is waiting for', function () {
-
+        it('should know who it is waiting for', () => {
           expect(barTask.isWaitingFor('foo@state')).to.equal(true);
           expect(barTask.isWaitingFor('baz@state')).to.equal(false);
           expect(bazTask.isWaitingFor('foo@state')).to.equal(true);
           expect(bazTask.isWaitingFor('bar@state')).to.equal(true);
         });
+
       });
 
+      describe('.setDependency(dependencyId, result)', () => {
 
-      describe('.setDependency(dependencyId, result)', function () {
-
-        it('should store the dependency and stop waiting for it', function () {
+        it('should store the dependency and stop waiting for it', () => {
 
           expect(barTask.waitingFor).to.deep.equal(['foo@state']);
 
@@ -202,13 +170,13 @@ describe('BaseResolve', function () {
       });
 
 
-      describe('.perform()', function () {
+      describe('.perform()', () => {
 
-        it('should call its resolve and return a promise', function () {
+        it('should call its resolve and return a promise', () => {
 
           fooResolve.execute = sinon.stub().returns('Yay!');
 
-          var resolve = fooTask.perform();
+          const resolve = fooTask.perform();
 
           expect(fooResolve.execute)
             .to.have.been
@@ -216,7 +184,7 @@ describe('BaseResolve', function () {
 
           fooResolve.execute = sinon.stub().throws('Oops!');
 
-          var reject = fooTask.perform();
+          const reject = fooTask.perform();
 
           return Promise.all([
             expect(resolve).to.eventually.equal('Yay!'),
@@ -227,14 +195,11 @@ describe('BaseResolve', function () {
       });
 
 
-      describe('.commit()', function () {
+      describe('.commit()', () => {
 
-        it('should set its result on the cache', function () {
-
+        it('should set its result on the cache', () => {
           fooTask.result = 'WHARGARBLE';
-
           fooTask.commit();
-
           expect(cache.set)
             .to.have.been.calledWithExactly('foo@state', 'WHARGARBLE');
         });
@@ -242,107 +207,109 @@ describe('BaseResolve', function () {
       });
 
 
-      describe('.runSelf(transition, queue, complete, wait)', function () {
+      describe('.runSelf(transition, queue, complete, wait)', () => {
 
-        it('should run itself and then run dependents', function (done) {
+        it('should run itself and then run dependents', done => {
 
-          transition.isSuperseded = function () { return false; };
+          transition.isSuperseded = () => false;
 
-          var queue = [fooTask, barTask, bazTask];
-          var complete = [];
-          var wait = 3;
+          const queue = [fooTask, barTask, bazTask];
+          const complete = [];
+          const wait = 3;
 
           sinon.stub(fooTask, 'runDependents');
           fooResolve.execute = sinon.stub().returns('ok');
 
           return fooTask
             .runSelf(queue, complete, wait)
-            .then(function () {
+            .then(() => {
               expect(queue).to.deep.equal([barTask, bazTask]);
               expect(complete).to.deep.equal([fooTask]);
               expect(fooTask.result).to.equal('ok');
               expect(fooTask.runDependents.calledOnce).to.equal(true);
-              return done();
-            });
+            })
+            .then(done)
+            .catch(done);
         });
 
-        it('should empty the queue if transition is canceled', function (done) {
+        it('should empty the queue if transition is canceled', done => {
 
-          transition.isSuperseded = function () { return true; };
-          transition._fail = function () { return Promise.reject(); };
+          transition.isSuperseded = () => true;
+          transition._fail = () => Promise.reject();
 
-          var queue = [fooTask, barTask, bazTask];
-          var complete = [];
-          var wait = 3;
+          const queue = [fooTask, barTask, bazTask];
+          const complete = [];
+          const wait = 3;
 
           sinon.stub(fooTask, 'runDependents');
           fooResolve.execute = sinon.spy();
 
           return fooTask
             .runSelf(queue, complete, wait)
-            .catch(function () {
+            .catch(() => {
               expect(queue).to.deep.equal([]);
               expect(complete).to.deep.equal([]);
               expect(fooResolve.execute.called).to.equal(false);
               expect(fooTask.runDependents.called).to.equal(false);
-              return done();
-            });
+            })
+            .then(done);
         });
 
 
-        it('should not run itself if it is not in the queue', function (done) {
+        it('should not run itself if it is not in the queue', done => {
 
-          transition.isSuperseded = function () { return true; };
-          transition._fail = function () { return Promise.reject(); };
+          transition.isSuperseded = () => true;
+          transition._fail = () => Promise.reject();
 
-          var queue = [];
-          var complete = [];
-          var wait = 3;
+          const queue = [];
+          const complete = [];
+          const wait = 3;
 
           sinon.stub(fooTask, 'runDependents');
           fooResolve.execute = sinon.spy();
 
           return fooTask
             .runSelf(queue, complete, wait)
-            .then(function () {
+            .then(() => {
               expect(fooResolve.execute.called).to.equal(false);
               expect(fooTask.runDependents.called).to.equal(false);
-              return done();
-            });
+            })
+            .then(done)
+            .catch(done);
         });
 
 
-        it('should not run dependents if completed', function (done) {
+        it('should not run dependents if completed', done => {
 
-          transition.isSuperseded = function () { return false; };
-          var queue = [fooTask];
-          var complete = [];
-          var wait = 1;
+          transition.isSuperseded = () => false;
+          const queue = [fooTask];
+          const complete = [];
+          const wait = 1;
 
           sinon.stub(fooTask, 'runDependents');
           fooResolve.execute = sinon.stub();
 
           return fooTask
             .runSelf(queue, complete, wait)
-            .then(function () {
+            .then(() => {
               expect(queue).to.deep.equal([]);
               expect(complete).to.deep.equal([fooTask]);
               expect(fooTask.runDependents.called).to.equal(false);
-              return done();
-            });
+            })
+            .then(done)
+            .catch(done);
         });
 
       });
 
-      describe('.runDependents(transition, queue, complete, wait)',function () {
+      describe('.runDependents(transition, queue, complete, wait)',() => {
 
-        it('should run all dependents that are now ready', function (done) {
+        it('should run all dependents that are now ready', done => {
 
-          transition.isSuperseded = function () { return false; };
-
-          var queue = [barTask, bazTask];
-          var complete = [fooTask];
-          var wait = 3;
+          transition.isSuperseded = () => false;
+          const queue = [barTask, bazTask];
+          const complete = [fooTask];
+          const wait = 3;
 
           sinon.spy(barTask, 'setDependency');
           sinon.spy(bazTask, 'setDependency');
@@ -352,13 +319,14 @@ describe('BaseResolve', function () {
 
           return fooTask
             .runDependents(queue, complete, wait)
-            .then(function () {
+            .then(() => {
               expect(barTask.setDependency.calledOnce).to.equal(true);
               expect(bazTask.setDependency.calledOnce).to.equal(true);
               expect(barTask.runSelf.calledOnce).to.equal(true);
               expect(bazTask.runSelf.calledOnce).to.equal(false);
-              return done();
-            });
+            })
+            .then(done)
+            .catch(done);
         });
       });
 

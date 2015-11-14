@@ -2,10 +2,9 @@
 'use strict';
 
 import Route from './Route';
-var urlTools = require('./urlTools');
+import urlTools from './urlTools';
 
-
-module.exports = function routerFactory() {
+export default function routerFactory() {
 
   return {
 
@@ -16,9 +15,7 @@ module.exports = function routerFactory() {
     queues: { __absolute__: [] },
 
     add(name, path) {
-      const route = new Route(name, path);
-      this.register(route);
-      return route;
+      return this.register(new Route(name, path));
     },
 
     register(route) {
@@ -44,7 +41,7 @@ module.exports = function routerFactory() {
 
     find(url) {
       const urlParts = urlTools.toParts(url);
-      const unmatched = urlParts.pathname.split('/').slice(1);
+      const [, ...unmatched ] = urlParts.pathname.split('/');
       const results = [];
       let route = this.root;
       results.push(route.match(unmatched));
@@ -107,7 +104,7 @@ module.exports = function routerFactory() {
 
   };
 
-};
+}
 
 function flattenParams(results) {
   return results

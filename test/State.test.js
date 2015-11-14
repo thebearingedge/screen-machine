@@ -1,22 +1,20 @@
 
 'use strict';
 
-var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
-var expect = chai.expect;
+import chai from 'chai';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import State from '../modules/State';
 
 chai.use(sinonChai);
 
+const { expect } = chai;
 
-import State from '../modules/State';
+describe('State', () => {
 
+  let state;
 
-describe('State', function () {
-
-  var state;
-
-  it('should establish its parent\'s name', function () {
+  it('should know its parent name', () => {
 
     state = new State({ name: 'foo' });
     expect(state.parent).to.equal(null);
@@ -32,7 +30,7 @@ describe('State', function () {
   });
 
 
-  it('should break its path into segments', function () {
+  it('should break its path into segments', () => {
 
     state = new State({ name: 'foo', path: '/foo-path' });
     expect(state.$queryKeys).to.deep.equal([]);
@@ -52,209 +50,157 @@ describe('State', function () {
     expect(state.$queryKeys).to.deep.equal([]);
   });
 
+  beforeEach(() => state = new State({ name: 'foo' }));
 
+  describe('.contains(state)', () => {
 
-  beforeEach(function () {
-
-    state = new State({ name: 'foo' });
-  });
-
-
-  describe('.contains(Object state) => Boolean', function () {
-
-    it('should know whether it contains another state', function () {
-
+    it('should know whether it contains another state', () => {
       expect(state.contains(state)).to.equal(true);
       expect(state.contains({ name: 'baz' })).to.equal(false);
     });
 
   });
 
+  describe('.getBranch()', () => {
 
-  describe('.getBranch() => Array<State>', function () {
-
-    it('should retreive its ancestor States', function () {
-
+    it('should retreive its ancestor States', () => {
       expect(state.getBranch()[0]).to.equal(state);
     });
 
   });
 
+  describe('.addView(view)', () => {
 
-  describe('.addView(Object viewLoader) => this', function () {
-
-    it('should store views', function () {
-
+    it('should store views', () => {
       expect(state.$views).to.equal(null);
-
       state.addView({});
-
-      expect(state.$views.length).to.equal(1);
+      expect(state.$views).to.deep.equal([{}]);
     });
 
   });
 
+  describe('.getViews()', () => {
 
-  describe('.getViews() => Array<ViewLoader>', function () {
-
-    it('should return its views', function () {
-
+    it('should return its views', () => {
       expect(state.getViews()).to.deep.equal([]);
-
-      var fakeLoader = {};
-
-      state.$views = [fakeLoader];
-
-      expect(state.getViews()[0]).to.equal(fakeLoader);
+      const view = {};
+      state.$views = [view];
+      expect(state.getViews()[0]).to.equal(view);
     });
 
   });
 
+  describe('.addComponent(component)', () => {
 
-  describe('.addComponent(Object view) => this', function () {
-
-    it('should store views', function () {
-
+    it('should store views', () => {
       expect(state.$components).to.equal(null);
-
       state.addComponent({});
-
-      expect(state.$components.length).to.equal(1);
+      expect(state.$components).to.deep.equal([{}]);
     });
 
   });
 
+  describe('.getComponents()', () => {
 
-  describe('.getComponents() => Array<View>', function () {
-
-    it('should return its views', function () {
-
+    it('should return its views', () => {
       expect(state.getComponents()).to.deep.equal([]);
-
-      var fakeView = {};
-
-      state.$components = [fakeView];
-
-      expect(state.getComponents()[0]).to.equal(fakeView);
+      const component = {};
+      state.$components = [component];
+      expect(state.getComponents()[0]).to.equal(component);
     });
 
   });
 
+  describe('.getParent()', () => {
 
-  describe('.getParent() => State', function () {
-
-    it('should return its parent State', function () {
-
-      var fakeParent = {};
-
+    it('should return its parent State', () => {
+      const fakeParent = {};
       state.$parent = fakeParent;
-
       expect(state.getParent()).to.equal(fakeParent);
     });
 
   });
 
+  describe('.getAncestor(stateName)', () => {
 
-  describe('.getAncestor(stateName) => State', function () {
-
-    it('should return an ancestor state', function () {
-
-      var foo = new State({ name: 'foo' });
-      var bar = new State({ name: 'bar' });
-
+    it('should return an ancestor state', () => {
+      const foo = new State({ name: 'foo' });
+      const bar = new State({ name: 'bar' });
       bar.inheritFrom(foo);
-
       expect(bar.getAncestor('foo')).to.equal(foo);
     });
 
   });
 
+  describe('.addResolve(resolve)', () => {
 
-  describe('.addResolve(Object resolve) => this', function () {
-
-    it('should store resolves', function () {
-
+    it('should store resolves', () => {
       expect(state.$resolves).to.equal(null);
-
-      var fakeResolve = {};
-
+      const fakeResolve = {};
       state.addResolve(fakeResolve);
-
+      expect(state.$resolves).to.exist;
       expect(state.$resolves.length).to.equal(1);
     });
 
   });
 
+  describe('.getResolves()', () => {
 
-  describe('.getResolves() => Array<Resolve>', function () {
-
-    it('should return its resolves', function () {
-
+    it('should return its resolves', () => {
       expect(state.getResolves()).to.deep.equal([]);
-
-      var fakeResolve = {};
-
+      const fakeResolve = {};
       state.$resolves = [fakeResolve];
-
       expect(state.getResolves()[0]).to.equal(fakeResolve);
     });
 
   });
 
+  describe('.filterParams(Object params)', () => {
 
-  describe('.filterParams(Object params) => Object', function () {
-
-    it('should return params filtered by $paramKeys', function () {
-
+    it('should return params filtered by $paramKeys', () => {
       state.$paramKeys = ['foo', 'bar'];
-
-      var allParams = { foo: 1, bar: 2, baz: 3 };
-
+      const allParams = { foo: 1, bar: 2, baz: 3 };
       expect(state.filterParams(allParams)).to.deep.equal({ foo: 1, bar: 2 });
     });
 
   });
 
+  describe('.sleep()', () => {
 
-  describe('.sleep() => this', function () {
+    it('should reset views, resolves and $paramCache', () => {
 
-    it('should reset views, resolves and $paramCache', function () {
+      const view = { detach: sinon.spy() };
+      const resolve = { clear: sinon.spy() };
 
-      var viewLoader = { detach: sinon.spy() };
-      var resolve = { clear: sinon.spy() };
-
-      state.$views = [viewLoader];
+      state.$views = [view];
       state.$resolves = [resolve];
 
       state.sleep();
 
-      expect(viewLoader.detach.calledOnce).to.equal(true);
+      expect(view.detach.calledOnce).to.equal(true);
       expect(resolve.clear.calledOnce).to.equal(true);
     });
 
   });
 
 
-  describe('.isStale(oldParams, newParams, oldQuery, newQuery)', function () {
+  describe('.isStale(oldParams, newParams, oldQuery, newQuery)', () => {
 
-    it('should be false if relevent params are equal', function () {
-
-      var oldParams = {};
-      var newParams = {};
-      var oldQuery = {};
-      var newQuery = {};
-
+    it('should be false if relevent params are equal', () => {
+      const oldParams = {};
+      const newParams = {};
+      const oldQuery = {};
+      const newQuery = {};
       expect(state.isStale(oldParams, newParams, oldQuery, newQuery))
         .to.equal(false);
     });
 
+    it('should be true if relevant params have changed', () => {
 
-    it('should be true if relevant params have changed', function () {
-
-      var oldParams = { foo: 1 };
-      var newParams = { foo: 2 };
-      var oldQuery = { bar: 1 };
-      var newQuery = { bar: 1 };
+      let oldParams = { foo: 1 };
+      let newParams = { foo: 2 };
+      let oldQuery = { bar: 1 };
+      let newQuery = { bar: 1 };
 
       state.$paramKeys = ['foo'];
       state.$queryKeys = [];
@@ -277,25 +223,23 @@ describe('State', function () {
   });
 
 
-  describe('.shouldResolve(cache)', function () {
+  describe('.shouldResolve(cache)', () => {
 
-    it('should resolve if it has resolves and is not cacheable', function () {
-
-      var cache = { $store: {} };
-
+    it('should resolve if it has resolves and is not cacheable', () => {
+      const cache = { $store: {} };
       state = new State({ name: 'state', cacheable: false });
       state.$resolves = [];
-
       expect(state.shouldResolve(cache)).to.equal(true);
     });
+
   });
 
 
-  describe('.inheritFrom(Object state) => this', function () {
+  describe('.inheritFrom(Object state)', () => {
 
-    var foo, bar;
+    let foo, bar;
 
-    beforeEach(function () {
+    beforeEach(() => {
 
       foo = new State({
         name: 'foo',
@@ -310,13 +254,10 @@ describe('State', function () {
         path: '/bar',
         data: { isGood: true }
       });
-
     });
 
-    it('should extend parent state properties', function () {
-
+    it('should extend parent state properties', () => {
       bar.inheritFrom(foo);
-
       expect(bar.data).to.deep.equal({ isCool: true, isGood: true });
       expect(bar.$includes.foo).to.equal(true);
       expect(bar.$paramKeys.length).to.equal(1);
@@ -325,13 +266,9 @@ describe('State', function () {
       expect(bar.$parent).to.equal(foo);
     });
 
-
-    it('should always extend parent data', function () {
-
+    it('should always extend parent data', () => {
       bar.data = null;
-
       bar.inheritFrom(foo);
-
       expect(bar.data).to.deep.equal(foo.data);
     });
 

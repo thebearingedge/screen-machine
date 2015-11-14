@@ -10,9 +10,7 @@ export default function notFoundScreen(machine) {
     .state('viewLibs.library.notFound', {
       path: '*notFound',
       views: {
-        '@': {
-          component: 'NotFound'
-        }
+        '@': { component: 'NotFound' }
       }
     });
 }

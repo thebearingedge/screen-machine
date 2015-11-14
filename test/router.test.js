@@ -1,10 +1,8 @@
 
 'use strict';
 
-import chai from 'chai';
+import { expect } from 'chai';
 import routerFactory from '../modules/router';
-
-const { expect } = chai;
 
 describe('router', () => {
 
@@ -16,21 +14,29 @@ describe('router', () => {
 
     it('should register routes', () => {
 
-      const appRoute = router.add('app', '/').routes.app;
+      const appRoute = router
+        .add('app', '/')
+        .routes.app;
 
       expect(appRoute).to.equal(router.root);
 
-      const photosRoute = router.add('app.photos', 'photos').routes['app.photos'];
+      const photosRoute = router
+        .add('app.photos', 'photos')
+        .routes['app.photos'];
 
       expect(photosRoute.parent).to.equal(appRoute);
       expect(appRoute.children[0]).to.equal(photosRoute);
 
-      const loginRoute = router.add('app.login', 'login').routes['app.login'];
+      const loginRoute = router
+        .add('app.login', 'login')
+        .routes['app.login'];
 
       expect(loginRoute.parent).to.equal(appRoute);
       expect(appRoute.children[1]).to.equal(loginRoute);
 
-      const landingRoute = router.add('landing', 'landing').routes.landing;
+      const landingRoute = router
+        .add('landing', 'landing')
+        .routes.landing;
 
       expect(landingRoute.parent).to.equal(appRoute);
       expect(appRoute.children[2]).to.equal(landingRoute);
@@ -82,7 +88,6 @@ describe('router', () => {
     });
 
   });
-
 
   describe('.find(path)', () => {
 

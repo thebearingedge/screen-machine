@@ -1,10 +1,8 @@
 
 'use strict';
 
-import chai from 'chai';
+import { expect } from 'chai';
 import Segment from '../modules/routeSegment';
-
-const { expect } = chai;
 
 describe('routeSegment', () => {
 
@@ -24,7 +22,6 @@ describe('routeSegment', () => {
       it('should not match a non-identical string', () => {
         expect(staticSegment.match('bar')).to.equal(null);
       });
-
 
       it('should match an identical string', () => {
         expect(staticSegment.match('foo')).to.deep.equal({});
@@ -72,7 +69,6 @@ describe('routeSegment', () => {
 
   });
 
-
   describe('splat', () => {
 
     let splatSegment;
@@ -101,7 +97,6 @@ describe('routeSegment', () => {
     });
 
   });
-
 
   describe('epsilon', () => {
 

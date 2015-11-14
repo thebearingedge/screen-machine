@@ -1,41 +1,38 @@
 
 'use strict';
 
-var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
-var expect = chai.expect;
-var document = require('jsdom').jsdom();
-
-chai.use(sinonChai);
-
+import chai from 'chai';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import { jsdom } from 'jsdom';
 import State from '../modules/State';
 import viewTree from '../modules/viewTree';
 import View from '../modules/View';
 import BaseComponent from '../modules/BaseComponent';
 
+const document = jsdom();
 
-describe('viewTree', function () {
+chai.use(sinonChai);
 
-  describe('.processState(state)', function () {
+const { expect } = chai;
 
-    var tree, rootState;
+describe('viewTree', () => {
 
-    beforeEach(function () {
+  describe('.processState(state)', () => {
 
+    let tree, rootState;
+
+    beforeEach(() => {
       tree = viewTree(document, BaseComponent);
       rootState = new State({ name: '' });
       rootState.addView(tree.views['@']);
     });
 
-
-    it('should have a root View', function () {
-
+    it('should have a root View', () => {
       expect(tree.views['@'] instanceof View).to.equal(true);
     });
 
-
-    it('should do nothing if a state defines no components', function () {
+    it('should do nothing if a state defines no components', () => {
       const empty = new State({ name: 'empty' });
       tree.processState(empty);
       expect(empty.$components).to.equal(null);
@@ -44,132 +41,93 @@ describe('viewTree', function () {
       });
     });
 
-
-    it('should not create a view more than once', function () {
-
+    it('should not create a view more than once', () => {
       sinon.spy(tree, 'createView');
-      var rootView = tree.views['@'];
-
-      var user = new State({
+      const rootView = tree.views['@'];
+      const user = new State({
         name: 'user',
         component: 'user-component'
       });
-
       user.inheritFrom(rootState);
-
       tree.processState(user);
-
-
       expect(user.$components[0].view).to.equal(rootView);
       expect(tree.createView.called).to.equal(false);
     });
 
 
-    it('should create a component on the state', function () {
-
-      var user = new State({
+    it('should create a component on the state', () => {
+      const user = new State({
         name: 'user',
         component: 'user-component'
       });
-
       user.inheritFrom(rootState);
-
       tree.processState(user);
-
-      var userComponent = user.$components[0];
+      const userComponent = user.$components[0];
       expect(userComponent instanceof BaseComponent).to.equal(true);
     });
 
 
-    it('should create a new view on the target state', function () {
-
+    it('should create a new view on the target state', () => {
       sinon.spy(tree, 'createView');
-
-      var user = new State({
+      const user = new State({
         name: 'user',
         component: 'user-component'
       });
-
-      var editUser = new State({
+      const editUser = new State({
         name: 'user.editUser',
         component: 'edit-user-component'
       });
-
       user.inheritFrom(rootState);
       editUser.inheritFrom(user);
-
       tree.processState(user);
       tree.processState(editUser);
-
-      var userView = tree.views['@user'];
-
+      const userView = tree.views['@user'];
       expect(tree.createView.calledOnce).to.equal(true);
       expect(userView instanceof View).to.equal(true);
       expect(user.$views[0]).to.equal(userView);
     });
 
 
-    it('should associate views and components', function () {
-
-      var user = new State({
+    it('should associate views and components', () => {
+      const user = new State({
         name: 'user',
         component: 'user'
       });
-
-      var editUser = new State({
+      const editUser = new State({
         name: 'user.editUser',
         component: 'edit-user'
       });
-
-      var userNotes = new State({
+      const userNotes = new State({
         name: 'user.editUser.userNotes',
         views: {
-          'left': {
-            component: 'user-notes-left'
-          },
-          'right': {
-            component: 'user-notes-right'
-          }
+          'left': { component: 'user-notes-left' },
+          'right': { component: 'user-notes-right' }
         }
       });
-
-      var bonus = new State({
+      const bonus = new State({
         name: 'user.editUser.userNotes.bonus',
         views: {
-          'left@user.editUser': {
-            component: 'bonus-component'
-          }
+          'left@user.editUser': { component: 'bonus-component' }
         }
       });
-
-      var userStatus = new State({
+      const userStatus = new State({
         name: 'userStatus',
         parent: 'user.editUser',
         component: 'user-status'
       });
-
-      var userProfile = new State({
+      const userProfile = new State({
         name: 'userProfile',
         parent: 'user',
         views: {
-          '': {
-            component: 'user-profile'
-          },
-          '@userProfile': {
-            component: 'user-photos'
-          },
+          '': { component: 'user-profile' },
+          '@userProfile': { component: 'user-photos' },
         }
       });
-
-      var admin = new State({
+      const admin = new State({
         name: 'admin',
         views: {
-          '': {
-            component: 'admin'
-          },
-          '@admin': {
-            component: 'admin-console'
-          }
+          '': { component: 'admin' },
+          '@admin': { component: 'admin-console' }
         }
       });
 
@@ -189,13 +147,13 @@ describe('viewTree', function () {
       tree.processState(userProfile);
       tree.processState(admin);
 
-      var rootView = tree.views['@'];
-      var userView = tree.views['@user'];
-      var editUserView = tree.views['@user.editUser'];
-      var editUserLeftView = tree.views['left@user.editUser'];
-      var editUserRightView = tree.views['right@user.editUser'];
-      var userProfileView = tree.views['@userProfile'];
-      var adminView = tree.views['@admin'];
+      const rootView = tree.views['@'];
+      const userView = tree.views['@user'];
+      const editUserView = tree.views['@user.editUser'];
+      const editUserLeftView = tree.views['left@user.editUser'];
+      const editUserRightView = tree.views['right@user.editUser'];
+      const userProfileView = tree.views['@userProfile'];
+      const adminView = tree.views['@admin'];
 
       expect(tree.views).to.deep.equal({
         '@': rootView,
@@ -207,14 +165,12 @@ describe('viewTree', function () {
         '@admin': adminView
       });
 
-
       expect(rootState.$views.length).to.equal(1);
       expect(user.$views.length).to.equal(1);
       expect(editUser.$views.length).to.equal(3);
       expect(userNotes.$views).to.equal(null);
       expect(userProfile.$views.length).to.equal(1);
       expect(admin.$views.length).to.equal(1);
-
 
       expect(rootState.$components).to.equal(null);
       expect(user.$components.length).to.equal(1);
@@ -223,16 +179,14 @@ describe('viewTree', function () {
       expect(userProfile.$components.length).to.equal(2);
       expect(admin.$components.length).to.equal(2);
 
-
-      var userComponent = user.$components[0];
-      var editUserComponent = editUser.$components[0];
-      var userNotesComponentLeft = userNotes.$components[0];
-      var userNotesComponentRight = userNotes.$components[1];
-      var userProfileComponent = userProfile.$components[0];
-      var userPhotosComponent = userProfile.$components[1];
-      var adminComponent = admin.$components[0];
-      var adminConsoleComponent = admin.$components[1];
-
+      const userComponent = user.$components[0];
+      const editUserComponent = editUser.$components[0];
+      const userNotesComponentLeft = userNotes.$components[0];
+      const userNotesComponentRight = userNotes.$components[1];
+      const userProfileComponent = userProfile.$components[0];
+      const userPhotosComponent = userProfile.$components[1];
+      const adminComponent = admin.$components[0];
+      const adminConsoleComponent = admin.$components[1];
 
       expect(rootView.container).to.equal(null);
       expect(userView.container).to.equal(userComponent);
@@ -241,14 +195,12 @@ describe('viewTree', function () {
       expect(userProfileView.container).to.equal(userProfileComponent);
       expect(adminView.container).to.equal(adminComponent);
 
-
       expect(rootView.parent).to.equal(null);
       expect(userView.parent).to.equal(rootView);
       expect(editUserLeftView.parent).to.equal(userView);
       expect(editUserRightView.parent).to.equal(userView);
       expect(userProfileView.parent).to.equal(userView);
       expect(adminView.parent).to.equal(rootView);
-
 
       expect(userComponent.view).to.equal(rootView);
       expect(editUserComponent.view).to.equal(userView);

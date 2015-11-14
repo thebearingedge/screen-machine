@@ -1,67 +1,49 @@
 
 'use strict';
 
-var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
-var expect = chai.expect;
-
-chai.use(sinonChai);
-
+import chai from 'chai';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import { jsdom } from 'jsdom';
+import riot from 'riot';
 import State from '../modules/State';
 import riotComponent from '../riotComponent';
 import View from '../modules/View';
-var document = require('jsdom').jsdom();
-var riot = require('riot');
+
+chai.use(sinonChai);
+
+const { expect } = chai;
+const document = jsdom();
 
 require('./riot-tags/all');
 
+describe('riotComponent', () => {
 
-describe('riotComponent', function () {
+  let view, views;
+  let RiotComponent, component;
+  let state;
 
-  var view, views;
-  var RiotComponent, component;
-  var state;
-
-  beforeEach(function () {
-
+  beforeEach(() => {
     global.document = document;
-
     RiotComponent = riotComponent(riot)(document);
-
-    views = {
-      loadedViews: [],
-      activeViews: []
-    };
-
+    views = { loadedViews: [], activeViews: [] };
     view = new View('@', views);
   });
 
+  afterEach(() => global.document = undefined);
 
-  afterEach(function () {
-
-    global.document = undefined;
-  });
-
-
-  it('should know its tagName', function () {
-
+  it('should know its tagName', () => {
     state = new State({
       name: 'app',
       views: {
-        '': {
-          component: 'parent-tag'
-        }
+        '': { component: 'parent-tag' }
       }
     });
     component = new RiotComponent('', '', state);
-
     expect(component.tagName).to.equal('parent-tag');
   });
 
-
-  beforeEach(function () {
-
+  beforeEach(() => {
     state = new State({
       name: 'app',
       component: 'simple-tag'
@@ -69,108 +51,77 @@ describe('riotComponent', function () {
     component = new RiotComponent('', '', state);
   });
 
+  describe('.setView(view)', () => {
 
-  describe('.setView(view)', function () {
-
-    it('should know which view it loads into', function () {
-
+    it('should know which view it loads into', () => {
       component.setView(view);
-
       expect(component.view).to.equal(view);
     });
 
   });
 
+  describe('.addChildView(view)', () => {
 
-  describe('.addChildView(view)', function () {
-
-    it('should store child views', function () {
-
+    it('should store child views', () => {
       component.addChildView(view);
-
       expect(component.childViews[0]).to.equal(view);
     });
 
   });
 
+  describe('.load()', () => {
 
-  describe('.load()', function () {
-
-    it('should load into its view', function () {
-
+    it('should load into its view', () => {
       component.view = view;
-
       component.load();
-
       expect(view.nextComponent).to.equal(component);
     });
 
   });
 
+  describe('.shouldRender()', () => {
 
-  describe('.shouldRender()', function () {
-
-    it('should know whether to render', function () {
-
+    it('should know whether to render', () => {
       component.view = view;
-
       expect(component.shouldRender()).to.equal(false);
-
       component.load();
-
       expect(component.shouldRender()).to.equal(true);
     });
 
   });
 
+  describe('.render()', () => {
 
-  describe('.render()', function () {
-
-    it('should render a riot tag', function () {
-
+    it('should render a riot tag', () => {
       state.$resolves = [{ id: 'place@app', key: 'place' }];
-
       component.render({ 'place@app': 'Santa Ana' });
-
       expect(component.node.innerHTML).to.equal(
         '<span>Welcome to Santa Ana</span>'
       );
     });
 
-
-    it('should attach child views to rendered DOM', function () {
-
+    it('should attach child views to rendered DOM', () => {
       state.component = 'parent-tag';
-
       view = new View('nested@', views);
       component = new RiotComponent('', '', state);
       component.addChildView(view);
-
       component.render();
-
       expect(view.element.outerHTML)
         .to.equal('<sm-view name="nested"></sm-view>');
     });
 
   });
 
+  describe('.update(resolved)', () => {
 
-  describe('.update(resolved)', function () {
-
-    it('should update its node\'s content', function () {
-
+    it('should update its node\'s content', () => {
       state.$resolves = [{ id: 'place@app', key: 'place' }];
-
       component.render({ 'place@app': '' });
-
       expect(component.node.innerHTML).to.equal(
         '<span>Welcome to </span>'
       );
-
       state.$resolves = [{ id: 'place@app', key: 'place' }];
-
       component.update({ 'place@app': 'Santa Ana' });
-
       expect(component.node.innerHTML).to.equal(
         '<span>Welcome to Santa Ana</span>'
       );
@@ -178,48 +129,31 @@ describe('riotComponent', function () {
 
   });
 
+  describe('.destroy()', () => {
 
-  describe('.destroy()', function () {
-
-    it('should unmount its tag and release its dom node', function () {
-
+    it('should unmount its tag and release its dom node', () => {
       component.render();
-
-      sinon.spy(component.tagInstance, 'unmount');
-
-      var tag = component.tagInstance;
-
-      expect(component.node.innerHTML).to.equal(
-        '<span>Welcome to </span>'
-      );
-
+      const { tagInstance, node } = component;
+      sinon.spy(tagInstance, 'unmount');
+      expect(node.innerHTML).to.equal('<span>Welcome to </span>');
       component.destroy();
-
-      expect(tag.unmount.calledOnce).to.equal(true);
+      expect(tagInstance.unmount.calledOnce).to.equal(true);
       expect(component.node).to.equal(null);
       expect(component.tagInstance).to.equal(null);
     });
 
-
-    it('should detach its child views', function () {
-
+    it('should detach its child views', () => {
       state.component = 'parent-tag';
       state.$resolves = [{ id: '@app', key: '' }];
-
       view = new View('nested@', views);
       component = new RiotComponent('', '', state);
       component.addChildView(view);
-
       component.render({ '@app': null });
-
       sinon.spy(view, 'detach');
-
       component.destroy();
-
       expect(view.detach.calledOnce).to.equal(true);
     });
 
   });
-
 
 });

@@ -1,22 +1,21 @@
 
 'use strict';
 
-const path = require('path');
-const glob = require('glob');
-var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
-var expect = chai.expect;
-
-chai.use(sinonChai);
-
+import path from 'path';
+import glob from 'glob';
+import chai from 'chai';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import { jsdom } from 'jsdom';
 import State from '../modules/State';
 import vueComponent from '../vueComponent';
 import View from '../modules/View';
-var jsdom = require('jsdom').jsdom;
+
+chai.use(sinonChai);
 
 const vueDir = path.join(__dirname, '../node_modules/vue/src');
 const vueFiles = glob.sync(vueDir + '/**/*.js');
+const { expect } = chai;
 
 describe('vueComponent', () => {
 
@@ -44,23 +43,14 @@ describe('vueComponent', () => {
   });
 
   beforeEach(() => {
-    views = {
-      loadedViews: [],
-      activeViews: []
-    };
+    views = { loadedViews: [], activeViews: [] };
     view = new View('@', views);
   });
 
-
   it('should know its ViewModel', () => {
-
     state = new State({
       name: 'app',
-      views: {
-        '': {
-          component: 'ParentVue'
-        }
-      }
+      views: { '': { component: 'ParentVue' } }
     });
     component = new VueComponent('', '', state);
     const ViewModel = component.ViewModel;
@@ -127,7 +117,6 @@ describe('vueComponent', () => {
         );
       });
 
-
       it('should attach child views to rendered DOM', () => {
         state.component = 'ParentVue';
         view = new View('nested@', views);
@@ -157,13 +146,12 @@ describe('vueComponent', () => {
 
     });
 
-
     describe('.destroy()', () => {
 
       it('should destory its vm and release its dom node', () => {
         component.render();
         sinon.spy(component.vm, '$destroy');
-        var vm = component.vm;
+        const vm = component.vm;
         expect(component.node.outerHTML).to.equal(
           '<span>Welcome to </span>'
         );
@@ -172,7 +160,6 @@ describe('vueComponent', () => {
         expect(component.node).to.equal(null);
         expect(component.vm).to.equal(null);
       });
-
 
       it('should detach its child views', () => {
         state.component = 'ParentVue';
@@ -188,8 +175,6 @@ describe('vueComponent', () => {
 
     });
 
-
   });
-
 
 });

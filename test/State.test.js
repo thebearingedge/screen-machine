@@ -183,7 +183,6 @@ describe('State', () => {
 
   });
 
-
   describe('.isStale(oldParams, newParams, oldQuery, newQuery)', () => {
 
     it('should be false if relevent params are equal', () => {
@@ -222,7 +221,6 @@ describe('State', () => {
 
   });
 
-
   describe('.shouldResolve(cache)', () => {
 
     it('should resolve if it has resolves and is not cacheable', () => {
@@ -233,7 +231,6 @@ describe('State', () => {
     });
 
   });
-
 
   describe('.inheritFrom(Object state)', () => {
 

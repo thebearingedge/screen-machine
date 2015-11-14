@@ -1,29 +1,29 @@
 
 'use strict';
 
-var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
-var expect = chai.expect;
-
-chai.use(sinonChai);
-
+import chai from 'chai';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import Promise from 'native-promise-only';
 import eventBus from '../modules/EventBus';
 import resolveFactory from '../modules/resolveFactory';
 import stateRegistry from '../modules/stateRegistry';
 import stateMachine from '../modules/stateMachine';
 
-describe('stateMachine', function () {
+chai.use(sinonChai);
 
-  var resolves, registry, events, machine;
-  var rootState, appState, fooState, barState, bazState, quxState, quuxState;
-  var initialParams, initialQuery;
+const { expect } = chai;
 
-  beforeEach(function () {
+describe('stateMachine', () => {
+
+  let resolves, registry, events, machine;
+  let rootState, appState, fooState, barState, bazState, quxState, quuxState;
+  let initialParams, initialQuery;
+
+  beforeEach(() => {
 
     events = eventBus({
-      emitter: { emit: function () {} },
+      emitter: { emit: () => {} },
       trigger: 'emit'
     });
 
@@ -39,8 +39,7 @@ describe('stateMachine', function () {
     initialParams = {};
     initialQuery = {};
 
-    var states = [
-
+    const states = [
       appState = registry
         .add('app', {
           path: '/',
@@ -48,7 +47,6 @@ describe('stateMachine', function () {
           beforeUpdate: sinon.spy(),
           beforeEnter: sinon.spy(),
         }),
-
       fooState = registry
         .add('app.foo', {
           path: 'foo/:fooParam',
@@ -59,21 +57,16 @@ describe('stateMachine', function () {
           beforeUpdate: sinon.spy(),
           beforeEnter: sinon.spy(),
         }),
-
       barState = registry
         .add('app.foo.bar', {
           path: 'bar?barQuery',
           resolve: {
-            barResolve: sinon.spy(function (params) {
-
-              return params.fooParam;
-            })
+            barResolve: sinon.spy(params => params.fooParam)
           },
           beforeExit: sinon.spy(),
           beforeUpdate: sinon.spy(),
           beforeEnter: sinon.spy(),
         }),
-
       bazState = registry
         .add('app.foo.bar.baz', {
           path: '/baz/:bazParam',
@@ -84,7 +77,6 @@ describe('stateMachine', function () {
           beforeUpdate: sinon.spy(),
           beforeEnter: sinon.spy(),
         }),
-
       quxState = registry
         .add('qux', {
           path: '/qux',
@@ -92,7 +84,6 @@ describe('stateMachine', function () {
           beforeUpdate: sinon.spy(),
           beforeEnter: sinon.spy(),
         }),
-
       quuxState = registry
         .add('quux', {
           parent: 'qux',
@@ -106,23 +97,17 @@ describe('stateMachine', function () {
         })
     ];
 
-    states.forEach(function (state) {
-
-      resolves.addTo(state);
-    });
+    states.forEach(state => resolves.addTo(state));
   });
 
 
-  describe('.init(startState, startParams)', function () {
+  describe('.init(startState, startParams)', () => {
 
-    it('should initialize', function () {
-
-      var rootState = registry.$root;
-      var params = {};
-      var query = {};
-
+    it('should initialize', () => {
+      const rootState = registry.$root;
+      const params = {};
+      const query = {};
       machine.init(rootState, params, query);
-
       expect(machine.$state.current).to.equal(rootState);
       expect(machine.$state.params).to.equal(params);
       expect(machine.$state.query).to.equal(query);
@@ -131,27 +116,19 @@ describe('stateMachine', function () {
 
   });
 
+  describe('.hasState(stateName, params, query)', () => {
 
-  describe('.hasState(stateName, params, query)', function () {
-
-    it('should know whether a state is active', function () {
-
+    it('should know whether a state is active', () => {
       expect(machine.hasState('app')).to.equal(false);
-
       machine.init(
         bazState, { bazParam: '42', fooParam: '7' }, { barQuery: 'smashing' }
       );
-
-      var hasRoot = machine.hasState('');
-      var hasFoo = machine.hasState('app.foo', { fooParam: '7' });
-
+      const hasRoot = machine.hasState('');
+      const hasFoo = machine.hasState('app.foo', { fooParam: '7' });
       expect(hasRoot).to.equal(true);
       expect(hasFoo).to.equal(true);
-
       machine.init(quxState, {}, {});
-
-      var hasQux = machine.hasState('qux');
-
+      const hasQux = machine.hasState('qux');
       expect(hasQux).to.equal(true);
     });
 
@@ -172,17 +149,16 @@ describe('stateMachine', function () {
 
   });
 
+  describe('.createTransition(state, params, query, options)', () => {
 
-  describe('.createTransition(state, params, query, options)', function () {
+    it('should create a transition from "root" to "app"', () => {
 
-    it('should create a transition from "root" to "app"', function () {
-
-      var params = {};
-      var query = {};
+      const params = {};
+      const query = {};
 
       machine.init(registry.$root, initialParams, initialQuery);
 
-      var transition = machine.createTransition(appState, params, query);
+      const transition = machine.createTransition(appState, params, query);
 
       expect(transition._tasks.length).to.equal(0);
       expect(transition._exiting.length).to.equal(0);
@@ -196,15 +172,14 @@ describe('stateMachine', function () {
       expect(appState.beforeExit.called).to.equal(false);
     });
 
+    it('should create a transition from "root" to "foo"', () => {
 
-    it('should create a transition from "root" to "foo"', function () {
-
-      var params = { fooParam: '42' };
-      var query = {};
+      const params = { fooParam: '42' };
+      const query = {};
 
       machine.init(registry.$root, initialParams, initialQuery);
 
-      var transition = machine.createTransition(fooState, params, query);
+      const transition = machine.createTransition(fooState, params, query);
 
       expect(transition._tasks.length).to.equal(1);
       expect(transition._exiting.length).to.equal(0);
@@ -222,15 +197,14 @@ describe('stateMachine', function () {
       expect(fooState.beforeExit.called).to.equal(false);
     });
 
+    it('should create a transition from "root" to "baz"', () => {
 
-    it('should create a transition from "root" to "baz"', function () {
-
-      var params = { fooParam: '42', bazParam: '7' };
-      var query = { barQuery: 'q' };
+      const params = { fooParam: '42', bazParam: '7' };
+      const query = { barQuery: 'q' };
 
       machine.init(rootState, initialParams, initialQuery);
 
-      var transition = machine.createTransition(bazState, params, query);
+      const transition = machine.createTransition(bazState, params, query);
 
       expect(transition._tasks.length).to.equal(3);
       expect(transition._exiting.length).to.equal(0);
@@ -245,12 +219,11 @@ describe('stateMachine', function () {
       expect(bazState.beforeEnter.calledOnce).to.equal(true);
     });
 
-
-    it('should create a transition from "baz" to "app"', function () {
+    it('should create a transition from "baz" to "app"', () => {
 
       machine.init(bazState, {}, {});
 
-      var transition = machine.createTransition(appState, {}, {});
+      const transition = machine.createTransition(appState, {}, {});
 
       expect(transition._tasks.length).to.equal(0);
       expect(transition._exiting.length).to.equal(3);
@@ -272,12 +245,11 @@ describe('stateMachine', function () {
       expect(bazState.beforeExit.calledOnce).to.equal(true);
     });
 
-
-    it('should create a transition from "baz" to "qux"', function () {
+    it('should create a transition from "baz" to "qux"', () => {
 
       machine.init(bazState, {}, {});
 
-      var transition = machine.createTransition(quxState, {}, {});
+      const transition = machine.createTransition(quxState, {}, {});
 
       expect(transition._tasks.length).to.equal(0);
       expect(transition._exiting.length).to.equal(4);
@@ -305,79 +277,63 @@ describe('stateMachine', function () {
 
   });
 
+  describe('.transitionTo(stateOrName, params, query, options)', () => {
 
-  describe('.transitionTo(stateOrName, params, query, options)', function () {
-
-    it('should transition from "root" to "app"', function (done) {
-
+    it('should transition from "root" to "app"', done => {
       machine.init(rootState, initialParams, initialQuery);
-
-      var params = {};
-      var query = {};
-
+      const params = {};
+      const query = {};
       return machine
         .transitionTo(appState, params, query)
-        .then(function (transition) {
+        .then(transition => {
           transition._commit();
           expect(machine.$state.current).to.equal(appState);
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
           transition._cleanup();
-          return done();
-        });
+        })
+        .then(done)
+        .catch(done);
     });
 
-
-    it('should transition from "root" to "app" by name', function (done) {
-
+    it('should transition from "root" to "app" by name', done => {
       machine.init(rootState, initialParams, initialQuery);
-
-      var params = {};
-      var query = {};
-
+      const params = {};
+      const query = {};
       return machine
         .transitionTo('app', params, query)
-        .then(function (transition) {
+        .then(transition => {
           transition._commit();
           expect(machine.$state.current).to.equal(appState);
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
           transition._cleanup();
-          return done();
-        });
+        })
+        .then(done);
     });
 
-
-
-    it('should transition from "root" to "foo"', function (done) {
-
+    it('should transition from "root" to "foo"', done => {
       machine.init(rootState, initialParams, initialQuery);
-
-      var params = { fooParam: '42' };
-      var query = {};
-
+      const params = { fooParam: '42' };
+      const query = {};
       return machine.transitionTo(fooState, params, query)
-        .then(function (transition) {
+        .then(transition => {
           transition._commit();
           expect(fooState.resolve.fooResolve.called).to.equal(true);
           expect(machine.$state.current).to.equal(fooState);
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
           transition._cleanup();
-          return done();
-        });
+        })
+        .then(done);
     });
 
-
-    it('should transition from "root" to "bar"', function (done) {
-
+    it('should transition from "root" to "bar"', done => {
       machine.init(rootState, initialParams, initialQuery);
-
-      var params = { fooParam: '42' };
-      var query = { barQuery: '7' };
-
+      const params = { fooParam: '42' };
+      const query = { barQuery: '7' };
       return machine.transitionTo(barState, params, query)
-        .then(function (transition) {
+        .then(transition => {
           transition._commit();
           expect(fooState.resolve.fooResolve.called).to.equal(true);
           expect(barState.resolve.barResolve.called).to.equal(true);
@@ -385,22 +341,18 @@ describe('stateMachine', function () {
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
           transition._cleanup();
-          return done();
-        });
+        })
+        .then(done);
     });
 
-
-    it('should transition from "foo" to "bar"', function (done) {
-
+    it('should transition from "foo" to "bar"', done => {
       machine.init(fooState, { fooParam: '42' }, {});
       machine.cache.set('fooResolve@app.foo', '42');
-
-      var params = { fooParam: '42' };
-      var query = { barQuery: '7' };
-
+      const params = { fooParam: '42' };
+      const query = { barQuery: '7' };
       return machine
         .transitionTo(barState, params, query)
-        .then(function (transition) {
+        .then(transition => {
           transition._commit();
           expect(fooState.resolve.fooResolve.called).to.equal(false);
           expect(barState.resolve.barResolve.called).to.equal(true);
@@ -408,36 +360,27 @@ describe('stateMachine', function () {
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
           transition._cleanup();
-          return done();
-        });
+        })
+        .then(done);
     });
 
-
-    it('should transition from "foo" to "baz"', function () {
-
+    it('should transition from "foo" to "baz"', () => {
       machine.init(fooState, { fooParam: '42' }, {});
-
-      var params = { fooParam: '42', bazParam: '50' };
-      var query = { barQuery: '7' };
-
+      const params = { fooParam: '42', bazParam: '50' };
+      const query = { barQuery: '7' };
       return machine
         .transitionTo(bazState, params, query);
-
     });
 
-
-    it('should transition from "baz" to "quux"', function (done) {
-
+    it('should transition from "baz" to "quux"', done => {
       machine.init(
         bazState, { fooParam: '42', bazParam: '24' }, { barQuery: '7' }
       );
-
-      var params = { quuxParam: 'fin' };
-      var query = {};
-
+      const params = { quuxParam: 'fin' };
+      const query = {};
       return machine
         .transitionTo(quuxState, params, query)
-        .then(function (transition) {
+        .then(transition => {
           transition._commit();
           expect(fooState.resolve.fooResolve.called).to.equal(false);
           expect(quuxState.resolve.quuxResolve.calledOnce).to.equal(true);
@@ -445,96 +388,73 @@ describe('stateMachine', function () {
           expect(machine.$state.params).to.equal(params);
           expect(machine.$state.query).to.equal(query);
           transition._cleanup();
-          return done();
-        });
+        })
+        .then(done);
     });
 
-
-    it('should rethrow any unhandled resolve error', function () {
-
+    it('should rethrow any unhandled resolve error', () => {
       machine.init(rootState, initialParams, initialQuery);
-
       sinon
         .stub(registry.states['app.foo'].$resolves[0], 'execute')
         .throws(new Error('oops!'));
-
-      var params = { fooParam: 'foo' };
-      var query = {};
-
+      const params = { fooParam: 'foo' };
+      const query = {};
       return expect(machine.transitionTo('app.foo', params, query))
             .to.eventually.be.rejectedWith(Error, 'oops!');
     });
 
-
-    it('should not run resolves if canceled by hook', function (done) {
-
+    it('should not run resolves if canceled by hook', done => {
       appState.beforeEnter = transition => transition.cancel();
-
       machine.init(rootState, {}, {});
-
       return machine
         .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
-        .catch(function (err) {
+        .catch(err => {
           expect(err.message).to.equal('transition canceled');
           expect(fooState.resolve.fooResolve.called).to.equal(false);
-          return done();
-        });
+        })
+        .then(done);
     });
 
-
-    it('should not run resolves if superseded by hook', function (done) {
-
+    it('should not run resolves if superseded by hook', done => {
       appState.beforeEnter = transition => transition.redirect('qux', {}, {});
-
       machine.init(rootState, {}, {});
-
       return machine
         .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
-        .catch(function (err) {
+        .catch(err => {
           expect(err.message).to.equal('transition superseded');
           expect(fooState.resolve.fooResolve.called).to.equal(false);
-          return done();
-        });
+        })
+        .then(done);
     });
 
-
-    it('should not run resolves if canceled by listener', function (done) {
-
+    it('should not run resolves if canceled by listener', done => {
       machine.init(rootState, {}, {});
-
-      events.notify = function (eventName, transition) {
-
+      events.notify = (eventName, transition) => {
         eventName === 'stateChangeStart' && transition.cancel();
       };
-
       return machine
         .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
-        .catch(function (err) {
+        .catch(err => {
           expect(err.message).to.equal('transition canceled');
           expect(fooState.resolve.fooResolve.called).to.equal(false);
-          return done();
-        });
+        })
+        .then(done);
     });
 
-
-    it('should not run resolves if superseded by listener', function (done) {
-
+    it('should not run resolves if superseded by listener', done => {
       machine.init(rootState, {}, {});
-
-      events.notify = function (eventName, transition) {
-
+      events.notify = (eventName, transition) => {
         eventName === 'stateChangeStart' &&
         transition.toState.name !== 'qux' &&
         transition.redirect('qux', {}, {});
       };
-
       return machine
         .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
-        .catch(function (err) {
+        .catch(err => {
           expect(err.message).to.equal('transition superseded');
           expect(fooState.resolve.fooResolve.called).to.equal(false);
-          return done();
-        });
+        })
+        .then(done);
     });
 
   });

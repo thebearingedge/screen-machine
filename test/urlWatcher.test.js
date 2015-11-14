@@ -1,23 +1,18 @@
 
 'use strict';
 
-var chai = require('chai');
-var sinon = require('sinon');
-var expect = chai.expect;
+import { expect } from 'chai';
+import sinon from 'sinon';
+import mockLocation from 'mock-location';
+import urlWatcher from '../modules/urlWatcher';
 
+describe('urlWatcher', () => {
 
-var mockLocation = require('mock-location');
-var urlWatcher = require('../modules/urlWatcher');
-
-
-describe('urlWatcher', function () {
-
-
-  describe('history', function () {
+  describe('history', () => {
 
     var window, url;
 
-    beforeEach(function () {
+    beforeEach(() => {
       window = {
         addEventListener: sinon.spy(),
         removeEventListener: sinon.spy(),
@@ -27,60 +22,45 @@ describe('urlWatcher', function () {
         },
         location: mockLocation('http://www.example.com/foo?bar=baz%20qux')
       };
-
       url = urlWatcher(window);
     });
 
+    describe('.get()', () => {
 
-    describe('.get()', function () {
-
-      it('should retrieve the current url', function () {
-
+      it('should retrieve the current url', () => {
         expect(url.get()).to.equal('/foo?bar=baz qux');
       });
 
     });
 
+    describe('.subscribe(onChange)', () => {
 
-    describe('.subscribe(onChange)', function () {
-
-      it('should take and call an observer function', function () {
-
-        var changeSpy = sinon.spy();
-
+      it('should take and call an observer function', () => {
+        const changeSpy = sinon.spy();
         url.subscribe(changeSpy);
-
         expect(changeSpy.calledOnce).to.equal(true);
         expect(changeSpy).to.have.been.calledWith('/foo?bar=baz qux');
-
         url.listener();
-
         expect(changeSpy.calledTwice).to.equal(true);
         expect(changeSpy).to.have.been.calledWith('/foo?bar=baz qux');
       });
 
     });
 
+    describe('.push(url)', () => {
 
-    describe('.push(url)', function () {
-
-      it('should push a url onto the window history', function () {
-
+      it('should push a url onto the window history', () => {
         url.push('/grault/garply');
-
         expect(window.history.pushState)
           .to.have.been.calledWithExactly({}, null, '/grault/garply');
       });
 
     });
 
+    describe('.replace(url)', () => {
 
-    describe('.replace(url)', function () {
-
-      it('should push a url onto the window history', function () {
-
+      it('should push a url onto the window history', () => {
         url.replace('/grault/garply');
-
         expect(window.history.replaceState)
           .to.have.been.calledWithExactly({}, null, '/grault/garply');
       });
@@ -89,59 +69,46 @@ describe('urlWatcher', function () {
 
   });
 
-
-  describe('hash', function () {
+  describe('hash', () => {
 
     var window, url;
 
-    beforeEach(function () {
+    beforeEach(() => {
       window = {
         addEventListener: sinon.spy(),
         removeEventListener: sinon.spy(),
         location: mockLocation('http://www.example.com/#/foo?bar=baz%20qux')
       };
-
       url = urlWatcher(window);
     });
 
+    describe('.get()', () => {
 
-    describe('.get()', function () {
-
-      it('should retrieve the current url', function () {
-
+      it('should retrieve the current url', () => {
         expect(url.get()).to.equal('/foo?bar=baz qux');
       });
 
-
-      it('should retrieve the current url', function () {
-
+      it('should retrieve the current url', () => {
         window.location.hash = '';
         expect(url.get()).to.equal('/');
       });
 
     });
 
+    describe('.push(url)', () => {
 
-    describe('.push(url)', function () {
-
-      it('should set the location hash', function () {
-
+      it('should set the location hash', () => {
         url.push('/grault/garply');
-
         expect(window.location.hash).to.equal('#/grault/garply');
       });
 
     });
 
+    describe('.replace(url)', () => {
 
-    describe('.replace(url)', function () {
-
-      it('should push a url onto the window history', function () {
-
+      it('should push a url onto the window history', () => {
         sinon.spy(window.location, 'replace');
-
         url.replace('/grault/garply');
-
         expect(window.location.replace)
           .to.have.been
           .calledWithExactly('http://www.example.com/#/grault/garply');

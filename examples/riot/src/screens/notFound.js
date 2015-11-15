@@ -1,8 +1,7 @@
 
 'use strict';
 
-module.exports = function (machine) {
-
+export default function notFound(machine) {
   machine
     .state('notFound', {
       path: '/*not-found',
@@ -11,9 +10,7 @@ module.exports = function (machine) {
     .state('viewLibs.library.notFound', {
       path: '*notFound',
       views: {
-        '@': {
-          component: 'not-found'
-        }
+        '@': { component: 'not-found' }
       }
     });
-};
+}

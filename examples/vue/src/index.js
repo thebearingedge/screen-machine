@@ -1,8 +1,6 @@
 
 'use strict';
 
-/* global -document */
-/* global -Promise */
 import document from 'global/document';
 import Vue from 'vue';
 import screenMachine from '../../../screenMachine';
@@ -15,10 +13,9 @@ import viewLibs from './screens/viewLibs';
 import notFound from './screens/notFound';
 import views from './vues';
 
-const emitter = new EventEmitter();
-
 Vue.config.silent = true;
 
+const emitter = new EventEmitter();
 const config = {
   document,
   components: vueComponent(Vue),
@@ -30,7 +27,6 @@ const config = {
     off: 'removeListener'
   }
 };
-
 const machine = global.machine = screenMachine(config);
 
 views(Vue);

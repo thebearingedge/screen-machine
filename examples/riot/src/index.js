@@ -1,42 +1,34 @@
 
 'use strict';
 
-/* global -document */
-/* global -Promise */
-var document = require('global/document');
-var riot = global.riot = require('riot');
-var screenMachine = require('../../../screenMachine');
-var riotComponent = require('../../../riotComponent');
-var EventEmitter = require('events').EventEmitter;
-var NativePromise = require('native-promise-only');
-var emitter = new EventEmitter();
+import document from 'global/document';
+import riot from 'riot';
+import screenMachine from '../../../screenMachine';
+import riotComponent from '../../../riotComponent';
+import EventEmitter from 'events';
+import NativePromise from 'native-promise-only';
+import domready from 'domready';
+import homeScreen from './screens/home';
+import viewLibs from './screens/viewLibs';
+import notFound from './screens/notFound';
 
-var config = {
+const emitter = new EventEmitter();
+const config = {
   components: riotComponent(riot),
-  document: document,
+  document,
   promises: NativePromise,
   events: {
-    emitter: emitter,
+    emitter,
     trigger: 'emit',
     on: 'addListener',
     off: 'removeListener'
   }
 };
-
-var machine = global.machine = screenMachine(config);
+const machine = global.machine = screenMachine(config);
 
 require('./tags/all');
-
-var domready = require('domready');
-var homeScreen = require('./screens/home');
-var viewLibs = require('./screens/viewLibs');
-var notFound = require('./screens/notFound');
 
 homeScreen(machine);
 viewLibs(machine);
 notFound(machine);
-
-domready(function () {
-
-  machine.start();
-});
+domready(() => machine.start());

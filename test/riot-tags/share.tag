@@ -1,4 +1,3 @@
 <share>
-
   <textarea></textarea>
 </share>

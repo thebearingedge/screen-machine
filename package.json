@@ -4,9 +4,9 @@
   "description": "Screen Machine",
   "main": "screenMachine.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha --compilers js:babel/register",
-    "cover": "./node_modules/.bin/babel-node ./node_modules/.bin/babel-istanbul cover _mocha",
-    "tdd": "./node_modules/.bin/mocha -w --compilers js:babel/register -R min"
+    "test": "mocha --compilers js:babel/register",
+    "cover": "babel-node ./node_modules/.bin/babel-istanbul cover _mocha",
+    "tdd": "mocha -w --compilers js:babel/register -R min"
   },
   "repository": {
     "type": "git",
@@ -24,8 +24,6 @@
     "chai": "^3.0.0",
     "chai-as-promised": "^5.1.0",
     "glob": "^5.0.15",
-    "http-server": "^0.8.0",
-    "istanbul": "^0.3.17",
     "jsdom": "^5.6.1",
     "mocha": "^2.3.3",
     "mock-location": "^0.1.0",

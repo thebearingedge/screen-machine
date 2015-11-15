@@ -6,7 +6,7 @@
   </ul>
 
   <script>
-
     this.stories = opts.stories;
   </script>
+
 </timeline>

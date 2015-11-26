@@ -1,35 +1,33 @@
 
-'use strict';
+import chai from 'chai'
+import { jsdom } from 'jsdom'
+import riot from 'riot'
+import riotComponent from '../riotComponent'
+import viewTree from '../modules/view-tree'
+import stateRegistry from '../modules/stateRegistry'
+import resolveFactory from '../modules/resolveFactory'
 
-import chai from 'chai';
-import { jsdom } from 'jsdom';
-import riot from 'riot';
-import riotComponent from '../riotComponent';
-import viewTree from '../modules/viewTree';
-import stateRegistry from '../modules/stateRegistry';
-import resolveFactory from '../modules/resolveFactory';
+require('./riot-tags/all')
 
-require('./riot-tags/all');
-
-const document = jsdom();
-const { expect } = chai;
+const document = jsdom()
+const { expect } = chai
 
 describe('Riot Component Composition', () => {
 
-  let views, RiotComponent, registry, resolves, appRoot, rootView;
+  let views, RiotComponent, registry, resolves, appRoot, rootView
 
   beforeEach(() => {
 
-    document.body.innerHTML = '';
-    global.document = document;
-    appRoot = document.createElement('sm-view');
-    document.body.appendChild(appRoot);
-    RiotComponent = riotComponent(riot)(document);
-    views = viewTree(document, RiotComponent);
-    resolves = resolveFactory(Promise);
-    registry = stateRegistry();
-    rootView = views.views['@'];
-    views.mountRoot();
+    document.body.innerHTML = ''
+    global.document = document
+    appRoot = document.createElement('sm-view')
+    document.body.appendChild(appRoot)
+    RiotComponent = riotComponent(riot)(document)
+    views = viewTree(document, RiotComponent)
+    resolves = resolveFactory(Promise)
+    registry = stateRegistry()
+    rootView = views.views['@']
+    views.mountRoot()
     const states = [
       registry.add('home', {
         component: 'home',
@@ -82,20 +80,20 @@ describe('Riot Component Composition', () => {
           }
         }
       })
-    ];
+    ]
     states.forEach(state => {
-      views.processState(state);
-      resolves.addTo(state);
-    });
-  });
+      views.processState(state)
+      resolves.addTo(state)
+    })
+  })
 
-  afterEach(() => global.document = undefined);
+  afterEach(() => global.document = undefined)
 
   it('should render a component into the app root', () => {
-    const components = registry.states.home.getAllComponents();
-    const resolved = { 'user@home': { name: 'John Doe' } };
-    const params = { userId: 42 };
-    views.compose(components, resolved, params);
+    const components = registry.states.home.getAllComponents()
+    const resolved = { 'user@home': { name: 'John Doe' } }
+    const params = { userId: 42 }
+    views.compose(components, resolved, params)
     expect(appRoot.innerHTML)
       .to.equal(
         '<home riot-tag="home">' +
@@ -104,18 +102,18 @@ describe('Riot Component Composition', () => {
           '<sm-view></sm-view> ' +
           '<sm-view name="modal"></sm-view>' +
         '</home>'
-      );
-  });
+      )
+  })
 
 
   it('should update the rendered view tree', () => {
-    let components = registry.states.home.getAllComponents();
-    let resolved = { 'user@home': { name: 'John Doe' } };
-    let params = { userId: 42 };
-    views.compose(components, resolved, params);
-    resolved = { 'user@home': { name: 'Jane Doe' } };
-    params = { userId: 7 };
-    views.compose(components, resolved, params);
+    let components = registry.states.home.getAllComponents()
+    let resolved = { 'user@home': { name: 'John Doe' } }
+    let params = { userId: 42 }
+    views.compose(components, resolved, params)
+    resolved = { 'user@home': { name: 'Jane Doe' } }
+    params = { userId: 7 }
+    views.compose(components, resolved, params)
     expect(appRoot.innerHTML)
       .to.equal(
         '<home riot-tag="home">' +
@@ -124,35 +122,35 @@ describe('Riot Component Composition', () => {
           '<sm-view></sm-view> ' +
           '<sm-view name="modal"></sm-view>' +
         '</home>'
-      );
-  });
+      )
+  })
 
   it('should rerender the view tree', () => {
-    let components = registry.states.home.getAllComponents();
-    let resolved = { 'user@home': { name: 'John Doe' } };
-    let params = { userId: 42 };
-    views.compose(components, resolved, params);
-    components = registry.states.profile.getAllComponents();
-    views.compose(components);
+    let components = registry.states.home.getAllComponents()
+    let resolved = { 'user@home': { name: 'John Doe' } }
+    let params = { userId: 42 }
+    views.compose(components, resolved, params)
+    components = registry.states.profile.getAllComponents()
+    views.compose(components)
     expect(appRoot.innerHTML)
       .to.equal(
         '<profile riot-tag="profile">' +
           '<span>Welcome to your profile.</span>' +
         '</profile>'
-      );
-  });
+      )
+  })
 
   it('should nest views', () => {
-    const components = registry.states['home.messages'].getAllComponents();
+    const components = registry.states['home.messages'].getAllComponents()
     const resolved = {
       'user@home': { name: 'John Doe' },
       'messages@home.messages': [
         { title: 'Message 1' },
         { title: 'Message 2' }
       ]
-    };
-    const params = { userId: 42 };
-    views.compose(components, resolved, params);
+    }
+    const params = { userId: 42 }
+    views.compose(components, resolved, params)
     expect(appRoot.innerHTML)
       .to.equal(
         '<home riot-tag="home">' +
@@ -164,30 +162,29 @@ describe('Riot Component Composition', () => {
               '<ul> ' +
                 '<li> <span>Message 1</span> </li>' +
                 '<li> <span>Message 2</span> </li>' +
-                '<!--riot placeholder-->' +
               '</ul>' +
             '</messages>' +
           '</sm-view> ' +
           '<sm-view name="modal"></sm-view>' +
         '</home>'
-      );
-  });
+      )
+  })
 
   it('should close nested views', () => {
-    let components = registry.states['home.messages'].getAllComponents();
+    let components = registry.states['home.messages'].getAllComponents()
     let resolved = {
       'user@home': { name: 'John Doe' },
       'messages@home.messages': [
         { title: 'Message 1' },
         { title: 'Message 2' }
       ]
-    };
-    let params = { userId: 42 };
-    views.compose(components, resolved, params);
-    components = registry.states.home.getAllComponents();
-    resolved = { 'user@home': { name: 'John Doe' } };
-    params = { userId: 42 };
-    views.compose(components, resolved, params);
+    }
+    let params = { userId: 42 }
+    views.compose(components, resolved, params)
+    components = registry.states.home.getAllComponents()
+    resolved = { 'user@home': { name: 'John Doe' } }
+    params = { userId: 42 }
+    views.compose(components, resolved, params)
     expect(appRoot.innerHTML)
       .to.equal(
         '<home riot-tag="home">' +
@@ -196,21 +193,21 @@ describe('Riot Component Composition', () => {
           '<sm-view></sm-view> ' +
           '<sm-view name="modal"></sm-view>' +
         '</home>'
-      );
-  });
+      )
+  })
 
   it('should replace nested views', () => {
-    let components = registry.states['home.messages'].getAllComponents();
+    let components = registry.states['home.messages'].getAllComponents()
     let resolved = {
       'user@home': { name: 'John Doe' },
       'messages@home.messages': [
         { title: 'Message 1' },
         { title: 'Message 2' }
       ]
-    };
-    let params = { userId: 42 };
-    views.compose(components, resolved, params);
-    components = registry.states['home.albums'].getAllComponents();
+    }
+    let params = { userId: 42 }
+    views.compose(components, resolved, params)
+    components = registry.states['home.albums'].getAllComponents()
     resolved = {
       'user@home': { name: 'Jane Doe' },
       'albums@home.albums': [
@@ -218,9 +215,9 @@ describe('Riot Component Composition', () => {
         { title: 'Album 2' },
         { title: 'Album 3' }
       ]
-    };
-    params = { userId: 7 };
-    views.compose(components, resolved, params);
+    }
+    params = { userId: 7 }
+    views.compose(components, resolved, params)
     expect(appRoot.innerHTML)
       .to.equal(
         '<home riot-tag="home">' +
@@ -233,25 +230,24 @@ describe('Riot Component Composition', () => {
                 '<li> <span>Album 1</span> </li>' +
                 '<li> <span>Album 2</span> </li>' +
                 '<li> <span>Album 3</span> </li>' +
-                '<!--riot placeholder-->' +
               '</ul>' +
             '</albums>' +
           '</sm-view> ' +
           '<sm-view name="modal"></sm-view>' +
         '</home>'
-      );
-  });
+      )
+  })
 
   it('should render states that define their own child view', () => {
-    const components = registry.states.timeline.getAllComponents();
+    const components = registry.states.timeline.getAllComponents()
     const resolved = {
       'stories@timeline': [
         { content: 'Event 1' },
         { content: 'Event 2' }
       ]
-    };
-    const params = {};
-    views.compose(components, resolved, params);
+    }
+    const params = {}
+    views.compose(components, resolved, params)
     expect(appRoot.innerHTML)
       .to.equal(
         '<timeline riot-tag="timeline">' +
@@ -262,18 +258,17 @@ describe('Riot Component Composition', () => {
           '</sm-view> ' +
           '<ul> ' +
             '<li>Event 1</li>' +
-            '<li>Event 2</li>' +
-            '<!--riot placeholder--> ' +
+            '<li>Event 2</li> ' +
           '</ul>' +
         '</timeline>'
-      );
-  });
+      )
+  })
 
   it('should render into named views', () => {
-    let components = registry.states['home.about'].getAllComponents();
-    let resolved = { 'user@home': { name: 'Spongebob' } };
-    let params = { userId: 1 };
-    views.compose(components, resolved, params);
+    let components = registry.states['home.about'].getAllComponents()
+    let resolved = { 'user@home': { name: 'Spongebob' } }
+    let params = { userId: 1 }
+    views.compose(components, resolved, params)
     expect(appRoot.innerHTML)
       .to.equal(
         '<home riot-tag="home">' +
@@ -290,18 +285,18 @@ describe('Riot Component Composition', () => {
             '</modal>' +
           '</sm-view>' +
         '</home>'
-      );
-  });
+      )
+  })
 
   it('should not render into shadowed views', () => {
-    let components = registry.states['home.about'].getAllComponents();
-    let resolved = { 'user@home': { name: 'Spongebob' } };
-    let params = { userId: 1 };
-    views.compose(components, resolved, params);
-    components = registry.states['home.about.contact'].getAllComponents();
-    resolved = { 'user@home': { name: 'Squidward' } };
-    params = { userId: 2 };
-    views.compose(components, resolved, params);
+    let components = registry.states['home.about'].getAllComponents()
+    let resolved = { 'user@home': { name: 'Spongebob' } }
+    let params = { userId: 1 }
+    views.compose(components, resolved, params)
+    components = registry.states['home.about.contact'].getAllComponents()
+    resolved = { 'user@home': { name: 'Squidward' } }
+    params = { userId: 2 }
+    views.compose(components, resolved, params)
     expect(appRoot.innerHTML)
       .to.equal(
         '<contact riot-tag="contact">' +
@@ -310,7 +305,7 @@ describe('Riot Component Composition', () => {
             '<input id="contactEmail" type="email"> ' +
           '</form>' +
         '</contact>'
-      );
-  });
+      )
+  })
 
-});
+})

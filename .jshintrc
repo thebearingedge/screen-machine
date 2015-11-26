@@ -1,8 +1,0 @@
-{
-  "node": true,
-  "laxbreak": true,
-  "expr": true,
-  "eqnull": true,
-  "maxcomplexity": 10,
-  "maxdepth": 3
-}

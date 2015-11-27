@@ -1,5 +1,5 @@
 
-import { expect } from 'chai'
+import { expect } from '@thebearingedge/test-utils'
 import routerFactory from '../src/router-factory'
 
 describe('routerFactory', () => {

@@ -1,13 +1,10 @@
 
-import chai from 'chai'
-import sinon from 'sinon'
+import { expect, spy } from '@thebearingedge/test-utils'
 import Promise from 'native-promise-only'
 import State from '../src/state'
 import SimpleResolve from '../src/simple-resolve'
 import DependentResolve from '../src/dependent-resolve'
 import resolveFactory from '../src/resolve-factory'
-
-const { expect } = chai
 
 describe('resolveFactory', () => {
 
@@ -49,7 +46,7 @@ describe('resolveFactory', () => {
 
 
     it('should noop if a state does not define resolves', () => {
-      sinon.spy(factory, 'instantiate')
+      spy(factory, 'instantiate')
       factory.addTo(grandChildState)
       expect(factory.instantiate.called).to.equal(false)
     })

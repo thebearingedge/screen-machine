@@ -1,16 +1,8 @@
 
-import chai from 'chai'
-import sinon from 'sinon'
-import sinonChai from 'sinon-chai'
-import chaiAsPromised from 'chai-as-promised'
+import { expect, spy, stub } from '@thebearingedge/test-utils'
 import Promise from 'native-promise-only'
 import State from '../src/state'
 import BaseResolve from '../src/base-resolve'
-
-chai.use(sinonChai)
-chai.use(chaiAsPromised)
-
-const { expect } = chai
 
 describe('BaseResolve', () => {
 
@@ -19,9 +11,9 @@ describe('BaseResolve', () => {
   beforeEach(() => {
     state = new State({
       name: 'foo',
-      resolve: { fooResolve: sinon.spy() }
+      resolve: { fooResolve: spy() }
     })
-    cache = { unset: sinon.spy() }
+    cache = { unset: spy() }
   })
 
   it('should have an id', () => {
@@ -69,7 +61,7 @@ describe('BaseResolve', () => {
     beforeEach(() => {
       params = { baz: 42 }
       query = { qux: 'quux' }
-      cache = { set: sinon.spy() }
+      cache = { set: spy() }
       transition = {}
     })
 
@@ -101,9 +93,9 @@ describe('BaseResolve', () => {
         const state = new State({
           name: 'state',
           resolve: {
-            foo: sinon.spy(),
-            bar: ['foo', sinon.spy()],
-            baz: ['foo', 'bar', sinon.spy()]
+            foo: spy(),
+            bar: ['foo', spy()],
+            baz: ['foo', 'bar', spy()]
           }
         })
         fooResolve = new BaseResolve('foo', state, Promise)
@@ -114,7 +106,7 @@ describe('BaseResolve', () => {
         params = { qux: 'quux' }
         query = { grault: 'garply' }
         transition = {}
-        cache = { set: sinon.spy() }
+        cache = { set: spy() }
         fooTask = fooResolve.createTask(params, query, transition, cache)
         barTask = barResolve.createTask(params, query, transition, cache)
         bazTask = bazResolve.createTask(params, query, transition, cache)
@@ -172,7 +164,7 @@ describe('BaseResolve', () => {
 
         it('should call its resolve and return a promise', () => {
 
-          fooResolve.execute = sinon.stub().returns('Yay!')
+          fooResolve.execute = stub().returns('Yay!')
 
           const resolve = fooTask.perform()
 
@@ -180,7 +172,7 @@ describe('BaseResolve', () => {
             .to.have.been
             .calledWithExactly(params, query, transition, undefined)
 
-          fooResolve.execute = sinon.stub().throws('Oops!')
+          fooResolve.execute = stub().throws('Oops!')
 
           const reject = fooTask.perform()
 
@@ -215,8 +207,8 @@ describe('BaseResolve', () => {
           const complete = []
           const wait = 3
 
-          sinon.stub(fooTask, 'runDependents')
-          fooResolve.execute = sinon.stub().returns('ok')
+          stub(fooTask, 'runDependents')
+          fooResolve.execute = stub().returns('ok')
 
           return fooTask
             .runSelf(queue, complete, wait)
@@ -239,8 +231,8 @@ describe('BaseResolve', () => {
           const complete = []
           const wait = 3
 
-          sinon.stub(fooTask, 'runDependents')
-          fooResolve.execute = sinon.spy()
+          stub(fooTask, 'runDependents')
+          fooResolve.execute = spy()
 
           return fooTask
             .runSelf(queue, complete, wait)
@@ -263,8 +255,8 @@ describe('BaseResolve', () => {
           const complete = []
           const wait = 3
 
-          sinon.stub(fooTask, 'runDependents')
-          fooResolve.execute = sinon.spy()
+          stub(fooTask, 'runDependents')
+          fooResolve.execute = spy()
 
           return fooTask
             .runSelf(queue, complete, wait)
@@ -284,8 +276,8 @@ describe('BaseResolve', () => {
           const complete = []
           const wait = 1
 
-          sinon.stub(fooTask, 'runDependents')
-          fooResolve.execute = sinon.stub()
+          stub(fooTask, 'runDependents')
+          fooResolve.execute = stub()
 
           return fooTask
             .runSelf(queue, complete, wait)
@@ -309,11 +301,11 @@ describe('BaseResolve', () => {
           const complete = [fooTask]
           const wait = 3
 
-          sinon.spy(barTask, 'setDependency')
-          sinon.spy(bazTask, 'setDependency')
+          spy(barTask, 'setDependency')
+          spy(bazTask, 'setDependency')
 
-          barTask.runSelf = sinon.stub()
-          bazTask.runSelf = sinon.stub()
+          barTask.runSelf = stub()
+          bazTask.runSelf = stub()
 
           return fooTask
             .runDependents(queue, complete, wait)

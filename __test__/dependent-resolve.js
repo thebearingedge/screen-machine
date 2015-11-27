@@ -1,16 +1,8 @@
 
-import chai from 'chai'
-import sinon from 'sinon'
-import sinonChai from 'sinon-chai'
-import chaiAsPromised from 'chai-as-promised'
+import { expect, spy } from '@thebearingedge/test-utils'
 import Promise from 'native-promise-only'
 import State from '../src/state'
 import DependentResolve from '../src/dependent-resolve'
-
-chai.use(sinonChai)
-chai.use(chaiAsPromised)
-
-const { expect } = chai
 
 describe('DependentResolve', () => {
 
@@ -21,7 +13,7 @@ describe('DependentResolve', () => {
       name: 'child',
       resolve: {
         bar: () => {},
-        baz: ['foo@parent', 'bar', sinon.spy()]
+        baz: ['foo@parent', 'bar', spy()]
       }
     })
   })

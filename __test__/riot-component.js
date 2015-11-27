@@ -1,16 +1,11 @@
 
-import chai from 'chai'
-import { spy } from 'sinon'
-import sinonChai from 'sinon-chai'
+import { expect, spy } from '@thebearingedge/test-utils'
 import { jsdom } from 'jsdom'
 import riot from 'riot'
 import State from '../src/state'
 import riotComponent from '../src/riot-component'
 import View from '../src/view'
 
-chai.use(sinonChai)
-
-const { expect } = chai
 const document = jsdom()
 
 global.riot = riot

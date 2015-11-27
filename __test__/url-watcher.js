@@ -1,6 +1,5 @@
 
-import { expect } from 'chai'
-import { spy } from 'sinon'
+import { expect, spy } from '@thebearingedge/test-utils'
 import mockLocation from 'mock-location'
 import urlWatcher from '../src/url-watcher'
 

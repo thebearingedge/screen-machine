@@ -1,7 +1,5 @@
 
-import chai from 'chai'
-import { spy } from 'sinon'
-import sinonChai from 'sinon-chai'
+import { expect, spy } from '@thebearingedge/test-utils'
 import { jsdom } from 'jsdom'
 import State from '../src/state'
 import viewTree from '../src/view-tree'
@@ -9,10 +7,6 @@ import View from '../src/view'
 import BaseComponent from '../src/base-component'
 
 const document = jsdom()
-
-chai.use(sinonChai)
-
-const { expect } = chai
 
 describe('viewTree', () => {
 

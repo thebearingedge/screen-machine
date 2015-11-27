@@ -1,13 +1,8 @@
 
+import { expect, spy } from '@thebearingedge/test-utils'
 import jsdom from 'jsdom'
-import chai from 'chai'
-import { spy } from 'sinon'
-import sinonChai from 'sinon-chai'
 import customComponent from '../src/custom-component'
 
-chai.use(sinonChai)
-
-const { expect } = chai
 const document = jsdom.jsdom()
 const Component = customComponent(document)
 

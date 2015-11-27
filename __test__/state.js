@@ -1,12 +1,6 @@
 
-import chai from 'chai'
-import { spy } from 'sinon'
-import sinonChai from 'sinon-chai'
+import { expect, spy } from '@thebearingedge/test-utils'
 import State from '../src/state'
-
-chai.use(sinonChai)
-
-const { expect } = chai
 
 describe('State', () => {
 

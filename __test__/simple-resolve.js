@@ -1,14 +1,8 @@
 
-import chai from 'chai'
-import { spy } from 'sinon'
-import sinonChai from 'sinon-chai'
+import { expect, spy } from '@thebearingedge/test-utils'
 import Promise from 'native-promise-only'
 import State from '../src/state'
 import SimpleResolve from '../src/simple-resolve'
-
-chai.use(sinonChai)
-
-const { expect } = chai
 
 describe('SimpleResolve', () => {
 

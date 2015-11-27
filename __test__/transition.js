@@ -1,17 +1,11 @@
 
-import chai from 'chai'
-import { spy, stub } from 'sinon'
-import sinonChai from 'sinon-chai'
+import { expect, spy, stub } from '@thebearingedge/test-utils'
 import Promise from 'native-promise-only'
 import stateMachine from '../src/state-machine'
 import State from '../src/state'
 import SimpleResolve from '../src/simple-resolve'
 import DependentResolve from '../src/dependent-resolve'
 import Transition from '../src/transition'
-
-chai.use(sinonChai)
-
-const { expect } = chai
 
 describe('Transition', () => {
 

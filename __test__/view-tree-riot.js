@@ -1,5 +1,5 @@
 
-import { expect } from 'chai'
+import { expect } from '@thebearingedge/test-utils'
 import { jsdom } from 'jsdom'
 import riot from 'riot'
 import riotComponent from '../src/riot-component'
@@ -13,7 +13,7 @@ const document = jsdom()
 
 describe('Riot Component Composition', () => {
 
-  let views, RiotComponent, registry, resolves, appRoot, rootView
+  let views, RiotComponent, registry, resolves, appRoot
 
   beforeEach(() => {
 
@@ -25,7 +25,6 @@ describe('Riot Component Composition', () => {
     views = viewTree(document, RiotComponent)
     resolves = resolveFactory(Promise)
     registry = stateRegistry()
-    rootView = views.views['@']
     views.mountRoot()
     const states = [
       registry.add('home', {

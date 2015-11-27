@@ -1,16 +1,10 @@
 
-import chai from 'chai'
-import { spy, stub } from 'sinon'
-import sinonChai from 'sinon-chai'
+import { expect, spy, stub } from '@thebearingedge/test-utils'
 import Promise from 'native-promise-only'
 import eventBus from '../src/event-bus'
 import resolveFactory from '../src/resolve-factory'
 import stateRegistry from '../src/state-registry'
 import stateMachine from '../src/state-machine'
-
-chai.use(sinonChai)
-
-const { expect } = chai
 
 describe('stateMachine', () => {
 
@@ -43,7 +37,7 @@ describe('stateMachine', () => {
           path: '/',
           beforeExit: spy(),
           beforeUpdate: spy(),
-          beforeEnter: spy(),
+          beforeEnter: spy()
         }),
       fooState = registry
         .add('app.foo', {
@@ -53,7 +47,7 @@ describe('stateMachine', () => {
           },
           beforeExit: spy(),
           beforeUpdate: spy(),
-          beforeEnter: spy(),
+          beforeEnter: spy()
         }),
       barState = registry
         .add('app.foo.bar', {
@@ -63,7 +57,7 @@ describe('stateMachine', () => {
           },
           beforeExit: spy(),
           beforeUpdate: spy(),
-          beforeEnter: spy(),
+          beforeEnter: spy()
         }),
       bazState = registry
         .add('app.foo.bar.baz', {
@@ -73,14 +67,14 @@ describe('stateMachine', () => {
           },
           beforeExit: spy(),
           beforeUpdate: spy(),
-          beforeEnter: spy(),
+          beforeEnter: spy()
         }),
       quxState = registry
         .add('qux', {
           path: '/qux',
           beforeExit: spy(),
           beforeUpdate: spy(),
-          beforeEnter: spy(),
+          beforeEnter: spy()
         }),
       quuxState = registry
         .add('quux', {
@@ -91,7 +85,7 @@ describe('stateMachine', () => {
           },
           beforeExit: spy(),
           beforeUpdate: spy(),
-          beforeEnter: spy(),
+          beforeEnter: spy()
         })
     ]
 

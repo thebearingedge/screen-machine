@@ -1,21 +1,13 @@
 
+import { expect, spy } from '@thebearingedge/test-utils'
 import path from 'path'
 import glob from 'glob'
-import chai from 'chai'
-import { spy } from 'sinon'
-import sinonChai from 'sinon-chai'
 import { jsdom } from 'jsdom'
 import Vue from 'vue'
 import State from '../src/state'
 import vueComponent from '../src/vue-component'
 import View from '../src/view'
 import vues from './vues'
-
-chai.use(sinonChai)
-
-const vueDir = path.join(__dirname, '../node_modules/vue/src')
-const vueFiles = glob.sync(vueDir + '/**/*.js')
-const { expect } = chai
 
 describe('vueComponent', () => {
 
@@ -27,6 +19,8 @@ describe('vueComponent', () => {
   let document
 
   before(() => {
+    const vueDir = path.join(__dirname, '../node_modules/vue/src')
+    const vueFiles = glob.sync(vueDir + '/**/*.js')
     vueFiles.forEach(file => delete require.cache[file])
     document = global.document = jsdom()
     global.window = global.document.defaultView

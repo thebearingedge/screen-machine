@@ -1,13 +1,8 @@
 
-import chai from 'chai'
-import { spy, stub } from 'sinon'
-import sinonChai from 'sinon-chai'
+import { expect, spy, stub } from '@thebearingedge/test-utils'
 import { jsdom } from 'jsdom'
 import View from '../src/view'
 
-chai.use(sinonChai)
-
-const { expect } = chai
 const document = jsdom()
 
 describe('View', () => {

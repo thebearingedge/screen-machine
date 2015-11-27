@@ -1,5 +1,5 @@
 
-import { expect } from 'chai'
+import { expect } from '@thebearingedge/test-utils'
 import urlTools from '../src/url-tools'
 
 describe('urlTools', () => {

@@ -3,14 +3,14 @@ import urlWatcher from './url-watcher'
 import eventBus from './event-bus'
 import viewTree from './view-tree'
 import resolveFactory from './resolve-factory'
-import router from './router'
+import router from './router-factory'
 import stateRegistry from './state-registry'
 import stateMachine from './state-machine'
 
 export default function screenMachine(config) {
 
   const {
-    document, promises, html5 = true, events:eventsConfig, components
+    document, promises, html5 = true, events: eventsConfig, components
   } = config
   const { defaultView: window } = document
   const events = eventBus(eventsConfig)

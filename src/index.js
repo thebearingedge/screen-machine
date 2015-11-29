@@ -48,7 +48,11 @@ export default function screenMachine(config) {
       const stateArgs = routes.find(url)
       if (stateArgs) {
         stateArgs.push(options)
-        return this.transitionTo(...stateArgs)
+        return this
+          .transitionTo(...stateArgs)
+          .catch(err => {
+            if (!events.notify('stateChangeError', err)) throw err
+          })
       }
       events.notify('routeNotFound', url)
     },

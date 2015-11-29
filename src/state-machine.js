@@ -87,8 +87,7 @@ export default function stateMachine(events, registry, Promise) {
       return transition
         ._attempt()
         .catch(err => {
-          events.notify('stateChangeError', err)
-          throw err
+          if (!events.notify('stateChangeError', err)) throw err
         })
     },
 

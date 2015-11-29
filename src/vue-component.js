@@ -41,7 +41,7 @@ export default function vueComponent(Vue) {
       }
 
       render(resolved, params, query) {
-        const {  ViewModel, childViews } = this
+        const { ViewModel, childViews } = this
         const data = this.getData(resolved, params, query)
         const vm = new ViewModel({ data })
         const node = vm.$mount().$el
@@ -67,7 +67,9 @@ export default function vueComponent(Vue) {
           .state
           .getResolves()
           .reduce((data, resolve) => {
-            data[resolve.key] = resolved[resolve.id]
+            const { key, id, cacheable } = resolve
+            data[key] = resolved[id]
+            if (!cacheable) resolve.clear()
             return data
           }, { params, query })
       }

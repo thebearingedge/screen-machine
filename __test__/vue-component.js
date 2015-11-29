@@ -106,7 +106,7 @@ describe('vueComponent', () => {
     describe('.render()', () => {
 
       it('should render a riot tag', () => {
-        state.$resolves = [{ id: 'place@app', key: 'place' }]
+        state.$resolves = [{ id: 'place@app', key: 'place', clear: () => {} }]
         component.render({ 'place@app': 'Santa Ana' })
         expect(component.node.outerHTML).to.equal(
           '<span>Welcome to Santa Ana</span>'
@@ -128,12 +128,12 @@ describe('vueComponent', () => {
     describe('.update(resolved)', () => {
 
       it('should update its node\'s content', () => {
-        state.$resolves = [{ id: 'place@app', key: 'place' }]
+        state.$resolves = [{ id: 'place@app', key: 'place', clear: () => {} }]
         component.render({ 'place@app': '' })
         expect(component.node.outerHTML).to.equal(
           '<span>Welcome to </span>'
         )
-        state.$resolves = [{ id: 'place@app', key: 'place' }]
+        state.$resolves = [{ id: 'place@app', key: 'place', clear: () => {} }]
         component.update({ 'place@app': 'Santa Ana' })
         expect(component.node.outerHTML).to.equal(
           '<span>Welcome to Santa Ana</span>'
@@ -159,7 +159,7 @@ describe('vueComponent', () => {
 
       it('should detach its child views', () => {
         state.component = 'ParentVue'
-        state.$resolves = [{ id: '@app', key: '' }]
+        state.$resolves = [{ id: '@app', key: '', clear: () => {} }]
         view = new View('nested@', views)
         component = new VueComponent('', '', state)
         component.addChildView(view)

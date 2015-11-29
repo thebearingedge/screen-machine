@@ -77,12 +77,6 @@ export default function stateMachine(events, registry, Promise) {
 
     transitionTo() {
       const transition = this.createTransition(...arguments)
-      if (transition.isCanceled()) {
-        return transition._fail('transition canceled')
-      }
-      else if (transition.isSuperseded()) {
-        return transition._fail('transition superseded')
-      }
       events.notify('stateChangeStart', transition)
       return transition
         ._attempt()

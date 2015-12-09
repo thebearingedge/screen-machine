@@ -49,7 +49,6 @@ export default function routerFactory() {
         children.sort((a, b) => b.specificity - a.specificity)
         for (let i = 0; i < children.length; i++) {
           const child = children[i]
-          // jshint -W084
           if (matched = child.match(unmatched)) {
             results.push(matched)
             route = child

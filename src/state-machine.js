@@ -10,9 +10,9 @@ export default function stateMachine(events, registry, Promise) {
     transition: null,
 
     init(state, params, query) {
-      Object.assign(this.$state, { current: state, params, query })
-      this.transition = null
-      return this
+      const $state = { current: state, params, query }
+      const transition = null
+      return Object.assign(this, { $state, transition })
     },
 
     getState(stateName) {
@@ -139,6 +139,7 @@ function callHook(hook, transition) {
 }
 
 function equalForKeys(partial, complete) {
-  var keys = Object.keys(partial)
-  return !keys.length || keys.every(key => (complete[key] === partial[key]))
+  return Object
+    .keys(partial)
+    .every(key => complete[key] === partial[key])
 }

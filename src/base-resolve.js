@@ -5,12 +5,12 @@ export default class BaseResolve {
     this.key = resolveKey
     this.id = resolveKey + '@' + state.name
     this.Promise = Promise
-    this.cacheable = state.cacheable === false ? false : true
+    this.cacheable = !(state.cacheable === false)
   }
 
   clear() {
     const { cache, cacheable, id } = this
-    if (cache && cacheable ) cache.unset(id)
+    if (cache && cacheable) cache.unset(id)
   }
 
   createTask(params, query, transition, cache) {
@@ -69,8 +69,9 @@ BaseResolve.prototype.taskDelegate = {
       .then(result => {
         this.result = result
         completed.push(this)
-        if (completed.length === wait) return Promise.resolve()
-        return this.runDependents(queue, completed, wait)
+        return completed.length === wait
+          ? Promise.resolve()
+          : this.runDependents(queue, completed, wait)
       })
   },
 

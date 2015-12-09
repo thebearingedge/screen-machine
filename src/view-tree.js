@@ -72,20 +72,18 @@ export default function viewTree(document, Component) {
         .map(component => component.load())
         .filter(component => component.shouldRender())
         .forEach(component => component.render(resolved, params, query))
-      tree
-        .loadedViews
+      const { loadedViews, activeViews } = tree
+      loadedViews
         .filter(loaded => loaded.isShadowed())
         .forEach(shadowed => shadowed.unload())
-      const toClose = tree
-        .activeViews
+      const toClose = activeViews
         .filter(active => active.shouldClose())
-      tree.activeViews = tree.loadedViews.slice()
-      tree
-        .loadedViews
+      tree.activeViews = loadedViews.slice()
+      loadedViews
         .map(loaded => loaded.publish(resolved, params, query))
         .forEach(published => published.cleanUp())
       toClose.forEach(open => open.close())
-      tree.loadedViews.slice().forEach(view => view.unload())
+      loadedViews.slice().forEach(view => view.unload())
     }
 
   }

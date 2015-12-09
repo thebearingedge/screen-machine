@@ -75,10 +75,11 @@ export default class View {
       return this
     }
     const { content, element, nextComponent } = this
-    if (content) element.replaceChild(nextComponent.node, content)
-    else element.appendChild(nextComponent.node)
+    const { node } = nextComponent
+    if (content) element.replaceChild(node, content)
+    else element.appendChild(node)
     return Object.assign(this, {
-      content: nextComponent.node,
+      content: node,
       lastComponent: currentComponent,
       currentComponent: nextComponent,
       nextComponent: null

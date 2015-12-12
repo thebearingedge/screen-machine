@@ -89,20 +89,20 @@ export default function stateMachine(events, registry, Promise) {
 
       $store: {},
 
-      get(resolveId) {
-        return this.$store[resolveId]
+      get(id) {
+        return this.$store[id]
       },
 
-      set(resolveId, result) {
-        this.$store[resolveId] = result
+      set(id, value) {
+        this.$store[id] = value
       },
 
-      unset(resolveId) {
-        delete this.$store[resolveId]
+      unset(id) {
+        delete this.$store[id]
       },
 
-      has(resolveId) {
-        return resolveId in this.$store
+      has(id) {
+        return id in this.$store
       }
 
     },

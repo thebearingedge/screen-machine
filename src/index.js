@@ -3,7 +3,7 @@ import urlWatcher from './url-watcher'
 import eventBus from './event-bus'
 import viewTree from './view-tree'
 import resolveFactory from './resolve-factory'
-import router from './router-factory'
+import routerFactory from './router-factory'
 import stateRegistry from './state-registry'
 import stateMachine from './state-machine'
 
@@ -15,21 +15,29 @@ export default function screenMachine(config) {
   const { defaultView: window } = document
   const events = eventBus(eventsConfig)
   const url = urlWatcher(window, { html5 })
-  const routes = router()
+  const router = routerFactory()
   const registry = stateRegistry()
   const resolves = resolveFactory(promises)
   const machine = stateMachine(events, registry, promises)
-  const Component = components(document, events, machine, routes)
+  const Component = components(document, events, machine, router)
   const views = viewTree(document, Component)
 
   return {
 
     state() {
       const registered = registry.add(...arguments)
-      if (registered.path) routes.add(registered.name, registered.path)
+      if (registered.path) router.add(registered.name, registered.path)
       resolves.addTo(registered)
       views.processState(registered)
       return this
+    },
+
+    hasState() {
+      return machine.hasSate(...arguments)
+    },
+
+    href() {
+      return router.href(...arguments)
     },
 
     start() {
@@ -45,7 +53,7 @@ export default function screenMachine(config) {
     },
 
     _navigateTo(url, options = {}) {
-      const stateArgs = routes.find(url)
+      const stateArgs = router.find(url)
       if (stateArgs) {
         stateArgs.push(options)
         return this
@@ -91,7 +99,7 @@ export default function screenMachine(config) {
           const resolved = machine.getResolved()
           views.compose(components, resolved, params, query)
           if (!options.routeChange) {
-            url.push(routes.toUrl(state.name, params, query))
+            url.push(router.toUrl(state.name, params, query))
           }
           events.notify('stateChangeSuccess', transition)
           return transition._cleanup()

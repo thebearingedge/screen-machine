@@ -1,6 +1,6 @@
 {
   "name": "screen-machine",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Screen Machine",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "cover": "babel-node node_modules/.bin/babel-istanbul cover _mocha",
     "tdd": "mocha -w --compilers js:babel-core/register -R min __test__",
     "transform": "babel src --out-dir lib",
-    "prepublish": "npm run transform"
+    "prepublish": "npm test && npm run transform"
   },
   "repository": {
     "type": "git",

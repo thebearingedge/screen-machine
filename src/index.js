@@ -33,7 +33,7 @@ export default function screenMachine(config) {
     },
 
     hasState() {
-      return machine.hasSate(...arguments)
+      return machine.hasState(...arguments)
     },
 
     href() {

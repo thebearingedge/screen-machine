@@ -78,6 +78,7 @@ export default function stateMachine(events, registry, Promise) {
     transitionTo() {
       const transition = this.createTransition(...arguments)
       events.notify('stateChangeStart', transition)
+      if (transition.isCanceled()) return Promise.resolve(transition)
       return transition
         ._attempt()
         .catch(err => {

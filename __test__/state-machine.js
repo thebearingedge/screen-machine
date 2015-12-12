@@ -394,16 +394,15 @@ describe('stateMachine', () => {
             .to.eventually.be.rejectedWith(Error, 'oops!')
     })
 
-    it('should not run resolves if canceled by hook', done => {
+    it('should not run resolves if canceled by hook', () => {
       appState.beforeEnter = transition => transition.cancel()
       machine.init(rootState, {}, {})
       return machine
         .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
-        .catch(err => {
-          expect(err.message).to.equal('transition canceled')
-          expect(fooState.resolve.fooResolve.called).to.equal(false)
+        .then(transition => {
+          expect(transition.isCanceled()).to.be.true
+          expect(fooState.resolve.fooResolve.called).to.be.false
         })
-        .then(done)
     })
 
     it('should not run resolves if superseded by hook', done => {
@@ -413,23 +412,22 @@ describe('stateMachine', () => {
         .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
         .catch(err => {
           expect(err.message).to.equal('transition superseded')
-          expect(fooState.resolve.fooResolve.called).to.equal(false)
+          expect(fooState.resolve.fooResolve).not.to.have.been.called
         })
         .then(done)
     })
 
-    it('should not run resolves if canceled by listener', done => {
+    it('should not run resolves if canceled by listener', () => {
       machine.init(rootState, {}, {})
       events.notify = (eventName, transition) => {
         eventName === 'stateChangeStart' && transition.cancel()
       }
       return machine
         .transitionTo(fooState, { fooParam: '42' }, { barQuery: '7' })
-        .catch(err => {
-          expect(err.message).to.equal('transition canceled')
-          expect(fooState.resolve.fooResolve.called).to.equal(false)
+        .then(transition => {
+          expect(transition.isCanceled()).to.be.true
+          expect(fooState.resolve.fooResolve).not.to.have.been.called
         })
-        .then(done)
     })
 
     it('should not run resolves if superseded by listener', done => {

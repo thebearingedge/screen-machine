@@ -11,27 +11,37 @@ export default function customComponent(document) {
       super(...arguments)
       const { views, component } = state
       this.factory = views ? views[viewKey].component : component
-      this.viewController = null
+      this.controller = null
     }
 
-    render() {
+    render(resolved, params, query) {
       const { factory, childViews } = this
-      const { viewController, node } = factory(...arguments, document)
+      const props = this.getProps(...arguments)
+      const { controller, node } = factory(props, document)
       childViews.forEach(view => view.attachWithin(node))
-      return Object.assign(this, { viewController, node })
+      return Object.assign(this, { controller, node })
     }
 
     update() {
-      this.viewController.update(...arguments)
+      const props = this.getProps(...arguments)
+      this.controller.update(props)
       return this
     }
 
     destroy() {
-      const { viewController, childViews } = this
-      viewController.destroy()
+      const { controller, childViews } = this
+      controller.destroy()
       childViews.forEach(view => view.detach())
-      this.viewController = this.node = null
+      this.controller = this.node = null
       return this
+    }
+
+    getProps(resolved, params, query) {
+      return this.state
+        .getResolves()
+        .reduce((props, r) => {
+          return Object.assign(props, { [r.key]: resolved[r.id] })
+        }, { params, query })
     }
 
   }

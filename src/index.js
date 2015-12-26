@@ -26,7 +26,8 @@ export default function screenMachine(config) {
 
     state() {
       const registered = registry.add(...arguments)
-      if (registered.path) router.add(registered.name, registered.path)
+      const { name, path, paramTypes } = registered
+      if (path) router.add(name, path, paramTypes)
       resolves.addTo(registered)
       views.processState(registered)
       return this

@@ -5,9 +5,8 @@ export default class Segment {
     return new this(...arguments)
   }
 
-  constructor(string) {
+  constructor(string, parser = val => val) {
     let match, type, key, specificity
-    // jshint -W084
     if (match = string.match(/^:([^\/]+)$/)) {
       type = 'dynamic'
       key = match[0].slice(1)
@@ -28,12 +27,18 @@ export default class Segment {
       key = string
       specificity = '4'
     }
-    Object.assign(this, { type, key, specificity })
+    Object.assign(this, { type, key, parser, specificity })
   }
 
   match(string) {
-    const { type, key } = this
-    if (type === 'splat' || type === 'dynamic') return { [key]: string }
+    const { type, key, parser } = this
+    if (type === 'dynamic') {
+      if (typeof parser === 'function') {
+        return { [key]: parser(string) }
+      }
+      return { [key]: string }
+    }
+    if (type === 'splat') return { [key]: string }
     return key === string ? {} : null
   }
 

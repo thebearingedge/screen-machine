@@ -51,7 +51,7 @@ describe('routerFactory', () => {
       router = routerFactory()
         .add('app', '/')
         .add('app.users', 'users')
-        .add('app.users.profile', ':userId')
+        .add('app.users.profile', ':userId', { userId: Number })
         .add('landing', '/landing')
         .add('landing.about', '/about')
     })
@@ -65,7 +65,7 @@ describe('routerFactory', () => {
     })
 
     it('should compile routes with params', () => {
-      const href = router.href('app.users.profile', { userId: '7' })
+      const href = router.href('app.users.profile', { userId: 7 })
       expect(href).to.equal('/users/7')
     })
 
@@ -97,7 +97,7 @@ describe('routerFactory', () => {
         .add('landing', '/landing')
         .add('app.login', 'login')
         .add('app', '/')
-        .add('app.users.profile', ':userId')
+        .add('app.users.profile', ':userId', { userId: Number })
         .add('app.users.profile.notFound', '*notFound')
         .add('app.users.search', 'search')
         .add('app.users.profile.friends', 'friends')
@@ -122,21 +122,21 @@ describe('routerFactory', () => {
 
     it('should find a dynamic route second', () => {
       expect(router.find('/users/7'))
-        .to.deep.equal(['app.users.profile', { userId: '7' }, {}])
+        .to.deep.equal(['app.users.profile', { userId: 7 }, {}])
     })
 
     it('should find a splat route', () => {
       expect(router.find('/users/7/so/cool'))
         .to.deep.equal([
           'app.users.profile.notFound',
-          { userId: '7', notFound: 'so/cool' },
+          { userId: 7, notFound: 'so/cool' },
           {}
         ])
     })
 
     it('should find a static nested route before a splat route', () => {
       expect(router.find('/users/7/friends'))
-        .to.deep.equal(['app.users.profile.friends', { userId: '7' }, {}])
+        .to.deep.equal(['app.users.profile.friends', { userId: 7 }, {}])
     })
 
     it('should not find a route that doesn\'t exist', () => {

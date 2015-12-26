@@ -12,8 +12,8 @@ export default function routerFactory() {
 
     queues: { __absolute__: [] },
 
-    add(name, path) {
-      return this.register(new Route(name, path))
+    add(name, path, parsers) {
+      return this.register(new Route(name, path, parsers))
     },
 
     register(route) {

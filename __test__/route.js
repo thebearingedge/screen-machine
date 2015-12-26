@@ -69,6 +69,15 @@ describe('Route', () => {
       expect(strings.length).to.equal(0)
     })
 
+    it('should convert dynamic params with supplied parsers', () => {
+      const strings = ['pictures', '7', 'captions']
+      const route = new Route('caption', 'pictures/:pictureId', {
+        pictureId: Number
+      })
+      const matched = route.match(strings)
+      expect(matched).to.deep.equal([{}, { pictureId: 7 }])
+    })
+
   })
 
   describe('.generate(params)', () => {

@@ -55,9 +55,15 @@ describe('RouteSegment', () => {
         expect(dynamicSegment.match('bar')).to.deep.equal({ foo: 'bar' })
       })
 
+      it('should convert the param type from a string', () => {
+        dynamicSegment.parser = val => parseInt(val, 10)
+        const interpolated = dynamicSegment.match('1')
+        expect(interpolated).to.deep.equal({ foo: 1 })
+      })
+
     })
 
-    describe('.interpolate', () => {
+    describe('.interpolate(params)', () => {
 
       it('should return the params value that matches its key', () => {
         expect(dynamicSegment.interpolate({ foo: 'bar' })).to.equal('bar')

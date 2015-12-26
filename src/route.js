@@ -3,16 +3,22 @@ import Segment from './route-segment'
 
 export default class Route {
 
-  constructor(name, path) {
+  constructor(name, path, parsers = {}) {
     const splitNames = name.split('.')
     const parentName = splitNames[1]
       ? splitNames.slice(0, splitNames.length - 1).join('.')
       : null
     const pathParts = (path.startsWith('/') ? path.slice(1) : path).split('/')
-    const segments = pathParts.map(part => Segment.create(part))
+    const segments = pathParts.map(part => {
+      const segment = Segment.create(part)
+      if (segment.type === 'dynamic') {
+        segment.parser = parsers[segment.key]
+      }
+      return segment
+    })
     const specificity = segments.map(segment => segment.specificity).join('')
     Object.assign(this, {
-      name, path, segments, specificity, parentName
+      name, path, segments, specificity, parentName, parsers
     })
   }
 

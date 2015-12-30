@@ -10,7 +10,7 @@ export default function customComponent(document) {
     constructor(componentName, viewKey, state) {
       super(...arguments)
       const { views, component } = state
-      this.factory = views ? views[viewKey].component : component
+      this.factory = views ? views[viewKey] : component
       this.controller = null
     }
 

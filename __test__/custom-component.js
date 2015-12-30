@@ -29,7 +29,7 @@ describe('customComponent', () => {
     })
 
     it('uses the factory defined on state.views', () => {
-      const state = new State({ name: 'test', views: { '@foo': { component: factory } } })
+      const state = new State({ name: 'test', views: { '@foo': factory } })
       const component = new Component(null, '@foo', state)
       expect(component.factory).to.equal(factory)
     })

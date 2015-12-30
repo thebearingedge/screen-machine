@@ -48,13 +48,13 @@ describe('Riot Component Composition', () => {
       registry.add('profile', {
         component: 'profile'
       }),
-      registry.add('timeline', {
+      registry.add('home.timeline', {
         views: {
-          '@timeline': {
-            component: 'share'
-          },
-          '': {
+          '@home': {
             component: 'timeline'
+          },
+          '@home.timeline': {
+            component: 'share'
           }
         },
         resolve: {
@@ -96,7 +96,7 @@ describe('Riot Component Composition', () => {
       .to.equal(
         '<home riot-tag="home">' +
           '<h1>Welcome, John Doe!</h1> ' +
-          '<p>Your are user #42</p> '+
+          '<p>Your are user #42</p> ' +
           '<sm-view></sm-view> ' +
           '<sm-view name="modal"></sm-view>' +
         '</home>'
@@ -116,7 +116,7 @@ describe('Riot Component Composition', () => {
       .to.equal(
         '<home riot-tag="home">' +
           '<h1>Welcome, Jane Doe!</h1> ' +
-          '<p>Your are user #7</p> '+
+          '<p>Your are user #7</p> ' +
           '<sm-view></sm-view> ' +
           '<sm-view name="modal"></sm-view>' +
         '</home>'
@@ -187,7 +187,7 @@ describe('Riot Component Composition', () => {
       .to.equal(
         '<home riot-tag="home">' +
           '<h1>Welcome, John Doe!</h1> ' +
-          '<p>Your are user #42</p> '+
+          '<p>Your are user #42</p> ' +
           '<sm-view></sm-view> ' +
           '<sm-view name="modal"></sm-view>' +
         '</home>'
@@ -237,9 +237,9 @@ describe('Riot Component Composition', () => {
   })
 
   it('should render states that define their own child view', () => {
-    const components = registry.states.timeline.getAllComponents()
+    const components = registry.states['home.timeline'].getAllComponents()
     const resolved = {
-      'stories@timeline': [
+      'stories@home.timeline': [
         { content: 'Event 1' },
         { content: 'Event 2' }
       ]
@@ -248,17 +248,19 @@ describe('Riot Component Composition', () => {
     views.compose(components, resolved, params)
     expect(appRoot.innerHTML)
       .to.equal(
-        '<timeline riot-tag="timeline">' +
+        '<home riot-tag="home">' +
+          '<h1>Welcome, !</h1> ' +
+          '<p>Your are user #</p> ' +
           '<sm-view>' +
-            '<share riot-tag="share">' +
-              '<textarea></textarea>' +
-            '</share>' +
+            '<timeline riot-tag="timeline">' +
+              '<sm-view>' +
+                '<share riot-tag="share"><textarea></textarea></share>' +
+              '</sm-view> ' +
+              '<ul> <li>Event 1</li><li>Event 2</li> </ul>' +
+            '</timeline>' +
           '</sm-view> ' +
-          '<ul> ' +
-            '<li>Event 1</li>' +
-            '<li>Event 2</li> ' +
-          '</ul>' +
-        '</timeline>'
+          '<sm-view name="modal"></sm-view>' +
+        '</home>'
       )
   })
 
@@ -271,7 +273,7 @@ describe('Riot Component Composition', () => {
       .to.equal(
         '<home riot-tag="home">' +
           '<h1>Welcome, Spongebob!</h1> ' +
-          '<p>Your are user #1</p> '+
+          '<p>Your are user #1</p> ' +
           '<sm-view>' +
             '<about riot-tag="about">' +
               '<p>Good info about our site!</p>' +

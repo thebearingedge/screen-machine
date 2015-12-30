@@ -24,7 +24,6 @@ export default function viewTree(document, Component) {
       if (views) {
         Object
           .keys(views)
-          .sort()
           .forEach(viewKey => {
             componentName = viewKey
             view = this.ensureView(viewKey, state)

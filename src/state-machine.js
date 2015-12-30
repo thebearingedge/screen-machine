@@ -57,9 +57,10 @@ export default function stateMachine(events, registry, Promise) {
       const toUpdate = dirtyFilter(fromParams, fromQuery, params, query, cache)
       let entering, updating
       if (pivotState) {
-        entering = toBranch.slice(toBranch.indexOf(pivotState) + 1)
+        const pivotAfter = toBranch.indexOf(pivotState) + 1
+        entering = toBranch.slice(pivotAfter)
         updating = toBranch
-          .slice(0, entering.indexOf(pivotState) + 1)
+          .slice(0, entering.length ? pivotAfter : toBranch.length)
           .filter(toUpdate)
       }
       else {

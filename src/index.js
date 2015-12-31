@@ -25,7 +25,7 @@ export default function screenMachine(config) {
   return {
 
     get $state() {
-      return registry.$state
+      return machine.$state
     },
 
     state() {

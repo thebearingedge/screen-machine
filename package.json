@@ -1,6 +1,6 @@
 {
   "name": "screen-machine",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Screen Machine",
   "main": "index.js",
   "scripts": {

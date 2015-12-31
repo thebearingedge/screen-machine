@@ -24,6 +24,10 @@ export default function screenMachine(config) {
 
   return {
 
+    get $state() {
+      return registry.$state
+    },
+
     state() {
       const registered = registry.add(...arguments)
       const { name, path, paramTypes } = registered
